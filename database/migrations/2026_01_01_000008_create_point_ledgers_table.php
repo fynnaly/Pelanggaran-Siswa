@@ -28,15 +28,17 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['student_id', 'academic_year_id']);
+
+            $table->unique(['student_id','academic_year_id', 'transaction_type', 'source_id'], 'ledger_idempotency')
+                    ->where('source_id IS NOT NULL');
+
+            $table->unique(['student_id', 'academic_year_id', 'transaction_type'], 'uniq_opening_balance');
+
+            $table->unique(['source_type', 'source_id'], 'uniq_source_idempotency');
+
+            $table->index(['student_id', 'academic_year_id', 'created_at']);
+
         });
-
-        DB::statement("
-            CREATE UNIQUE INDEX point_ledgers_one_opening_per_year ON point_ledgers (student_id, academic_year_id) WHERE transaction_type = 'OPENING_BALANCE'
-        ");
-
-        DB::statement("
-            CREATE UNIQUE INDEX point_ledgers_unique_source ON point_ledgers (source_type, source_id) WHERE source_type IS NOT NULL AND transaction_type IN ('VIOLATION', 'ACHIEVEMENT')
-        ");
     }
 
 
