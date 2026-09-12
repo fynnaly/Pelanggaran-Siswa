@@ -2,63 +2,83 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\SchoolClass;
+use App\Models\AcademicYear;
 use Illuminate\Http\Request;
 
 class SchoolClassController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    /** Menampilkan daftar semua kelas */
     public function index()
     {
-        //
+        $classes = SchoolClass::with(['academicYear', 'homeroomTeacher', 'students'])
+            ->latest('name')
+            ->paginate(20);
+
+        return view('classes.index', compact('classes'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+    /** Menampilkan form pembuatan kelas baru */
     public function create()
     {
-        //
+        $academicYears = AcademicYear::orderBy('name', 'desc')->pluck('name', 'id');
+        return view('classes.create', compact('academicYears'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    /** Menyimpan kelas baru ke database */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'academic_year_id' => 'required|exists:academic_years,id',
+            'name' => ['required', 'string', 'max:20', 'unique:classes,name,' . $request->academic_year_id . ',academic_year_id'],
+            'homeroom_teacher_id' => 'nullable|exists:users,id',
+        ]);
+
+        SchoolClass::create($validated);
+
+        return redirect()
+            ->route('classes.index')
+            ->with('success', 'Kelas ' . $validated['name'] . ' berhasil ditambahkan.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    /** Menampilkan form edit kelas */
+    public function edit(SchoolClass $class)
     {
-        //
+        $academicYears = AcademicYear::orderBy('name', 'desc')->pluck('name', 'id');
+        return view('classes.edit', compact('class', 'academicYears'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    /** Memperbarui data kelas */
+    public function update(Request $request, SchoolClass $class)
     {
-        //
+        $validated = $request->validate([
+            'academic_year_id' => 'sometimes|exists:academic_years,id',
+            'name' => ['sometimes', 'required', 'string', 'max:20',
+                'unique:classes,name,' . $class->id . ',academic_year_id,' .
+                $request->input('academic_year_id', $class->academic_year_id) . ',academic_year_id'],
+            'homeroom_teacher_id' => 'nullable|exists:users,id',
+        ]);
+
+        $class->update($validated);
+
+        return redirect()
+            ->route('classes.index')
+            ->with('success', 'Kelas ' . $validated['name'] . ' berhasil diupdate.');
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    /** Menghapus kelas */
+    public function destroy(SchoolClass $class)
     {
-        //
-    }
+        if ($class->students()->count() > 0) {
+            return redirect()
+                ->route('classes.index')
+                ->with('error', 'Kelas ' . $class->name . ' tidak bisa dihapus karena masih ada siswa.');
+        }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        $class->delete();
+
+        return redirect()
+            ->route('classes.index')
+            ->with('success', 'Kelas ' . $class->name . ' berhasil dihapus.');
     }
 }

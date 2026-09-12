@@ -6,6 +6,7 @@ use App\Http\Controllers\ViolationCategoryController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\PointLedgerController;
 use App\Http\Controllers\DisciplineCaseController;
+use App\Http\Controllers\SchoolClassController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -31,13 +32,16 @@ Route::middleware('auth')->group(function () {
     // Siswa / Murid
     Route::resource('students', StudentController::class);
 
+    // Kelas (untuk assign siswa, import excel pakai class_id)
+    Route::resource('classes', SchoolClassController::class);
+
     // PointLedger
     Route::resource('point-ledgers', PointLedgerController::class)->only(['index', 'show']);
 
-    // Kasus Validasi / Selesai
+    // Kasus Discipline - CRUD dasar + aksi validasi/selesai
+    Route::resource('discipline-cases', DisciplineCaseController::class)->only(['index', 'create', 'store', 'show']);
     Route::patch('/discipline-cases/{disciplineCase}/validate', [DisciplineCaseController::class, 'validate'])->name('discipline-cases.validate');
     Route::patch('/discipline-cases/{disciplineCase}/done', [DisciplineCaseController::class, 'done'])->name('discipline-cases.done');
 });
-
 
 require __DIR__.'/auth.php';
