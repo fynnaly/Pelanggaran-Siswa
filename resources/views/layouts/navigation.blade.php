@@ -15,6 +15,21 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('students.index')" :active="request()->routeIs('students')">
+                        {{ __('Siswa') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('classes.index')" :active="request()->routeIs('classes')">
+                        {{ __('Kelas') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('violation-categories.index')" :active="request()->routeIs('violation-categories')">
+                        {{ __('Pelanggaran') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('discipline-cases.index')" :active="request()->routeIs('discipline-cases')">
+                        {{ __('Kasus Pelanggaran') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('point-ledgers.index')" :active="request()->routeIs('point-ledgers')">
+                        {{ __('Buku Poin') }}
+                    </x-nav-link>
                 </div>
             </div>
 
