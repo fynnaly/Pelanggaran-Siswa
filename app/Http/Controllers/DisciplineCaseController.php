@@ -75,6 +75,7 @@ class DisciplineCaseController extends Controller
     /** Validasi pelanggaran: found -> validated + potong poin */
     public function validate(Request $request, DisciplineCase $case)
     {
+        // Policy, dari policies/disciplinecasePolicy
         $this->authorize('validate', $case);
 
         $validated = $request->validate([

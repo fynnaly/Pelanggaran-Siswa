@@ -30,6 +30,9 @@
                     <x-nav-link :href="route('point-ledgers.index')" :active="request()->routeIs('point-ledgers')">
                         {{ __('Buku Poin') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('academic-years.index')" :active="request()->routeIs('academic-years')">
+                        {{ __('Tahun Ajaran') }}
+                    </x-nav-link>
                 </div>
             </div>
 

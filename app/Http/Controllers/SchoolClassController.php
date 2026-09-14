@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\SchoolClass;
 use App\Models\AcademicYear;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class SchoolClassController extends Controller
 {
@@ -22,7 +24,8 @@ class SchoolClassController extends Controller
     public function create()
     {
         $academicYears = AcademicYear::orderBy('name', 'desc')->pluck('name', 'id');
-        return view('classes.create', compact('academicYears'));
+        $users = User::orderBy('name');
+        return view('classes.create', compact('academicYears', 'users'));
     }
 
     /** Menyimpan kelas baru ke database */
@@ -30,7 +33,16 @@ class SchoolClassController extends Controller
     {
         $validated = $request->validate([
             'academic_year_id' => 'required|exists:academic_years,id',
-            'name' => ['required', 'string', 'max:20', 'unique:classes,name,' . $request->academic_year_id . ',academic_year_id'],
+            'name' => ['required', 'string', 'max:20',
+
+            /**
+             * ! SQLSTATE[42703]: Undefined column: 7 ERROR: column "6" does not exist LINE :
+             * * Fix, menggunakan Rule::unique qihuy
+            */
+            Rule::unique('classes', 'name')->where(function ($query) use ($request) {
+                return $query->where('academic_year_id', $request->academic_year_id);
+            })
+            ],
             'homeroom_teacher_id' => 'nullable|exists:users,id',
         ]);
 
@@ -51,11 +63,17 @@ class SchoolClassController extends Controller
     /** Memperbarui data kelas */
     public function update(Request $request, SchoolClass $class)
     {
+        // amvil data ID tahun ajaran
+        $academicYearId = $request->input('academic_year_id', $class->academicYearId);
+
         $validated = $request->validate([
             'academic_year_id' => 'sometimes|exists:academic_years,id',
             'name' => ['sometimes', 'required', 'string', 'max:20',
-                'unique:classes,name,' . $class->id . ',academic_year_id,' .
-                $request->input('academic_year_id', $class->academic_year_id) . ',academic_year_id'],
+            // cari naam yg sama, but ga anggap Id kelas yang dipilih dan juga cek di taun ajaran yang sama juga.
+            Rule::unique('classes', 'name')
+            ->ignore($class->id)
+            ->where('academic_year_id', $academicYearId),
+            ],
             'homeroom_teacher_id' => 'nullable|exists:users,id',
         ]);
 
@@ -69,6 +87,8 @@ class SchoolClassController extends Controller
     /** Menghapus kelas */
     public function destroy(SchoolClass $class)
     {
+
+    // cek relasi siswa sebelum hapus (kelas)
         if ($class->students()->count() > 0) {
             return redirect()
                 ->route('classes.index')

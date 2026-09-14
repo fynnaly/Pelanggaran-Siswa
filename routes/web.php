@@ -7,6 +7,7 @@ use App\Http\Controllers\StudentController;
 use App\Http\Controllers\PointLedgerController;
 use App\Http\Controllers\DisciplineCaseController;
 use App\Http\Controllers\SchoolClassController;
+use App\Http\Controllers\AcademicYearController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -21,10 +22,14 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+
     // Auth Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Tahun Ajaran
+    Route::resource('academic-years', AcademicYearController::class);
 
     // Pelanggaran
     Route::resource('violation-categories', ViolationCategoryController::class);

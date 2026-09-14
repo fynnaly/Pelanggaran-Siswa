@@ -31,9 +31,12 @@
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Wali Kelas</label>
                         <select name="homeroom_teacher_id" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500">
                             <option value="">-- Pilih wali --</option>
-                            @foreach(User::where('role', 'admin')->get() as $user)
+                            @foreach($users as $user)
                                 <option value="{{ $user->id }}" {{ old('homeroom_teacher_id')==$user->id?'selected':'' }}>{{ $user->name }}</option>
                             @endforeach
+                            @if($users->isEmpty())
+                                <option value="" disabled>Tidak ada user tersedia</option>
+                            @endif
                         </select>
                     </div>
                     <div class="flex justify-end space-x-3 pt-2">
