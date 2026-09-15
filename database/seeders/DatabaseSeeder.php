@@ -26,8 +26,10 @@ class DatabaseSeeder extends Seeder
         $admin = User::firstOrCreate(['email' => 'admin@admin.com'], ['name' => 'Admin', 'password' => Hash::make('password')]);
         $admin->syncRoles(['admin']);
 
-        $guru = User::firstOrCreate(['email' => 'guru@guru.com'], ['name' => 'Guru', 'password' => Hash::make('password')]);
-        $guru->syncRoles(['guru']);
+        $guru1 = User::firstOrCreate(['email' => 'guru1@guru.com'], ['name' => 'Guru1', 'password' => Hash::make('password')]);
+        $guru2 = User::firstOrCreate(['email' => 'guru2@guru.com'], ['name' => 'Guru2', 'password' => Hash::make('password')]);
+        $guru3 = User::firstOrCreate(['email' => 'guru3@guru.com'], ['name' => 'Guru3', 'password' => Hash::make('password')]);
+        foreach ([$guru1, $guru2, $guru3] as $user) { $user->syncRoles(['guru']); }
 
         $bk = User::firstOrCreate(['email' => 'bk@bk.com'], ['name' => 'BK', 'password' => Hash::make('password')]);
         $bk->syncRoles(['bk']);

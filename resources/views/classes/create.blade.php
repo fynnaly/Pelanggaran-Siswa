@@ -25,7 +25,7 @@
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Kelas</label>
                         <input type="text" name="name" value="{{ old('name') }}" required maxlength="20"
-                               class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500">
+                                class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Wali Kelas</label>

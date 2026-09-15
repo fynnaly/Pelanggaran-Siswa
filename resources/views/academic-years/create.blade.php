@@ -26,7 +26,8 @@
                     <div class="mb-4">
                         <label for="start_date" class="block text-sm font-medium text-gray-700">Tanggal Mulai</label>
                         <input type="date" name="start_date" id="start_date" value="{{ old('start_date') }}"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500" required>
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                            required>
                         @error('start_date')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                         @enderror
@@ -40,10 +41,14 @@
                                 {{ old('is_active') ? 'checked' : '' }}>
                             <span class="ml-2 text-sm text-gray-700">Jadikan Tahun Ajaran Ini Aktif (Default)</span>
                         </label>
-<p id="is_active-help" class="mt-1 flex items-start gap-1.5 text-xs text-gray-500">
-  <svg class="h-3.5 w-3.5 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-  <span>Jika diaktifkan, tahun ajaran lain yang aktif akan otomatis dinonaktifkan.</span>
-</p>
+                        <p id="is_active-help" class="mt-1 flex items-start gap-1.5 text-xs text-gray-500">
+                            <svg class="h-3.5 w-3.5 mt-0.5 shrink-0" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Jika diaktifkan, tahun ajaran lain yang aktif akan otomatis dinonaktifkan.</span>
+                        </p>
 
                     </div>
 

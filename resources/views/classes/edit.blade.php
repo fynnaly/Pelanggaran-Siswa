@@ -24,7 +24,7 @@
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Kelas</label>
                         <input type="text" name="name" value="{{ old('name', $class->name) }}" required maxlength="20"
-                               class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500">
+                                class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Wali Kelas</label>
@@ -33,7 +33,7 @@
                             @foreach(\App\Models\User::whereHas('roles', fn($q) => $q->where('name','admin'))->get() as $user)
                                 <option value="{{ $user->id }}" {{ old('homeroom_teacher_id', $class->homeroom_teacher_id)==$user->id?'selected':'' }}>{{ $user->name }}</option>
                             @endforeach
-                            @if(\App\Models\User::whereHas('roles', fn($q) => $q->where('name','admin'))->count() === 0)
+                            @if(\App\Models\User::whereHas('roles', fn($q) => $q->where('name', ''))->count() === 0)
                                 @foreach(\App\Models\User::limit(20)->get() as $user)
                                     <option value="{{ $user->id }}" {{ old('homeroom_teacher_id', $class->homeroom_teacher_id)==$user->id?'selected':'' }}>{{ $user->name }}</option>
                                 @endforeach

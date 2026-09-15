@@ -24,7 +24,7 @@ class SchoolClassController extends Controller
     public function create()
     {
         $academicYears = AcademicYear::orderBy('name', 'desc')->pluck('name', 'id');
-        $users = User::orderBy('name');
+        $users = User::orderBy('name')->get();
         return view('classes.create', compact('academicYears', 'users'));
     }
 
@@ -64,7 +64,7 @@ class SchoolClassController extends Controller
     public function update(Request $request, SchoolClass $class)
     {
         // amvil data ID tahun ajaran
-        $academicYearId = $request->input('academic_year_id', $class->academicYearId);
+        $academicYearId = $request->input('academic_year_id', $class->academic_year_id);
 
         $validated = $request->validate([
             'academic_year_id' => 'sometimes|exists:academic_years,id',
