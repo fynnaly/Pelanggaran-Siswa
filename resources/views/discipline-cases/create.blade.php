@@ -76,7 +76,7 @@
             @else
                 <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--sp-md);text-align:center">
                     <p class="text-sm text-muted">Belum ada kategori pencapaian aktif.</p>
-                    <a href="{{ route('achievement-categories.create') }}" class="btn btn-secondary btn-sm" style="margin-top:var(--sp-sm)"><i data-lucide="plus" class="icon-sm"></i> Buat Kategori Pencapaian</a>
+                    <span class="text-sm text-muted">Kategori pencapaian akan tersedia saat fitur diintegrasikan.</span>
                 </div>
             @endif
         </div>

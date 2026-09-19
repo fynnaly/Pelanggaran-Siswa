@@ -42,9 +42,9 @@ class StudentController extends Controller
     /** Form tambah siswa — kirim daftar kelas dari controller (jangan query di Blade). */
     public function create()
     {
-        $klases = SchoolClass::with('academicYear')->orderBy('name')->get();
+        $classes = SchoolClass::with('academicYear')->orderBy('name')->get();
 
-        return view('students.create', compact('klases'));
+        return view('students.create', compact('classes'));
     }
 
     /** Simpan siswa baru + buat saldo awal 2000 (OPENING_BALANCE) sekali per tahun ajaran. */
@@ -88,9 +88,9 @@ class StudentController extends Controller
     /** Form edit siswa */
     public function edit(Student $student)
     {
-        $klases = SchoolClass::with('academicYear')->orderBy('name')->get();
+        $classes = SchoolClass::with('academicYear')->orderBy('name')->get();
 
-        return view('students.edit', compact('student', 'klases'));
+        return view('students.edit', compact('student', 'classes'));
     }
 
     /** Update data siswa */

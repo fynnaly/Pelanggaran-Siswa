@@ -21,8 +21,8 @@
                 <div class="field"><label class="field-label">Kelas <span class="text-danger">*</span></label>
                     <select name="school_class_id" class="field-input" required>
                         <option value="">Pilih kelas...</option>
-                        @foreach($classes as $id => $name)
-                            <option value="{{ $id }}" {{ old('school_class_id', $student->school_class_id)==$id?'selected':'' }}>{{ $name }}</option>
+                        @foreach($classes as $class)
+                            <option value="{{ $class->id }}" {{ old('school_class_id', $student->school_class_id)==$class->id?'selected':'' }}>{{ $class->name }}</option>
                         @endforeach
                     </select>
                 </div>

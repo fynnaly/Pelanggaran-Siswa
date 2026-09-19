@@ -8,6 +8,8 @@
             </div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
                 <a href="{{ route('discipline-cases.create') }}" class="btn btn-primary"><i data-lucide="plus" class="icon-sm"></i> Buat Kasus</a>
+                <a href="{{ route('students.index') }}" class="btn btn-secondary btn-sm"><i data-lucide="search" class="icon-sm"></i> Cari Siswa</a>
+                <a href="{{ route('students.export') }}" class="btn btn-secondary btn-sm"><i data-lucide="download" class="icon-sm"></i> Export</a>
             </div>
         </div>
     </x-slot>
@@ -88,15 +90,6 @@
                         @empty
                             <p class="text-muted text-sm" style="padding:var(--sp-md) 0"><i data-lucide="check-circle" class="icon-sm"></i> Tidak ada siswa dengan poin kritis.</p>
                         @endforelse
-                    </div>
-
-                    <div class="section" style="margin-top:var(--sp-lg)">
-                        <div class="section-header"><h2 style="display:flex;align-items:center;gap:var(--sp-sm)"><i data-lucide="zap" class="icon"></i> Aksi Cepat</h2></div>
-                        <div class="card" style="display:flex;flex-direction:column;gap:var(--sp-sm)">
-                            <a href="{{ route('discipline-cases.create') }}" class="btn btn-primary" style="width:100%;justify-content:center"><i data-lucide="file-plus" class="icon-sm"></i> Buat Kasus Baru</a>
-                            <a href="{{ route('students.index') }}" class="btn btn-secondary" style="width:100%;justify-content:center"><i data-lucide="search" class="icon-sm"></i> Cari Siswa</a>
-                            <a href="{{ route('students.export') }}" class="btn btn-secondary" style="width:100%;justify-content:center"><i data-lucide="download" class="icon-sm"></i> Export Laporan</a>
-                        </div>
                     </div>
                 </div>
             </div>
