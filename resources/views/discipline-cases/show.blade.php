@@ -1,85 +1,67 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="breadcrumb">Beranda / Kasus / Detail</div>
-        <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--sp-sm)">
-            <div><h1>Detail Kasus</h1></div>
-            <a href="{{ route('discipline-cases.index') }}" class="btn btn-secondary btn-sm">Kembali</a>
+        <div class="page-header">
+            <div><div class="breadcrumb">Beranda / Kasus / Detail</div><h1 style="display:flex;align-items:center;gap:var(--sp-sm)"><i data-lucide="file-text" class="icon"></i> {{ $case->case_number }}</h1></div>
+            <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
+                @if($case->status==='found')
+                    <form action="{{ route('discipline-cases.validate', $case) }}" method="POST" onsubmit="return confirm('Validasi kasus ini?')">@csrf @method('PATCH')<input type="hidden" name="validation_passed" value="1"><button class="btn btn-primary btn-sm"><i data-lucide="check" class="icon-sm"></i> Validasi</button></form>
+                @endif
+                @if($case->status==='validated')
+                    <form action="{{ route('discipline-cases.done', $case) }}" method="POST" onsubmit="return confirm('Tandai selesai?')">@csrf @method('PATCH')<button class="btn btn-primary btn-sm"><i data-lucide="check-circle" class="icon-sm"></i> Selesai</button></form>
+                @endif
+                <a href="{{ route('discipline-cases.index') }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" class="icon-sm"></i> Kembali</a>
+            </div>
         </div>
     </x-slot>
     <div class="main-wrap">
-        @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
-        @if(session('warning'))<div class="alert alert-warning">{{ session('warning') }}</div>@endif
-        @if(session('error'))<div class="alert alert-error">{{ session('error') }}</div>@endif
-
-        <div class="card" style="margin-bottom:var(--sp-lg)">
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--sp-lg)">
-                <div>
-                    <div class="label">Nomor Kasus</div>
-                    <div style="margin-top:var(--sp-xs);font-weight:600;font-family:ui-monospace,monospace;font-size:.875rem">{{ $disciplineCase->case_number }}</div>
+        <div class="layout-2col" style="align-items:start">
+            <div>
+                <div class="card" style="margin-bottom:var(--sp-lg)">
+                    <h2 style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)"><i data-lucide="info" class="icon"></i> Detail Kasus</h2>
+                    <table style="width:100%;border-collapse:collapse">
+                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted);width:160px">Nomor Kasus</td><td class="mono" style="padding:8px 0;font-weight:600">{{ $case->case_number }}</td></tr>
+                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Status</td><td style="padding:8px 0">
+                            @if($case->status==='found')<span class="badge badge-warning"><i data-lucide="clock" style="width:12px;height:12px"></i> Diproses</span>
+                            @elseif($case->status==='validated')<span class="badge" style="background:var(--ws);color:var(--wt)"><i data-lucide="check" style="width:12px;height:12px"></i> Divalidasi</span>
+                            @elseif($case->status==='done')<span class="badge badge-success"><i data-lucide="check-circle" style="width:12px;height:12px"></i> Selesai</span>
+                            @else<span class="badge badge-danger"><i data-lucide="x-circle" style="width:12px;height:12px"></i> {{ ucfirst($case->status) }}</span>@endif
+                        </td></tr>
+                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Tanggal Dilaporkan</td><td style="padding:8px 0">{{ $case->created_at?->format('d M Y H:i') }}</td></tr>
+                        @if($case->validated_at)<tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Divalidasi</td><td style="padding:8px 0">{{ $case->validated_at?->format('d M Y H:i') }}</td></tr>@endif
+                        @if($case->resolved_at)<tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Selesai</td><td style="padding:8px 0">{{ $case->resolved_at?->format('d M Y H:i') }}</td></tr>@endif
+                    </table>
                 </div>
-                <div>
-                    <div class="label">Siswa</div>
-                    <div style="margin-top:var(--sp-xs);font-weight:600">{{ $disciplineCase->student?->full_name ?? '-' }}</div>
-                    <div class="text-sm text-muted">{{ $disciplineCase->student?->schoolClass?->name ?? '' }}</div>
-                </div>
-                <div>
-                    <div class="label">Pelanggaran</div>
-                    <div style="margin-top:var(--sp-xs)">{{ $disciplineCase->violationCategory?->name ?? '-' }}</div>
-                </div>
-                <div>
-                    <div class="label">Poin</div>
-                    <div style="margin-top:var(--sp-xs);font-weight:700;color:var(--danger)">-{{ $disciplineCase->violationCategory?->points ?? 0 }}</div>
-                </div>
-                <div>
-                    <div class="label">Status</div>
-                    <div style="margin-top:var(--sp-xs)">
-                        @if($disciplineCase->status==='found')<span class="badge badge-warning">Diproses</span>
-                        @elseif($disciplineCase->status==='validated')<span class="badge" style="background:var(--ws);color:var(--wt)">Divalidasi</span>
-                        @elseif($disciplineCase->status==='done')<span class="badge badge-success">Selesai</span>
-                        @else<span class="badge" style="background:var(--ds);color:var(--dt)">{{ ucfirst($disciplineCase->status) }}</span>@endif
-                    </div>
-                </div>
-                <div>
-                    <div class="label">Lokasi</div>
-                    <div style="margin-top:var(--sp-xs)">{{ $disciplineCase->location ?? '-' }}</div>
+                <div class="card">
+                    <h2 style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)"><i data-lucide="file-text" class="icon"></i> Kronologi / Catatan</h2>
+                    @if($case->notes)<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--sp-md);line-height:1.7">{{ nl2br(e($case->notes)) }}</div>@else<p class="text-muted text-sm">Tidak ada catatan.</p>@endif
                 </div>
             </div>
-
-            <div style="margin-top:var(--sp-lg);border-top:1px solid var(--border);padding-top:var(--sp-lg)">
-                <div class="label">Deskripsi</div>
-                <div style="margin-top:var(--sp-xs);padding:var(--sp-md);background:var(--surface);border-radius:var(--r-sm);white-space:pre-wrap">{{ $disciplineCase->description ?? '-' }}</div>
-            </div>
-
-            <div style="margin-top:var(--sp-lg);border-top:1px solid var(--border);padding-top:var(--sp-lg);display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--sp-lg)">
-                <div>
-                    <div class="label">Dilaporkan Oleh</div>
-                    <div style="margin-top:var(--sp-xs)">{{ $disciplineCase->reporter?->name ?? '-' }}</div>
+            <div>
+                <div class="card" style="margin-bottom:var(--sp-lg)">
+                    <h2 style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)"><i data-lucide="user" class="icon"></i> Siswa</h2>
+                    <table style="width:100%;border-collapse:collapse">
+                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted);width:140px">Nama</td><td style="padding:8px 0;font-weight:600">{{ $case->student?->full_name }}</td></tr>
+                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">NIS</td><td class="mono" style="padding:8px 0">{{ $case->student?->nis }}</td></tr>
+                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Kelas</td><td style="padding:8px 0">{{ $case->student?->schoolClass?->name ?? '-' }}</td></tr>
+                    </table>
                 </div>
-                <div>
-                    <div class="label">Divalidasi Oleh</div>
-                    <div style="margin-top:var(--sp-xs)">{{ $disciplineCase->validator?->name ?? '-' }}</div>
+                <div class="card" style="margin-bottom:var(--sp-lg)">
+                    <h2 style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)"><i data-lucide="tag" class="icon"></i> Pelanggaran</h2>
+                    <table style="width:100%;border-collapse:collapse">
+                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted);width:140px">Kategori</td><td style="padding:8px 0;font-weight:600">{{ $case->violationCategory?->name }}</td></tr>
+                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Tingkat</td><td style="padding:8px 0"><span class="badge badge-warning">{{ ucfirst($case->violationCategory?->severity ?? '-') }}</span></td></tr>
+                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Poin Dikurangi</td><td class="mono" style="padding:8px 0;font-size:1.25rem;font-weight:700;color:var(--danger)">-{{ $case->violationCategory?->points }}</td></tr>
+                    </table>
                 </div>
-                <div>
-                    <div class="label">Waktu Lapor</div>
-                    <div style="margin-top:var(--sp-xs)">{{ $disciplineCase->created_at?->format('d/m/Y H:i') }}</div>
-                </div>
-                <div>
-                    <div class="label">Waktu Validasi</div>
-                    <div style="margin-top:var(--sp-xs)">{{ $disciplineCase->validated_at?->format('d/m/Y H:i') ?? '-' }}</div>
+                <div class="card">
+                    <h2 style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)"><i data-lucide="user-check" class="icon"></i> Pelapor</h2>
+                    <table style="width:100%;border-collapse:collapse">
+                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted);width:140px">Dilaporkan oleh</td><td style="padding:8px 0;font-weight:600">{{ $case->reporter?->name }}</td></tr>
+                        @if($case->validator)<tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Divalidasi oleh</td><td style="padding:8px 0;font-weight:600">{{ $case->validator?->name }}</td></tr>@endif
+                    </table>
                 </div>
             </div>
         </div>
-
-        @if($disciplineCase->status === 'found' || $disciplineCase->status === 'validated')
-            <div class="card" style="display:flex;gap:var(--sp-sm);flex-wrap:wrap;justify-content:flex-end">
-                @if($disciplineCase->status === 'found')
-                    <form action="{{ route('discipline-cases.validate', $disciplineCase) }}" method="POST" onsubmit="return confirm('Validasi kasus ini?')">@csrf @method('PATCH')<input type="hidden" name="validation_passed" value="1"><button class="btn btn-primary">Validasi</button></form>
-                    <form action="{{ route('discipline-cases.validate', $disciplineCase) }}" method="POST" onsubmit="return confirm('Tolak kasus ini?')">@csrf @method('PATCH')<input type="hidden" name="validation_passed" value="0"><button class="btn btn-secondary">Tolak</button></form>
-                @endif
-                @if($disciplineCase->status === 'validated')
-                    <form action="{{ route('discipline-cases.done', $disciplineCase) }}" method="POST" onsubmit="return confirm('Tandai kasus selesai?')">@csrf @method('PATCH')<button class="btn btn-primary">Selesai</button></form>
-                @endif
-            </div>
-        @endif
     </div>
+    <script>document.addEventListener('DOMContentLoaded',()=>{lucide.createIcons()})</script>
 </x-app-layout>

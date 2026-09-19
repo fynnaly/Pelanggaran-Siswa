@@ -51,8 +51,10 @@
 
         /* ── Layout ── */
         .main-wrap { max-width: 1280px; margin: 0 auto; padding: var(--sp-xl) var(--sp-md); }
-        .page-header { margin-bottom: var(--sp-xl); }
+        .page-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:var(--sp-md); margin-bottom: var(--sp-xl); width:100%; }
         .page-header h1 { margin-bottom: var(--sp-xs); }
+        .page-header > div:first-child{flex:1; min-width:200px;}
+        @media(max-width:639px){ .page-header{flex-direction:column; align-items:stretch;} .page-header .btn{width:100%; justify-content:center;} .page-header > div:last-child{width:100%; display:flex; flex-wrap:wrap; gap:var(--sp-sm);} .page-header > div:last-child .btn{flex:1; min-width:120px;} }
         .breadcrumb { font-size: .875rem; color: var(--on-surface-muted); margin-bottom: var(--sp-sm); }
         .section { margin-top: var(--sp-xl); }
         .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-lg); flex-wrap: wrap; gap: var(--sp-sm); }
@@ -170,6 +172,11 @@
         .alert-success { background: var(--bs); border: 1px solid var(--bt); color: var(--bt); }
         .alert-warning { background: var(--ws); border: 1px solid var(--wt); color: var(--wt); }
         .alert-error { background: var(--ds); border: 1px solid var(--dt); color: var(--dt); }
+
+        /* ── Icon (Lucide SVG inline, stroke-only) ── */
+        .icon{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;flex-shrink:0}
+        .icon-sm{width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;flex-shrink:0}
+        .icon-lg{width:22px;height:22px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;flex-shrink:0}
     </style>
 </head>
 <body class="antialiased" style="font-family:'Figtree',sans-serif;background:var(--surface);color:var(--on-surface);">
@@ -178,7 +185,7 @@
 
         @isset($header)
             <header style="background:var(--glass-bg);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--glass-border);box-shadow:var(--sh-g);position:sticky;top:0;z-index:50;">
-                <div style="max-width:1280px;margin:0 auto;padding:0 var(--sp-md);display:flex;align-items:center;justify-content:space-between;height:64px;gap:var(--sp-md);">
+                <div style="max-width:1280px;margin:0 auto;padding:0 var(--sp-md);display:flex;align-items:center;gap:var(--sp-md);height:64px;">
                     {{ $header }}
                 </div>
             </header>
@@ -190,12 +197,17 @@
     </div>
 
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
     <script>
         function toggleTheme() {
             const h = document.documentElement;
             const d = h.classList.toggle('dark');
             h.classList.toggle('light', !d);
             localStorage.setItem('theme', d ? 'dark' : 'light');
+            document.querySelectorAll('.icon-theme').forEach(el => {
+                el.setAttribute('data-lucide', d ? 'moon' : 'sun');
+            });
+            lucide.createIcons();
         }
         (function() {
             const s = localStorage.getItem('theme');
@@ -204,6 +216,12 @@
                 document.documentElement.classList.remove('light');
                 document.documentElement.classList.add('dark');
             }
+            document.addEventListener('DOMContentLoaded', () => {
+                document.querySelectorAll('.icon-theme').forEach(el => {
+                    el.setAttribute('data-lucide', document.documentElement.classList.contains('dark') ? 'moon' : 'sun');
+                });
+                lucide.createIcons();
+            });
         })();
     </script>
 </body>
