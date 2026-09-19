@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="breadcrumb">Beranda / Tahun Ajaran / Tambah</div>
+
         <div class="page-header">
             <div><h1>Tambah Tahun Ajaran</h1></div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
@@ -9,7 +9,7 @@
         </div>
     </x-slot>
     <div class="main-wrap">
-        <div class="card" style="max-width:600px">
+        <div class="card">
             @if($errors->any())<div class="alert alert-error" style="margin-bottom:var(--sp-lg)"><i data-lucide="alert-circle" class="icon-sm"></i> {{ $errors->first() }}</div>@endif
             <form action="{{ route('academic-years.store') }}" method="POST">
                 @csrf

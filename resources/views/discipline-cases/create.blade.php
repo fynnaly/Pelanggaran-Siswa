@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="breadcrumb">Beranda / Kasus / Tambah</div>
+
         <div class="page-header">
             <div><h1>Buat Kasus Baru</h1></div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
@@ -9,7 +9,7 @@
         </div>
     </x-slot>
     <div class="main-wrap">
-        <div class="card" style="max-width:600px" x-data="caseForm()">
+        <div class="card" x-data="caseForm()">
             @if(session('success'))<div class="alert alert-success"><i data-lucide="check-circle" class="icon-sm"></i> {{ session('success') }}</div>@endif
             @if(session('error'))<div class="alert alert-error"><i data-lucide="alert-circle" class="icon-sm"></i> {{ session('error') }}</div>@endif
             <form action="{{ route('discipline-cases.store') }}" method="POST">
@@ -31,7 +31,7 @@
                 <div class="field"><label class="field-label">Kategori <span class="text-danger">*</span></label>
                     <select name="violation_category_id" class="field-input" required>
                         <option value="">Pilih kategori...</option>
-                        @foreach($violationCategories as $cat)
+                        @foreach($categories as $cat)
                             <option value="{{ $cat->id }}" {{ old('violation_category_id')==$cat->id?'selected':'' }}>{{ $cat->name }} ({{ $cat->points }} poin)</option>
                         @endforeach
                     </select>
@@ -55,7 +55,7 @@
         </div>
 
         {{-- Rekomendasi Pemulihan Poin --}}
-        <div class="card" style="max-width:600px;margin-top:var(--sp-lg)">
+        <div class="card" style="margin-top:var(--sp-lg)">
             <h2 style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)"><i data-lucide="rotate-ccw" class="icon"></i> Rekomendasi Pemulihan Poin</h2>
             <p class="text-sm text-muted" style="margin-bottom:var(--sp-md)">Setiap pelanggaran mengurangi poin siswa. Poin dapat dipulihkan melalui pencapaian/prestasi berikut:</p>
             @php

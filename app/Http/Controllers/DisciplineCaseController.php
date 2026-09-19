@@ -8,6 +8,7 @@ use App\Models\ViolationCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 class DisciplineCaseController extends Controller
@@ -32,8 +33,8 @@ class DisciplineCaseController extends Controller
     /** Menampilkan form pelaporan pelanggaran baru */
     public function create()
     {
-        $categories = ViolationCategory::where('status', 'active')
-            ->pluck('name', 'id');
+        $categories = ViolationCategory::where('status', 'active')->get();
+        $reporters = User::orderBy('name')->get();
 
         // Ambil data siswa terpilih jika ada old() (redirect setelah validasi gagal)
         $selectedStudent = null;
@@ -51,7 +52,7 @@ class DisciplineCaseController extends Controller
             }
         }
 
-        return view('discipline-cases.create', compact('categories', 'selectedStudent'));
+        return view('discipline-cases.create', compact('categories', 'reporters', 'selectedStudent'));
     }
 
     /** Menyimpan pelaporan pelanggaran baru */

@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="breadcrumb">Beranda / Buku Poin / Detail</div>
+
         <div class="page-header">
             <div><h1 style="display:flex;align-items:center;gap:var(--sp-sm)"><i data-lucide="book-open" class="icon"></i> Ledger Poin Siswa</h1></div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">

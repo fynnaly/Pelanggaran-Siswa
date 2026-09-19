@@ -24,7 +24,7 @@ class SchoolClassController extends Controller
     /** Menampilkan form pembuatan kelas baru */
     public function create()
     {
-        $academicYears = AcademicYear::orderBy('name', 'desc')->pluck('name', 'id');
+        $academicYears = AcademicYear::orderBy('name', 'desc')->get();
         $users = User::orderBy('name')->get();
         return view('classes.create', compact('academicYears', 'users'));
     }
@@ -57,7 +57,7 @@ class SchoolClassController extends Controller
     /** Menampilkan form edit kelas */
     public function edit(SchoolClass $class)
     {
-        $academicYears = AcademicYear::orderBy('name', 'desc')->pluck('name', 'id');
+        $academicYears = AcademicYear::orderBy('name', 'desc')->get();
         return view('classes.edit', compact('class', 'academicYears'));
     }
 

@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="breadcrumb">Beranda / Kategori Pelanggaran</div>
+
         <div class="page-header">
             <div><h1>Kategori Pelanggaran</h1></div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
