@@ -70,6 +70,7 @@
         .app-shell { min-height: 100vh; }
         @media(min-width:1024px) { .app-shell { margin-left: 256px; } }
         .app-header { background: var(--neutral); border-bottom: 1px solid var(--border); padding: var(--sp-md) var(--sp-lg); }
+        .app-header > div { display: flex; flex-direction: column; }
 
         /* ── Cards ── */
         .card { background: var(--neutral); border-radius: var(--r-lg); padding: var(--sp-lg); border: 1px solid var(--border); transition: box-shadow .2s; }
@@ -204,7 +205,7 @@
     </div>
 
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js" crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+    <script src="{{ asset('vendor/lucide/lucide.min.js') }}"></script>
     <script>
         function toggleTheme() {
             const h = document.documentElement;
