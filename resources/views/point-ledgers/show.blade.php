@@ -7,7 +7,7 @@
     </x-slot>
     <div class="py-6">
         <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white shadow-sm sm:rounded-lg p-6 space-y-4 text-sm">
+            <div class="bg-white rounded-lg p-6 space-y-4 text-sm">
                 <div class="grid grid-cols-2 gap-4">
                     <div><div class="text-gray-500">Siswa</div><div class="font-semibold">{{ $pointLedger->student?->full_name ?? '-' }}</div></div>
                     <div><div class="text-gray-500">Tahun Ajaran</div><div class="font-semibold">{{ $pointLedger->academicYear?->name ?? $pointLedger->academic_year_id }}</div></div>

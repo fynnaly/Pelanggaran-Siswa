@@ -27,7 +27,7 @@
                 ];
             @endphp
 
-            <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
+            <div class="bg-white rounded-lg overflow-hidden">
                 <div class="p-6 space-y-6">
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
                         <div>
@@ -95,7 +95,7 @@
                             <form action="{{ route('discipline-cases.validate', $disciplineCase) }}" method="POST" class="inline">
                                 @csrf @method('PATCH')
                                 <input type="hidden" name="validation_passed" value="1">
-                                <button class="px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700">Validasi</button>
+                                <button class="px-4 py-2 bg-tertiary text-white text-sm font-semibold rounded-lg hover:bg-emerald-700">Validasi</button>
                             </form>
                             <form action="{{ route('discipline-cases.validate', $disciplineCase) }}" method="POST" class="inline">
                                 @csrf @method('PATCH')
@@ -107,7 +107,7 @@
                         @if($disciplineCase->status === 'validated')
                             <form action="{{ route('discipline-cases.done', $disciplineCase) }}" method="POST" class="inline">
                                 @csrf @method('PATCH')
-                                <button class="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700">Selesai</button>
+                                <button class="px-4 py-2 bg-tertiary text-white text-sm font-semibold rounded-lg hover:bg-emerald-700">Selesai</button>
                             </form>
                         @endif
                     </div>

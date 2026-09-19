@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Daftar Kelas</h2>
-            <a href="{{ route('classes.create') }}" class="px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700">+ Tambah Kelas</a>
+            <a href="{{ route('classes.create') }}" class="px-4 py-2 bg-tertiary text-white text-sm font-semibold rounded-lg hover:bg-emerald-700">Tambah Kelas</a>
         </div>
     </x-slot>
     <div class="py-6">
@@ -13,7 +13,7 @@
             @if(session('error'))
                 <div class="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">{{ session('error') }}</div>
             @endif
-            <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
+            <div class="bg-white rounded-lg overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
                         <thead class="bg-gray-50 text-gray-600">
@@ -29,16 +29,16 @@
                             @forelse($classes as $class)
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-4 py-3 font-semibold">
-                                        <a href="{{ route('students.index', ['class_id' => $class->id]) }}" class="text-blue-600 hover:underline">{{ $class->name }}</a>
+                                        <a href="{{ route('students.index', ['class_id' => $class->id]) }}" class="text-tertiary hover:underline">{{ $class->name }}</a>
                                     </td>
                                     <td class="px-4 py-3 text-xs text-gray-600">{{ $class->academicYear?->name ?? '-' }}</td>
                                     <td class="px-4 py-3 text-center font-semibold">{{ $class->students_count }}</td>
                                     <td class="px-4 py-3 text-xs text-gray-600">{{ $class->homeroomTeacher?->name ?? '-' }}</td>
                                     <td class="px-4 py-3 text-right space-x-2">
-                                        <a href="{{ route('classes.edit', $class) }}" class="text-blue-600 hover:underline text-xs">Edit</a>
+                                        <a href="{{ route('classes.edit', $class) }}" class="text-tertiary hover:underline text-xs font-semibold">Edit</a>
                                         <form action="{{ route('classes.destroy', $class) }}" method="POST" class="inline" onsubmit="return confirm('Hapus kelas ini?')">
                                             @csrf @method('DELETE')
-                                            <button class="text-red-600 hover:underline text-xs">Hapus</button>
+                                            <button class="text-danger hover:underline text-xs font-semibold">Hapus</button>
                                         </form>
                                     </td>
                                 </tr>
