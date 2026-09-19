@@ -1,53 +1,36 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Kategori Pelanggaran</h2>
-            <a href="{{ route('violation-categories.create') }}" class="px-4 py-2 bg-tertiary text-white text-sm font-semibold rounded-lg hover:bg-emerald-700">Tambah Kategori</a>
+        <div class="breadcrumb">Beranda / Kategori Pelanggaran</div>
+        <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--sp-sm)">
+            <div><h1>Kategori Pelanggaran</h1><p class="text-muted text-sm">{{ $categories->total() }} kategori</p></div>
+            <a href="{{ route('violation-categories.create') }}" class="btn btn-primary">Tambah Kategori</a>
         </div>
     </x-slot>
-
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            @if(session('success'))
-                <div class="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm">{{ session('success') }}</div>
-            @endif
-            <div class="bg-white rounded-lg overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full text-sm">
-                        <thead class="bg-gray-50 text-gray-600">
-                            <tr>
-                                <th class="px-4 py-3 text-left font-semibold">Kode</th>
-                                <th class="px-4 py-3 text-left font-semibold">Nama</th>
-                                <th class="px-4 py-3 text-left font-semibold">Tingkat</th>
-                                <th class="px-4 py-3 text-center font-semibold">Poin</th>
-                                <th class="px-4 py-3 text-center font-semibold">Status</th>
-                                <th class="px-4 py-3 text-right font-semibold">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            @forelse($categories as $cat)
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-4 py-3 font-mono text-xs">{{ $cat->code }}</td>
-                                    <td class="px-4 py-3">{{ $cat->name }}</td>
-                                    <td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-semibold {{ $cat->severity==='berat'?'bg-red-100 text-red-700':($cat->severity==='sedang'?'bg-amber-100 text-amber-700':'bg-emerald-100 text-emerald-700') }}">{{ $cat->severity }}</span></td>
-                                    <td class="px-4 py-3 text-center font-semibold">{{ $cat->points }}</td>
-                                    <td class="px-4 py-3 text-center"><span class="px-2 py-1 rounded-full text-xs {{ $cat->status==='active'?'bg-emerald-100 text-emerald-700':'bg-gray-100 text-gray-600' }}">{{ $cat->status }}</span></td>
-                                    <td class="px-4 py-3 text-right space-x-2">
-                                        <a href="{{ route('violation-categories.edit', $cat) }}" class="text-tertiary hover:underline text-xs font-semibold">Edit</a>
-                                        <form action="{{ route('violation-categories.destroy', $cat) }}" method="POST" class="inline" onsubmit="return confirm('Hapus kategori ini?')">
-                                            @csrf @method('DELETE')
-                                            <button class="text-danger hover:underline text-xs font-semibold">Hapus</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr><td colspan="6" class="px-4 py-10 text-center text-gray-500">Belum ada kategori. Tambah dulu.</td></tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-                <div class="px-4 py-3">{{ $categories->links() }}</div>
-            </div>
+    <div class="main-wrap">
+        @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
+        @if(session('error'))<div class="alert alert-error">{{ session('error') }}</div>@endif
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Kode</th><th>Nama</th><th>Tingkat</th><th>Poin</th><th>Status</th><th style="width:120px">Aksi</th></tr></thead>
+                <tbody>
+                    @forelse($categories as $cat)
+                        <tr>
+                            <td class="mono">{{ $cat->code }}</td>
+                            <td><strong>{{ $cat->name }}</strong></td>
+                            <td><span class="badge badge-warning" style="background:var(--ws);color:var(--wt)" {{ $cat->severity=='ringan' }}>{{ $cat->severity }}</span></td>
+                            <td class="mono">{{ $cat->points }}</td>
+                            <td><span class="badge {{ $cat->status=='active' ? 'badge-success' : 'text-muted' }}" style="{{ $cat->status=='active' ? 'background:var(--bs);color:var(--bt)' : 'background:var(--surface);color:var(--on-surface-muted)' }}">{{ ucfirst($cat->status) }}</span></td>
+                            <td><div class="action-cell">
+                                <a href="{{ route('violation-categories.edit', $cat) }}" class="action-btn" title="Edit">E</a>
+                                <form action="{{ route('violation-categories.destroy', $cat) }}" method="POST" class="inline" onsubmit="return confirm('Hapus kategori ini?')">@csrf @method('DELETE')<button class="action-btn" title="Hapus" style="color:var(--danger)">X</button></form>
+                            </div></td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="6" style="padding:40px;text-align:center;color:var(--on-surface-muted)">Belum ada kategori. Tambah dulu.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:var(--sp-lg)"><div class="pagination" style="margin-top:0">{{ $categories->links() }}</div></div>
     </div>
 </x-app-layout>

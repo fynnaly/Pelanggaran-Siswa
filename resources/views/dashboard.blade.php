@@ -1,100 +1,141 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Dashboard</h2>
+        <div class="breadcrumb">Beranda / Dashboard</div>
+        <div class="page-header">
+            <h1>Dashboard</h1>
+            <p class="text-muted text-sm">Ringkasan data pelanggaran dan pencapaian siswa</p>
+        </div>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            {{-- Kartu utama --}}
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="card-glass r-lg p-4">
-                    <p class="text-xs text-gray-500 uppercase tracking-wide">Total Siswa Aktif</p>
-                    <p class="mt-1 text-2xl font-semibold text-gray-900">{{ $totalStudentsActive }}</p>
-                </div>
+    <div class="main-wrap">
+        {{-- Stat Cards --}}
+        <div class="grid grid-4">
+            <div class="card-glass">
+                <div class="stat-label">Total Siswa Aktif</div>
+                <div class="stat-value">{{ number_format($totalStudentsActive) }}</div>
+                <div class="stat-change positive">{{ $activeAcademicYear?->name ?? 'Tahun ajaran aktif' }}</div>
+            </div>
+            <div class="card-glass">
+                <div class="stat-label">Kasus Ditemukan</div>
+                <div class="stat-value">{{ number_format($totalCasesFound) }}</div>
+                <div class="stat-change negative">Perlu diverifikasi</div>
+            </div>
+            <div class="card-glass">
+                <div class="stat-label">Kasus Selesai</div>
+                <div class="stat-value">{{ number_format($totalCasesDone) }}</div>
+                @php $resolveRate = $totalCases > 0 ? round(($totalCasesDone / $totalCases) * 100) : 0; @endphp
+                <div class="stat-change positive">{{ $resolveRate }}% resolve rate</div>
+            </div>
+            <div class="card-glass">
+                <div class="stat-label">Kategori Aktif</div>
+                <div class="stat-value">{{ $totalCategoriesActive }} / {{ $totalCategories }}</div>
+                <div class="stat-change positive">Kategori pelanggaran</div>
+            </div>
+        </div>
 
-                <div class="card-glass r-lg p-4">
-                    <p class="text-xs text-gray-500 uppercase tracking-wide">Total Kasus</p>
-                    <p class="mt-1 text-2xl font-semibold text-gray-900">{{ $totalCases }}</p>
+        {{-- Breakdown status --}}
+        <div class="section">
+            <div class="grid grid-4">
+                <div class="card-glass">
+                    <div class="stat-label">Ditemukan</div>
+                    <div class="stat-value" style="color:var(--tertiary)">{{ $totalCasesFound }}</div>
                 </div>
-
-                <div class="card-glass r-lg p-4">
-                    <p class="text-xs text-gray-500 uppercase tracking-wide">Kategori Aktif</p>
-                    <p class="mt-1 text-2xl font-semibold text-gray-900">{{ $totalCategoriesActive }} / {{ $totalCategories }}</p>
+                <div class="card-glass">
+                    <div class="stat-label">Divalidasi</div>
+                    <div class="stat-value" style="color:var(--tertiary)">{{ $totalCasesValidated }}</div>
                 </div>
-
-                <div class="card-glass r-lg p-4">
-                    <p class="text-xs text-gray-500 uppercase tracking-wide">Tahun Ajaran Aktif</p>
-                    <p class="mt-1 text-2xl font-semibold text-gray-900">{{ $activeAcademicYear?->name ?? 'Belum ada' }}</p>
-                    @if($activeAcademicYear)
-                        <p class="mt-1 text-xs text-gray-500">{{ $activeAcademicYear->start_date?->format('d/m/Y') ?? '-' }}</p>
-                    @endif
+                <div class="card-glass">
+                    <div class="stat-label">Selesai</div>
+                    <div class="stat-value">{{ $totalCasesDone }}</div>
+                </div>
+                <div class="card-glass">
+                    <div class="stat-label">Dibuang</div>
+                    <div class="stat-value" style="color:var(--on-surface-muted)">{{ $totalCasesDismissed }}</div>
                 </div>
             </div>
+        </div>
 
-            {{-- Breakdown status kasus --}}
-            <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="card-glass r-lg p-4">
-                    <p class="text-xs text-gray-500 uppercase tracking-wide">Ditemukan</p>
-                    <p class="mt-1 text-2xl font-semibold text-tertiary">{{ $totalCasesFound }}</p>
-                </div>
-                <div class="card-glass r-lg p-4">
-                    <p class="text-xs text-gray-500 uppercase tracking-wide">Divalidasi</p>
-                    <p class="mt-1 text-2xl font-semibold text-tertiary">{{ $totalCasesValidated }}</p>
-                </div>
-                <div class="card-glass r-lg p-4">
-                    <p class="text-xs text-gray-500 uppercase tracking-wide">Selesai</p>
-                    <p class="mt-1 text-2xl font-semibold text-gray-900">{{ $totalCasesDone }}</p>
-                </div>
-                <div class="card-glass r-lg p-4">
-                    <p class="text-xs text-gray-500 uppercase tracking-wide">Dibuang</p>
-                    <p class="mt-1 text-2xl font-semibold text-gray-400">{{ $totalCasesDismissed }}</p>
-                </div>
-            </div>
-
-            {{-- Kasus terbaru + siswa poin rendah --}}
-            <div class="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2 bg-white rounded-lg overflow-hidden">
-                    <div class="p-6 text-gray-900">
-                        <h3 class="font-semibold text-lg mb-4">Kasus Terbaru</h3>
-                        <div class="space-y-4">
-                            @forelse($recentCases as $case)
-                                <div class="card-glass r-lg p-3">
-                                    <div class="flex justify-between items-start">
-                                        <div>
-                                            <p class="text-sm font-medium">{{ $case->student?->full_name ?? 'Siswa tidak dikenal' }}</p>
-                                            <p class="text-xs text-gray-500">{{ $case->case_number }}</p>
-                                        </div>
-                                        <span class="px-2 py-1 rounded-full text-xs font-semibold {{ $case->status === 'found' ? 'bg-blue-100 text-blue-700' : ($case->status === 'validated' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600') }}">
-                                            {{ ucfirst($case->status) }}
-                                        </span>
-                                    </div>
-                                    <p class="text-xs text-gray-500 mt-1">{{ $case->violationCategory?->name ?? '-' }} ({{ $case->violationCategory?->points ?? 0 }} poin)</p>
-                                </div>
-                            @empty
-                                <p class="text-gray-500">Belum ada kasus.</p>
-                            @endforelse
-                        </div>
+        {{-- Kasus Terbaru + Siswa Poin Rendah --}}
+        <div class="section">
+            <div class="layout-2col">
+                <div>
+                    <div class="section-header">
+                        <h2>Kasus Terbaru</h2>
+                        <a href="{{ route('discipline-cases.index') }}" class="btn btn-secondary btn-sm">Lihat Semua</a>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>No. Kasus</th>
+                                    <th>Siswa</th>
+                                    <th>Kategori</th>
+                                    <th>Poin</th>
+                                    <th>Status</th>
+                                    <th>Tanggal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($recentCases as $case)
+                                    <tr>
+                                        <td class="mono">{{ $case->case_number }}</td>
+                                        <td>
+                                            <strong>{{ $case->student?->full_name ?? '-' }}</strong>
+                                            <br><span class="text-muted text-sm">{{ $case->student?->schoolClass?->name ?? '' }}</span>
+                                        </td>
+                                        <td>{{ $case->violationCategory?->name ?? '-' }}</td>
+                                        <td class="mono">-{{ $case->violationCategory?->points ?? 0 }}</td>
+                                        <td>
+                                            @if($case->status === 'found')
+                                                <span class="badge badge-warning">Diproses</span>
+                                            @elseif($case->status === 'validated')
+                                                <span class="badge badge-warning">Divalidasi</span>
+                                            @elseif($case->status === 'done')
+                                                <span class="badge badge-success">Selesai</span>
+                                            @else
+                                                <span class="badge badge-danger">{{ ucfirst($case->status) }}</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-sm text-muted">{{ $case->created_at?->format('d M Y') }}</td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="6" style="padding:40px;text-align:center;color:var(--on-surface-muted)">Belum ada kasus.</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
-                <div class="bg-white rounded-lg overflow-hidden">
-                    <div class="p-6 text-gray-900">
-                        <h3 class="font-semibold text-lg mb-4">Siswa Poin Rendah</h3>
-                        <p class="text-xs text-gray-500 mb-4">Sisa poin <= 500, segera tindak lanjuti pembinaan.</p>
-                        <div class="space-y-3">
-                            @forelse($lowPointStudents as $student)
-                                <div class="card-glass r-lg p-3">
-                                    <div class="flex justify-between items-center">
-                                        <div>
-                                            <p class="text-sm font-medium">{{ $student->full_name }}</p>
-                                            <p class="text-xs text-gray-500">{{ $student->schoolClass?->name ?? '-' }} &middot; {{ $student->nis }}</p>
-                                        </div>
-                                        <span class="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">{{ $student->latest_balance }} poin</span>
-                                    </div>
+                <div>
+                    <div class="section-header">
+                        <h2>Siswa Poin Rendah</h2>
+                    </div>
+                    <div class="card">
+                        @forelse($lowPointStudents as $student)
+                            @php
+                                $initials = collect(explode(' ', $student->full_name))->map(fn($w) => strtoupper(substr($w,0,1)))->take(2)->implode('');
+                            @endphp
+                            <div class="list-item">
+                                <div class="list-avatar">{{ $initials }}</div>
+                                <div class="list-info">
+                                    <div class="list-name">{{ $student->full_name }}</div>
+                                    <div class="list-meta">{{ $student->schoolClass?->name ?? '-' }} &middot; {{ $student->nis }}</div>
                                 </div>
-                            @empty
-                                <p class="text-gray-500">Tidak ada siswa dengan poin kritis.</p>
-                            @endforelse
+                                <div class="list-score {{ $student->latest_balance <= 500 ? 'danger' : 'warning' }}">{{ $student->latest_balance }}</div>
+                            </div>
+                        @empty
+                            <p class="text-muted text-sm" style="padding:var(--sp-md) 0">Tidak ada siswa dengan poin kritis.</p>
+                        @endforelse
+                    </div>
+
+                    <div class="section" style="margin-top:var(--sp-lg)">
+                        <div class="section-header">
+                            <h2>Aksi Cepat</h2>
+                        </div>
+                        <div class="card" style="display:flex;flex-direction:column;gap:var(--sp-sm)">
+                            <a href="{{ route('discipline-cases.create') }}" class="btn btn-primary" style="width:100%;justify-content:center">Buat Kasus Baru</a>
+                            <a href="{{ route('students.index') }}" class="btn btn-secondary" style="width:100%;justify-content:center">Cari Siswa</a>
+                            <a href="{{ route('students.export') }}" class="btn btn-secondary" style="width:100%;justify-content:center">Export Laporan</a>
                         </div>
                     </div>
                 </div>
