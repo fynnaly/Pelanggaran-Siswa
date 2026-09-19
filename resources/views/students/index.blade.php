@@ -3,15 +3,9 @@
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Daftar Siswa</h2>
             <div class="flex items-center gap-2">
-                <a href="{{ route('students.template') }}" class="px-3 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-200">
-                    Template
-                </a>
-                <a href="{{ route('students.export') }}" class="px-3 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700">
-                    Export
-                </a>
-                <a href="{{ route('students.create') }}" class="px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700">
-                    + Tambah Siswa
-                </a>
+                <a href="{{ route('students.template') }}" class="px-3 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-200">Template</a>
+                <a href="{{ route('students.export') }}" class="px-3 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700">Export</a>
+                <a href="{{ route('students.create') }}" class="px-4 py-2 bg-tertiary text-white text-sm font-semibold rounded-lg hover:bg-emerald-700">Tambah Siswa</a>
             </div>
         </div>
     </x-slot>
@@ -28,9 +22,7 @@
             {{-- Filter badge --}}
             @if($classId)
                 <div class="mb-4 flex items-center gap-2">
-                    <span class="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full">
-                        Filter: Kelas {{ $students->first()?->schoolClass?->name ?? '#' . $classId }}
-                    </span>
+                    <span class="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full">Filter: Kelas {{ $students->first()?->schoolClass?->name ?? '#' . $classId }}</span>
                     <a href="{{ route('students.index') }}" class="text-xs text-gray-500 hover:text-gray-700">Hapus filter</a>
                 </div>
             @endif
@@ -41,17 +33,14 @@
                     @if($classId)
                         <input type="hidden" name="class_id" value="{{ $classId }}">
                     @endif
-                    <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nama / NISN / NIS..."
-                           class="flex-1 border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500 text-sm">
+                    <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nama / NISN / NIS..." class="flex-1 border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500 text-sm">
                     <button type="submit" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-200">Cari</button>
                 </form>
 
-                <form action="{{ route('students.import') }}" method="POST" enctype="multipart/form-data"
-                      class="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm">
+                <form action="{{ route('students.import') }}" method="POST" enctype="multipart/form-data" class="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm">
                     @csrf
                     <label class="text-xs text-gray-500 font-semibold whitespace-nowrap">Import CSV:</label>
-                    <input type="file" name="file" accept=".csv,.txt" required
-                           class="text-xs border-gray-300 rounded focus:ring-emerald-500 focus:border-emerald-500">
+                    <input type="file" name="file" accept=".csv,.txt" required class="text-xs border-gray-300 rounded focus:ring-emerald-500 focus:border-emerald-500">
                     <button type="submit" class="px-3 py-1 bg-emerald-600 text-white text-xs font-semibold rounded hover:bg-emerald-700">Unggah</button>
                 </form>
             </div>
@@ -78,7 +67,7 @@
             </form>
 
             {{-- Tabel siswa --}}
-            <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
+            <div class="bg-white rounded-lg overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
                         <thead class="bg-gray-50 text-gray-600">
@@ -105,8 +94,7 @@
                                 @endphp
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-4 py-3 text-center">
-                                        <input type="checkbox" name="student_ids[]" value="{{ $student->id }}"
-                                               class="student-cb rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
+                                        <input type="checkbox" name="student_ids[]" value="{{ $student->id }}" class="student-cb rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
                                     </td>
                                     <td class="px-4 py-3 font-mono text-xs">{{ $student->nisn }}</td>
                                     <td class="px-4 py-3 font-mono text-xs">{{ $student->nis }}</td>

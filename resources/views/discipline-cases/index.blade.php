@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Kasus Pelanggaran</h2>
-            <a href="{{ route('discipline-cases.create') }}" class="px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700">+ Lapor Kasus</a>
+            <a href="{{ route('discipline-cases.create') }}" class="px-4 py-2 bg-tertiary text-white text-sm font-semibold rounded-lg hover:bg-emerald-700">Lapor Kasus</a>
         </div>
     </x-slot>
     <div class="py-6">
@@ -26,7 +26,7 @@
                 <a href="?status=done" class="px-3 py-1.5 rounded-full {{ $status==='done'?'bg-gray-100 text-gray-600 font-semibold':'bg-gray-100 text-gray-600' }}">Done</a>
             </div>
 
-            <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
+            <div class="bg-white rounded-lg overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
                         <thead class="bg-gray-50 text-gray-600">
