@@ -66,6 +66,11 @@
         .layout-2col { display: grid; gap: var(--sp-lg); grid-template-columns: 1fr; }
         @media(min-width:1024px) { .layout-2col { grid-template-columns: 2fr 1fr; } }
 
+        /* ── Sidebar offset ── */
+        .app-shell { min-height: 100vh; }
+        @media(min-width:1024px) { .app-shell { margin-left: 256px; } }
+        .app-header { background: var(--neutral); border-bottom: 1px solid var(--border); padding: var(--sp-md) var(--sp-lg); }
+
         /* ── Cards ── */
         .card { background: var(--neutral); border-radius: var(--r-lg); padding: var(--sp-lg); border: 1px solid var(--border); transition: box-shadow .2s; }
         .card:hover { box-shadow: var(--sh-md); }
@@ -183,17 +188,19 @@
     <div class="min-h-screen">
         @include('layouts.navigation')
 
-        @isset($header)
-            <header style="background:var(--glass-bg);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--glass-border);box-shadow:var(--sh-g);position:sticky;top:0;z-index:50;">
-                <div style="max-width:1280px;margin:0 auto;padding:0 var(--sp-md);display:flex;align-items:center;gap:var(--sp-md);height:64px;">
-                    {{ $header }}
+        <div class="app-shell">
+            @isset($header)
+                <div class="app-header">
+                    <div style="max-width:1280px;margin:0 auto;display:flex;align-items:center;gap:var(--sp-md);">
+                        {{ $header }}
+                    </div>
                 </div>
-            </header>
-        @endisset
+            @endisset
 
-        <main>
-            {{ $slot }}
-        </main>
+            <main>
+                {{ $slot }}
+            </main>
+        </div>
     </div>
 
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js" crossorigin="anonymous"></script>

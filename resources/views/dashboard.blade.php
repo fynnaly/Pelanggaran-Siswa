@@ -1,12 +1,14 @@
 <x-app-layout>
     <x-slot name="header">
+        <div class="breadcrumb">Beranda / Dashboard</div>
         <div class="page-header">
             <div>
-                <div class="breadcrumb">Beranda / Dashboard</div>
                 <h1>Dashboard</h1>
                 <p class="text-muted text-sm">Ringkasan data pelanggaran dan pencapaian siswa</p>
             </div>
-            <a href="{{ route('discipline-cases.create') }}" class="btn btn-primary"><i data-lucide="plus" class="icon-sm"></i> Buat Kasus</a>
+            <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
+                <a href="{{ route('discipline-cases.create') }}" class="btn btn-primary"><i data-lucide="plus" class="icon-sm"></i> Buat Kasus</a>
+            </div>
         </div>
     </x-slot>
 

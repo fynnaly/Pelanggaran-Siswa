@@ -1,8 +1,13 @@
 <x-app-layout>
     <x-slot name="header">
+        <div class="breadcrumb">Beranda / Siswa / Edit</div>
         <div class="page-header">
-            <div><div class="breadcrumb">Beranda / Siswa / Edit</div><h1>Edit: {{ $student->full_name }}</h1></div>
-            <a href="{{ route('students.index') }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" class="icon-sm"></i> Kembali</a>
+            <div>
+                <h1>Edit: {{ $student->full_name }}</h1>
+            </div>
+            <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
+                <a href="{{ route('students.index') }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" class="icon-sm"></i> Kembali</a>
+            </div>
         </div>
     </x-slot>
     <div class="main-wrap">

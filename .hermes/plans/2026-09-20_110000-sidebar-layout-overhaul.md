@@ -1,3 +1,54 @@
+# Plan: Sidebar Navigation + Responsive Layout Overhaul
+
+## Goal
+Ganti navigasi top-bar menjadi sidebar (PC) + hamburger drawer (HP), buat layout profesional standar dashboard modern.
+
+## Current Context
+- **Branch**: `feat/view-design-system` (up-to-date di remote)
+- **Layout saat ini**: `app.blade.php` pakai top nav (`navigation.blade.php`) + sticky header slot + `<main>` full-width
+- **Masalah**: Navigasi top-bar susah diklik (terutama di HP), page-header `flex justify-between` berantakan di mobile
+- **Tech stack**: Laravel Blade + Alpine.js + Lucide CDN (inline CSS, NO Tailwind utility classes)
+- **19 view files** pakai `<x-app-layout>` + `<x-slot name="header">`
+
+## Architecture
+Layout berubah dari:
+```
+[Top Nav - sticky]
+  [Logo] [Nav links horizontal] [Theme] [Avatar]
+[Header slot - sticky]
+[Main content - full width]
+```
+Menjadi:
+```
+DESKTOP (≥1024px):
+┌──────────┬──────────────────────────────┐
+│ Sidebar  │ Top bar (breadcrumb/title)   │
+│ (fixed)  │                              │
+│          │ Main content                 │
+│          │                              │
+└──────────┴──────────────────────────────┘
+
+MOBILE (<1024px):
+[Top bar: hamburger + logo + theme + avatar]
+[Main content full-width]
+[Overlay sidebar → slide from left]
+```
+
+## Step-by-Step Tasks
+
+### Task 1: Rewrite `resources/views/layouts/navigation.blade.php`
+Sidebar component dengan Alpine.js.
+
+**Desktop (≥1024px)**: Fixed left sidebar 256px, full height, `var(--neutral)` bg, border-right.
+**Mobile (<1024px)**: Hidden by default, slide-in overlay from left saat hamburger diklik.
+
+Isi sidebar:
+- **Top**: Logo + nama sekolah (shield icon)
+- **Middle**: Nav links vertikal — Dashboard, Siswa, Kelas, Kategori, Kasus, Tahun Ajaran. Setiap link punya icon Lucide + label. Active state: background highlight + bold
+- **Bottom**: Theme toggle (sun/moon) + User avatar + nama + Profile link + Logout button
+
+```html
+{{-- resources/views/layouts/navigation.blade.php --}}
 @php
     $links = [
         ['route' => 'dashboard', 'label' => 'Dashboard', 'pattern' => 'dashboard', 'icon' => 'layout-dashboard'],
@@ -175,3 +226,126 @@
         .sidebar-overlay > .mobile-topbar { display:flex !important; }
     }
 </style>
+```
+
+### Task 2: Rewrite `resources/views/layouts/app.blade.php` layout structure
+
+Ubah dari:
+```
+@include('layouts.navigation')   ← top nav
+<header>{{ $header }}</header>   ← sticky page-header
+<main>{{ $slot }}</main>
+```
+Menjadi:
+```
+@include('layouts.navigation')   ← contains sidebar + mobile-topbar
+<div class="app-shell">          ← new wrapper
+    <header>{{ $header }}</header>  ← in-content top bar (breadcrumb + title)
+    <main>{{ $slot }}</main>
+</div>
+```
+
+CSS baru di `<style>`:
+```css
+/* ── Sidebar Layout Shell ── */
+/* Desktop: main content shifted right by sidebar width */
+@media(min-width:1024px) {
+    .app-shell { margin-left: 256px; }
+}
+
+/* Header in-content (not sticky — sidebar handles nav) */
+.app-header {
+    background: var(--neutral);
+    border-bottom: 1px solid var(--border);
+    padding: var(--sp-md) var(--sp-lg);
+}
+```
+
+Hapus CSS `.page-header` lama, ganti:
+```css
+.page-header {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: var(--sp-md); width: 100%;
+}
+.page-header h1 { margin-bottom: var(--sp-xs); }
+.page-header > div:first-child { flex: 1; min-width: 200px; }
+@media(max-width:639px) {
+    .page-header { flex-direction: column; align-items: stretch; }
+    .page-header .btn { width: 100%; justify-content: center; }
+    .page-header > div:last-child { width: 100%; display: flex; flex-wrap: wrap; gap: var(--sp-sm); }
+    .page-header > div:last-child .btn { flex: 1; min-width: 120px; }
+}
+```
+
+### Task 3: Update all 19 view files — header slot
+
+Semua view pakai `<x-slot name="header">` yang render di dalam `.app-header`. Yang perlu diubah di setiap view:
+- **BISA DIHAPUS**: `<div class="breadcrumb">...</div>` di dalam page-header — pindahkan ke `$header` slot secara terpisah
+- **Layout `$header` slot** jadi: breadcrumb di atas, title + actions di bawah
+
+**Contoh pattern untuk semua views:**
+```blade
+<x-slot name="header">
+    <div class="breadcrumb">Beranda / [Section]</div>
+    <div class="page-header">
+        <div>
+            <h1>[Page Title]</h1>
+            <p class="text-muted text-sm">[Subtitle]</p>
+        </div>
+        <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
+            {{-- action buttons --}}
+        </div>
+    </div>
+</x-slot>
+```
+
+### Files to update (19 views):
+
+| # | File | Page Title |
+|---|------|-----------|
+| 1 | `resources/views/dashboard.blade.php` | Dashboard |
+| 2 | `resources/views/students/index.blade.php` | Daftar Siswa |
+| 3 | `resources/views/students/create.blade.php` | Tambah Siswa |
+| 4 | `resources/views/students/edit.blade.php` | Edit: {nama} |
+| 5 | `resources/views/classes/index.blade.php` | Daftar Kelas |
+| 6 | `resources/views/classes/create.blade.php` | Tambah Kelas |
+| 7 | `resources/views/classes/edit.blade.php` | Edit: {nama} |
+| 8 | `resources/views/violation-categories/index.blade.php` | Kategori Pelanggaran |
+| 9 | `resources/views/violation-categories/create.blade.php` | Tambah Kategori |
+| 10 | `resources/views/violation-categories/edit.blade.php` | Edit: {kode} |
+| 11 | `resources/views/discipline-cases/index.blade.php` | Kasus Pelanggaran |
+| 12 | `resources/views/discipline-cases/create.blade.php` | Buat Kasus Baru |
+| 13 | `resources/views/discipline-cases/show.blade.php` | Detail Kasus |
+| 14 | `resources/views/academic-years/index.blade.php` | Tahun Ajaran |
+| 15 | `resources/views/academic-years/create.blade.php` | Tambah Tahun Ajaran |
+| 16 | `resources/views/academic-years/edit.blade.php` | Edit Tahun Ajaran |
+| 17 | `resources/views/point-ledgers/show.blade.php` | Ledger Poin |
+| 18 | `resources/views/profile/edit.blade.php` | Profil |
+| 19 | `resources/views/point-ledgers/index.blade.php` | Buku Poin |
+
+### Task 4: Update dark mode CSS token untuk sidebar
+
+`.dark` tokens sudah ada — pastikan sidebar pakai `var(--neutral)` bg (bukan `var(--surface)`), sehingga dark mode otomatis gelap.
+
+### Task 5: Commit + push
+
+```bash
+git add -A
+git commit -m "feat: sidebar navigation (desktop) + drawer (mobile) + layout overhaul"
+git push origin feat/view-design-system
+```
+
+## Risks & Tradeoffs
+- **Sidebar offset**: Desktop content shifted 256px right. Jika ada view yang pakai `max-width:1280px` di `.main-wrap`, akan terasa sempit — resolved dengan `margin-left:256px` + content max-width tetap 1024px (total visible = 256 + 1024 = 1280px)
+- **Mobile drawer z-index**: Overlay harus di atas semua konten. Pakai z-index 50 untuk drawer, 45 untuk backdrop
+- **Lucide re-init**: `lucide.createIcons()` harus dipanggil setelah Alpine render drawer. Pindahkan ke `DOMContentLoaded` di navigation.blade.php
+- **Auth components** (`profile/edit`, `auth/*`) — profile edit perlu diupdate, auth pages (login, register) pakai `layouts/guest.blade.php` — TIDAK DIUBAH
+
+## Verification
+1. `npm run build` — pastikan tidak ada error
+2. Buka `http://localhost:8000/dashboard` di desktop — sidebar visible, content shifted right
+3. Resize browser ke <1024px — sidebar hilang, muncul hamburger + topbar
+4. Klik hamburger — drawer slide dari kiri, backdrop overlay
+5. Toggle dark mode di sidebar — semua berubah
+6. Buka `/students`, `/classes`, `/discipline-cases` — navigasi aktif highlight
+7. Buka di HP (atau devtools responsive) — full mobile experience

@@ -1,8 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
+        <div class="breadcrumb">Beranda / Tahun Ajaran / Tambah</div>
         <div class="page-header">
-            <div><div class="breadcrumb">Beranda / Tahun Ajaran / Tambah</div><h1>Tambah Tahun Ajaran</h1></div>
-            <a href="{{ route('academic-years.index') }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" class="icon-sm"></i> Kembali</a>
+            <div><h1>Tambah Tahun Ajaran</h1></div>
+            <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
+                <a href="{{ route('academic-years.index') }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" class="icon-sm"></i> Kembali</a>
+            </div>
         </div>
     </x-slot>
     <div class="main-wrap">

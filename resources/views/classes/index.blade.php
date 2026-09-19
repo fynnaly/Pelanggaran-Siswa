@@ -1,8 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
+        <div class="breadcrumb">Beranda / Kelas</div>
         <div class="page-header">
-            <div><h1>Daftar Kelas</h1><p class="text-muted text-sm">{{ $classes->total() }} kelas terdaftar</p></div>
-            <a href="{{ route('classes.create') }}" class="btn btn-primary"><i data-lucide="plus" class="icon-sm"></i> Tambah</a>
+            <div><h1>Daftar Kelas</h1></div>
+            <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
+                <a href="{{ route('classes.create') }}" class="btn btn-primary"><i data-lucide="plus" class="icon-sm"></i> Tambah</a>
+            </div>
         </div>
     </x-slot>
     <div class="main-wrap">

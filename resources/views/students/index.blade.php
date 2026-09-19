@@ -1,8 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
+        <div class="breadcrumb">Beranda / Siswa</div>
         <div class="page-header">
             <div>
-                <div class="breadcrumb">Beranda / Siswa</div>
                 <h1>Daftar Siswa</h1>
                 <p class="text-muted text-sm">{{ $students->total() }} siswa terdaftar</p>
             </div>

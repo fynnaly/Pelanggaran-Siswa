@@ -1,8 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
+        <div class="breadcrumb">Beranda / Tahun Ajaran</div>
         <div class="page-header">
-            <div><div class="breadcrumb">Beranda / Tahun Ajaran</div><h1>Tahun Ajaran</h1><p class="text-muted text-sm">{{ $academicYears->total() }} tahun ajaran</p></div>
-            <a href="{{ route('academic-years.create') }}" class="btn btn-primary"><i data-lucide="plus" class="icon-sm"></i> Tambah</a>
+            <div><h1>Tahun Ajaran</h1></div>
+            <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
+                <a href="{{ route('academic-years.create') }}" class="btn btn-primary"><i data-lucide="plus" class="icon-sm"></i> Tambah</a>
+            </div>
         </div>
     </x-slot>
     <div class="main-wrap">

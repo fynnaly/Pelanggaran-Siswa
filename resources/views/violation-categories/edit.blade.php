@@ -1,8 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
+        <div class="breadcrumb">Beranda / Kategori / Edit</div>
         <div class="page-header">
-            <div><div class="breadcrumb">Beranda / Kategori / Edit</div><h1>Edit: {{ $violationCategory->code }}</h1></div>
-            <a href="{{ route('violation-categories.index') }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" class="icon-sm"></i> Kembali</a>
+            <div><h1>Edit: {{ $violationCategory->code }}</h1></div>
+            <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
+                <a href="{{ route('violation-categories.index') }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" class="icon-sm"></i> Kembali</a>
+            </div>
         </div>
     </x-slot>
     <div class="main-wrap">

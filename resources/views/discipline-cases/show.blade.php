@@ -1,7 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
+        <div class="breadcrumb">Beranda / Kasus / Detail</div>
         <div class="page-header">
-            <div><div class="breadcrumb">Beranda / Kasus / Detail</div><h1 style="display:flex;align-items:center;gap:var(--sp-sm)"><i data-lucide="file-text" class="icon"></i> {{ $case->case_number }}</h1></div>
+            <div><h1 style="display:flex;align-items:center;gap:var(--sp-sm)"><i data-lucide="file-text" class="icon"></i> {{ $case->case_number }}</h1></div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
                 @if($case->status==='found')
                     <form action="{{ route('discipline-cases.validate', $case) }}" method="POST" onsubmit="return confirm('Validasi kasus ini?')">@csrf @method('PATCH')<input type="hidden" name="validation_passed" value="1"><button class="btn btn-primary btn-sm"><i data-lucide="check" class="icon-sm"></i> Validasi</button></form>
