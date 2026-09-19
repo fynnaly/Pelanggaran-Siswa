@@ -63,4 +63,19 @@ class PointLedger extends Model
     {
         return $this->belongsTo(User::class, 'verified_by');
     }
+
+    /** Label human-readable untuk sumber transaksi (ganti 'App\Models\X #1') */
+    public function sourceLabel(): string
+    {
+        if ($this->source_type === null || $this->source_id === null) {
+            return '-';
+        }
+
+        if ($this->source_type === DisciplineCase::class) {
+            $case = DisciplineCase::find($this->source_id);
+            return $case?->case_number ?? 'Kasus #' . $this->source_id;
+        }
+
+        return class_basename($this->source_type) . ' #' . $this->source_id;
+    }
 }

@@ -15,11 +15,43 @@ class DisciplineCasePolicy
         //
     }
 
-    public function validate(User $user, DisciplineCase $case) {
-        return $case->status === 'found' && $user->hasRole('bk');
+    /**
+     * Determine whether the user can create a discipline case report.
+     * Guru (guru role) and admin can report a violation.
+     *
+     * @param  \App\Models\User  $user
+     * @return bool
+     */
+    public function create(User $user): bool
+    {
+        return $user->hasAnyRole(['guru', 'admin']);
     }
 
-    public function done(User $user, DisciplineCase $case): bool {
-        return $case->status === 'validated' && $user->hasRole('bk');
+    /**
+     * Determine whether the user can validate a discipline case.
+     * Only BK (bk role) or admin can validate a reported case.
+     * The case must be in 'found' status (reported, pending validation).
+     *
+     * @param  \App\Models\User  $user
+     * @param  \App\Models\DisciplineCase  $case
+     * @return bool
+     */
+    public function validate(User $user, DisciplineCase $case): bool
+    {
+        return $case->status === 'found' && $user->hasAnyRole(['bk', 'admin']);
+    }
+
+    /**
+     * Determine whether the user can mark a discipline case as done/completed.
+     * Only BK (bk role) or admin can close a validated case.
+     * The case must be in 'validated' status (validated, pending completion).
+     *
+     * @param  \App\Models\User  $user
+     * @param  \App\Models\DisciplineCase  $case
+     * @return bool
+     */
+    public function done(User $user, DisciplineCase $case): bool
+    {
+        return $case->status === 'validated' && $user->hasAnyRole(['bk', 'admin']);
     }
 }

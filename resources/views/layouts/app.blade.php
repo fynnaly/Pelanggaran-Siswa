@@ -13,6 +13,26 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+        <style>
+            /* Glass Design Tokens */
+            :root {
+                --blur-px: 14px;
+                --radius-lg: 20px;
+                --radius-md: 14px;
+                --glass-bg: rgba(255, 255, 255, 0.72);
+                --glass-border: rgba(255, 255, 255, 0.55);
+                --glass-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+            }
+            .glass {
+                background: var(--glass-bg);
+                backdrop-filter: blur(var(--blur-px)) saturate(140%);
+                -webkit-backdrop-filter: blur(var(--blur-px)) saturate(140%);
+                border: 1px solid var(--glass-border);
+                box-shadow: var(--glass-shadow);
+            }
+            .r-lg { border-radius: var(--radius-lg); }
+        </style>
     </head>
     <body class="font-sans antialiased">
         <div class="min-h-screen bg-gray-100">
@@ -32,5 +52,7 @@
                 {{ $slot }}
             </main>
         </div>
+        <!-- Fallback: load Alpine.js via CDN jika Vite build belum di-upload ke hosting -->
+        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js" crossorigin="anonymous"></script>
     </body>
 </html>

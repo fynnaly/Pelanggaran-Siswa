@@ -12,14 +12,40 @@
                 @endif
                 <form action="{{ route('discipline-cases.store') }}" method="POST" class="space-y-4">
                     @csrf
-                    <div>
+                    <div x-data="studentAutocomplete()" class="relative">
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Siswa</label>
-                        <select name="student_id" required class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500">
-                            <option value="">-- Pilih siswa --</option>
-                            @foreach($students as $id => $name)
-                                <option value="{{ $id }}" {{ old('student_id')==$id?'selected':'' }}>{{ $name }}</option>
-                            @endforeach
-                        </select>
+                        <input
+                            type="text"
+                            x-model="searchQuery"
+                            name="student_name"
+                            autocomplete="off"
+                            required
+                            class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
+                            placeholder="Cari nama siswa atau NISN..."
+                            @focus="showDropdown = true"
+                            @click.outside="showDropdown = false"
+                        />
+                        <input
+                            type="hidden"
+                            name="student_id"
+                            :value="selectedStudent ? selectedStudent.id : ''"
+                        />
+                        <div
+                            x-show="showDropdown && suggestions.length > 0 && !selectedStudent"
+                            x-transition
+                            class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-y-auto"
+                            role="listbox"
+                        >
+                            <template x-for="s in suggestions" :key="s.id">
+                                <div
+                                    class="px-4 py-2 cursor-pointer hover:bg-gray-100 flex justify-between items-center"
+                                    @click="selectStudent(s)"
+                                >
+                                    <span class="font-medium text-gray-900" x-text="s.full_name"></span>
+                                    <span class="text-xs text-gray-500" x-text="s.nis + ' - ' + s.kelas"></span>
+                                </div>
+                            </template>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Kategori Pelanggaran</label>
@@ -54,4 +80,46 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function studentAutocomplete() {
+            return {
+                searchQuery: '',
+                suggestions: [],
+                selectedStudent: @json($selectedStudent),
+                showDropdown: false,
+                debounceTimer: null,
+
+                init() {
+                    this.searchQuery = this.selectedStudent ? this.selectedStudent.full_name : '';
+                    this.$watch('searchQuery', (value) => {
+                        if (this.selectedStudent && value === this.selectedStudent.full_name) return;
+                        this.selectedStudent = null;
+                        if (this.debounceTimer) clearTimeout(this.debounceTimer);
+                        this.debounceTimer = setTimeout(() => this.fetchSuggestions(value), 250);
+                    });
+                },
+
+                fetchSuggestions(query) {
+                    if (query.length < 2) {
+                        this.suggestions = [];
+                        return;
+                    }
+                    fetch(`{{ route('students.search') }}?q=${encodeURIComponent(query)}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            this.suggestions = data;
+                            this.showDropdown = data.length > 0;
+                        });
+                },
+
+                selectStudent(student) {
+                    this.selectedStudent = student;
+                    this.searchQuery = student.full_name;
+                    this.suggestions = [];
+                    this.showDropdown = false;
+                }
+            }
+        }
+    </script>
 </x-app-layout>

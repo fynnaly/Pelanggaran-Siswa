@@ -16,25 +16,27 @@
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1">NISN</label>
                         <input type="text" name="nisn" value="{{ old('nisn') }}" required maxlength="20"
-                                class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500">
+                               class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1">NIS</label>
                         <input type="text" name="nis" value="{{ old('nis') }}" required maxlength="20"
-                                class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500">
+                               class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Lengkap</label>
                         <input type="text" name="full_name" value="{{ old('full_name') }}" required maxlength="100"
-                                class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500">
+                               class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500">
                     </div>
-                    @php $klases = \App\Models\SchoolClass::all(); @endphp
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Kelas</label>
+                        {{-- $klases di-pass dari controller, bukan query inline --}}
                         <select name="class_id" required class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500">
                             <option value="">-- Pilih kelas --</option>
                             @foreach($klases as $k)
-                                <option value="{{ $k->id }}" {{ old('class_id')==$k->id?'selected':'' }}>{{ $k->name }}</option>
+                                <option value="{{ $k->id }}" {{ old('class_id')==(string)$k->id ? 'selected' : '' }}>
+                                    {{ $k->name }}{{ $k->academicYear ? ' ('.$k->academicYear->name.')' : '' }}
+                                </option>
                             @endforeach
                         </select>
                     </div>

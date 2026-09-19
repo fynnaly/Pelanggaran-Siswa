@@ -15,7 +15,7 @@
                     <div><div class="text-gray-500">Jumlah</div><div class="font-bold text-lg">{{ $pointLedger->amount }}</div></div>
                     <div><div class="text-gray-500">Saldo Akhir</div><div class="font-bold text-lg">{{ $pointLedger->balance_after }}</div></div>
                     <div><div class="text-gray-500">Tipe</div><div><span class="px-2 py-1 rounded bg-gray-100 text-xs">{{ $pointLedger->transaction_type }}</span></div></div>
-                    <div><div class="text-gray-500">Sumber</div><div class="font-mono text-xs">{{ $pointLedger->source_type ?? '-' }} #{{ $pointLedger->source_id ?? '-' }}</div></div>
+                    <div><div class="text-gray-500">Sumber</div><div class="font-mono text-xs">{{ $pointLedger->sourceLabel() }}</div></div>
                     <div><div class="text-gray-500">Waktu</div><div>{{ $pointLedger->created_at?->format('d/m/Y H:i:s') }}</div></div>
                 </div>
                 <div><div class="text-gray-500">Alasan</div><div class="mt-1 p-3 bg-gray-50 rounded-lg">{{ $pointLedger->reason ?? '-' }}</div></div>

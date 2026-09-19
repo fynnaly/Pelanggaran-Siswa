@@ -8,6 +8,7 @@ use App\Http\Controllers\PointLedgerController;
 use App\Http\Controllers\DisciplineCaseController;
 use App\Http\Controllers\SchoolClassController;
 use App\Http\Controllers\AcademicYearController;
+use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -17,9 +18,9 @@ Route::get('/test', function () {
     return view('test-glass-theme');
 })->name('test');
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
 
@@ -34,10 +35,16 @@ Route::middleware('auth')->group(function () {
     // Pelanggaran
     Route::resource('violation-categories', ViolationCategoryController::class);
 
-    // Siswa / Murid
+    // Siswa — export/import/template CSV native (tanpa library, PHP 8.5.5 ext-gd kosong)
+    // Letak SEBELUM resource agar /students/export tidak kecapture sebagai {student}
+    Route::get('students/template', [StudentController::class, 'downloadTemplate'])->name('students.template');
+    Route::get('students/export', [StudentController::class, 'export'])->name('students.export');
+    Route::post('students/import', [StudentController::class, 'import'])->name('students.import');
+    Route::get('students/search', [StudentController::class, 'search'])->name('students.search');
     Route::resource('students', StudentController::class);
 
-    // Kelas (untuk assign siswa, import excel pakai class_id)
+    // Kelas — promote HARUS sebelum resource agar tidak tertelan sebagai {class}
+    Route::post('classes/promote', [SchoolClassController::class, 'promote'])->name('classes.promote');
     Route::resource('classes', SchoolClassController::class);
 
     // PointLedger

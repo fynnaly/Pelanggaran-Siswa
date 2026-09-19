@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\SchoolClass;
+use App\Models\Student;
 use App\Models\AcademicYear;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -13,7 +14,7 @@ class SchoolClassController extends Controller
     /** Menampilkan daftar semua kelas */
     public function index()
     {
-        $classes = SchoolClass::with(['academicYear', 'homeroomTeacher', 'students'])
+        $classes = SchoolClass::with(['academicYear', 'homeroomTeacher'])->withCount('students')
             ->latest('name')
             ->paginate(20);
 
@@ -82,6 +83,25 @@ class SchoolClassController extends Controller
         return redirect()
             ->route('classes.index')
             ->with('success', 'Kelas ' . $validated['name'] . ' berhasil diupdate.');
+    }
+
+    /** Pindahkan massal (naik kelas) sekumpulan siswa ke satu kelas target */
+    public function promote(Request $request)
+    {
+        $validated = $request->validate([
+            'student_ids' => 'required|array|min:1',
+            'student_ids.*' => 'exists:students,id',
+            'class_id' => 'required|exists:classes,id',
+        ]);
+
+        $target = SchoolClass::findOrFail($validated['class_id']);
+        $count = Student::whereIn('id', $validated['student_ids'])->count();
+
+        Student::whereIn('id', $validated['student_ids'])->update(['class_id' => $target->id]);
+
+        return redirect()
+            ->route('classes.index')
+            ->with('success', $count . ' siswa berhasil dipindahkan ke kelas ' . $target->name . '.');
     }
 
     /** Menghapus kelas */

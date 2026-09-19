@@ -28,9 +28,11 @@
                         <tbody class="divide-y divide-gray-100">
                             @forelse($classes as $class)
                                 <tr class="hover:bg-gray-50">
-                                    <td class="px-4 py-3 font-semibold">{{ $class->name }}</td>
+                                    <td class="px-4 py-3 font-semibold">
+                                        <a href="{{ route('students.index', ['class_id' => $class->id]) }}" class="text-blue-600 hover:underline">{{ $class->name }}</a>
+                                    </td>
                                     <td class="px-4 py-3 text-xs text-gray-600">{{ $class->academicYear?->name ?? '-' }}</td>
-                                    <td class="px-4 py-3 text-center font-semibold">{{ $class->students()->count() }}</td>
+                                    <td class="px-4 py-3 text-center font-semibold">{{ $class->students_count }}</td>
                                     <td class="px-4 py-3 text-xs text-gray-600">{{ $class->homeroomTeacher?->name ?? '-' }}</td>
                                     <td class="px-4 py-3 text-right space-x-2">
                                         <a href="{{ route('classes.edit', $class) }}" class="text-blue-600 hover:underline text-xs">Edit</a>

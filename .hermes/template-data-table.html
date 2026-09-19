@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="id" class="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daftar Kasus — Pelanggaran Siswa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--primary:#1e3a5f;--secondary:#64748b;--tertiary:#059669;--accent:#f59e0b;--neutral:#fff;--surface:#f8fafc;--border:#e2e8f0;--danger:#dc2626;--on-primary:#fff;--on-tertiary:#fff;--on-surface:#1e293b;--on-surface-muted:#64748b;--glass-bg:rgba(255,255,255,.72);--glass-border:rgba(255,255,255,.55);--glass-shadow:rgba(15,23,42,.06);--bs:#dcfce7;--bt:#166534;--ws:#fef3c7;--wt:#92400e;--ds:#fee2e2;--dt:#991b1b;--sh-sm:0 1px 2px rgba(15,23,42,.06);--sh-md:0 4px 12px rgba(15,23,42,.08);--sh-g:0 4px 16px rgba(15,23,42,.06);--r-sm:8px;--r-md:12px;--r-lg:20px;--r-full:9999px;--sp-xs:4px;--sp-sm:8px;--sp-md:16px;--sp-lg:24px;--sp-xl:40px}
+.dark{--neutral:#161615;--surface:#0a0a0a;--border:#334155;--on-surface:#f8fafc;--on-surface-muted:#94a3b8;--glass-bg:rgba(15,23,42,.72);--glass-border:rgba(15,23,42,.4);--glass-shadow:rgba(0,0,0,.4);--sh-g:0 4px 16px rgba(0,0,0,.4);--bs:#064e3b;--bt:#6ee7b7;--ws:#78350f;--wt:#fcd34d;--ds:#7f1d1d;--dt:#fca5a5}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Figtree',sans-serif;font-size:1rem;line-height:1.6;color:var(--on-surface);background:var(--surface);transition:background .2s,color .2s}
+h1{font-size:2.25rem;font-weight:700;line-height:1.15;letter-spacing:-.01em}
+h2{font-size:1.5rem;font-weight:600;line-height:1.25}
+.label{font-size:.75rem;font-weight:600;letter-spacing:.06em;line-height:1.4;text-transform:uppercase}
+.text-sm{font-size:.875rem;line-height:1.5}.text-muted{color:var(--on-surface-muted)}
+.mono{font-family:ui-monospace,monospace;font-size:.8125rem;line-height:1.5}
+.header{position:sticky;top:0;z-index:50;background:var(--glass-bg);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--glass-border);box-shadow:var(--sh-g)}
+.header-inner{max-width:1280px;margin:0 auto;padding:0 var(--sp-md);display:flex;align-items:center;justify-content:space-between;height:64px;gap:var(--sp-md)}
+.logo{font-size:1.125rem;font-weight:700;color:var(--primary);white-space:nowrap}
+.nav{display:none;gap:var(--sp-lg)}.nav a{text-decoration:none;color:var(--on-surface-muted);font-size:.875rem;font-weight:600;transition:color .15s}.nav a.active,.nav a:hover{color:var(--on-surface)}
+.header-actions{display:flex;align-items:center;gap:var(--sp-sm)}
+.theme-toggle{width:40px;height:40px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--neutral);color:var(--on-surface);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.125rem;transition:background .15s}.theme-toggle:hover{background:var(--border)}
+.avatar{width:36px;height:36px;border-radius:var(--r-full);background:var(--primary);color:var(--on-primary);display:flex;align-items:center;justify-content:center;font-size:.875rem;font-weight:700}
+@media(min-width:640px){.nav{display:flex}}
+.main{max-width:1280px;margin:0 auto;padding:var(--sp-xl) var(--sp-md)}
+.page-header{margin-bottom:var(--sp-xl)}.page-header h1{margin-bottom:var(--sp-xs)}
+.breadcrumb{font-size:.875rem;color:var(--on-surface-muted);margin-bottom:var(--sp-sm)}
+.card{background:var(--neutral);border-radius:var(--r-lg);padding:var(--sp-lg);border:1px solid var(--border);transition:box-shadow .2s}.card:hover{box-shadow:var(--sh-md)}
+.section{margin-top:var(--sp-xl)}.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-lg);flex-wrap:wrap;gap:var(--sp-sm)}
+.btn{display:inline-flex;align-items:center;gap:var(--sp-sm);padding:12px 20px;border-radius:var(--r-sm);border:none;font-family:inherit;font-size:.875rem;font-weight:600;cursor:pointer;transition:background .15s}
+.btn-primary{background:var(--tertiary);color:var(--on-tertiary)}.btn-primary:hover{background:#047857}
+.btn-secondary{background:var(--surface);color:var(--on-surface);border:1px solid var(--border)}.btn-secondary:hover{background:var(--border)}
+.btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{background:#b91c1c}
+.btn-sm{padding:8px 14px;font-size:.8125rem}
+.input{width:100%;padding:10px 14px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--neutral);color:var(--on-surface);font-family:inherit;font-size:.875rem;transition:border-color .15s,box-shadow .15s}.input:focus{outline:none;border-color:var(--tertiary);box-shadow:0 0 0 3px rgba(5,150,105,.15)}.input::placeholder{color:var(--on-surface-muted)}
+.badge{display:inline-block;padding:4px 10px;border-radius:var(--r-full);font-size:.75rem;font-weight:600;letter-spacing:.04em;white-space:nowrap}
+.badge-success{background:var(--bs);color:var(--bt)}.badge-warning{background:var(--ws);color:var(--wt)}.badge-danger{background:var(--ds);color:var(--dt)}
+.table-wrap{overflow-x:auto;border-radius:var(--r-lg);border:1px solid var(--border);background:var(--neutral)}
+table{width:100%;border-collapse:collapse;font-size:.875rem}
+th{text-align:left;padding:12px 16px;font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--on-surface-muted);border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
+th:hover{color:var(--on-surface)}
+td{padding:12px 16px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface)}
+.checkbox{width:18px;height:18px;border-radius:4px;border:1px solid var(--border);cursor:pointer;accent-color:var(--tertiary)}
+.toolbar{display:flex;flex-wrap:wrap;gap:var(--sp-sm);align-items:center;margin-bottom:var(--sp-lg)}
+.toolbar .input{max-width:280px}
+.filter-group{display:flex;gap:var(--sp-sm);flex-wrap:wrap}
+select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;cursor:pointer}
+.pagination{display:flex;align-items:center;gap:var(--sp-xs);margin-top:var(--sp-lg);justify-content:center;flex-wrap:wrap}
+.page-btn{min-width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--neutral);color:var(--on-surface);font-size:.875rem;cursor:pointer;transition:background .15s}
+.page-btn.active{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}.page-btn:hover:not(.active){background:var(--surface)}
+.skeleton{background:#e2e8f0;border-radius:var(--r-sm);animation:pulse 1.5s ease-in-out infinite}.dark .skeleton{background:#1e293b}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.skeleton .skeleton{margin-bottom:6px}
+.action-cell{display:flex;gap:var(--sp-xs)}
+.action-btn{width:32px;height:32px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--neutral);color:var(--on-surface-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.875rem;transition:all .15s}.action-btn:hover{background:var(--surface);color:var(--on-surface);border-color:var(--on-surface-muted)}
+</style>
+</head>
+<body>
+<header class="header">
+<div class="header-inner">
+<div class="logo">SMK Pelanggaran</div>
+<nav class="nav"><a href="#">Dashboard</a><a href="#">Siswa</a><a href="#" class="active">Kasus</a><a href="#">Kategori</a><a href="#">Laporan</a></nav>
+<div class="header-actions"><button class="theme-toggle" onclick="toggleTheme()">O</button><div class="avatar">AD</div></div>
+</div>
+</header>
+<main class="main">
+<div class="breadcrumb">Beranda / Kasus Pelanggaran</div>
+<div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--sp-sm)">
+<div><h1>Kasus Pelanggaran</h1><p class="text-muted text-sm">156 total kasus</p></div>
+<button class="btn btn-primary">Buat Kasus Baru</button>
+</div>
+
+<div class="toolbar">
+<input type="text" class="input" placeholder="Cari nomor kasus, nama siswa...">
+<div class="filter-group">
+<select class="input"><option>Semua Status</option><option>Diproses</option><option>Selesai</option><option>Ditolak</option></select>
+<select class="input"><option>Semua Kategori</option><option>Terlambat Masuk</option><option>Titip Absen</option><option>Bolos</option><option>Rambut Tidak Rapi</option></select>
+<button class="btn btn-secondary btn-sm">Export</button>
+</div>
+</div>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th style="width:40px"><input type="checkbox" class="checkbox"></th><th>No. Kasus</th><th>Siswa</th><th>Kategori</th><th>Poin</th><th>Pelapor</th><th>Status</th><th>Tanggal</th><th style="width:100px">Aksi</th></tr>
+</thead>
+<tbody>
+<tr><td><input type="checkbox" class="checkbox"></td><td class="mono">KAS-2026-0156</td><td><strong>Ahmad Fauzi</strong><br><span class="text-muted text-sm">X RPL 2</span></td><td>Terlambat Masuk</td><td class="mono">-10</td><td class="text-sm">Pak Budi</td><td><span class="badge badge-warning">Diproses</span></td><td class="text-sm text-muted">19 Sep 2026</td><td class="action-cell"><button class="action-btn" title="Lihat">V</button><button class="action-btn" title="Edit">E</button><button class="action-btn" title="Hapus" style="color:var(--danger)">X</button></td></tr>
+<tr><td><input type="checkbox" class="checkbox"></td><td class="mono">KAS-2026-0155</td><td><strong>Siti Nurhaliza</strong><br><span class="text-muted text-sm">XI AKL 1</span></td><td>Titip Absen</td><td class="mono">-25</td><td class="text-sm">Bu Sari</td><td><span class="badge badge-danger">Berat</span></td><td class="text-sm text-muted">18 Sep 2026</td><td class="action-cell"><button class="action-btn">V</button><button class="action-btn">E</button><button class="action-btn" style="color:var(--danger)">X</button></td></tr>
+<tr><td><input type="checkbox" class="checkbox"></td><td class="mono">KAS-2026-0154</td><td><strong>Budi Santoso</strong><br><span class="text-muted text-sm">X BD 1</span></td><td>Rambut Tidak Rapi</td><td class="mono">-5</td><td class="text-sm">Pak Andi</td><td><span class="badge badge-success">Selesai</span></td><td class="text-sm text-muted">18 Sep 2026</td><td class="action-cell"><button class="action-btn">V</button><button class="action-btn">E</button><button class="action-btn" style="color:var(--danger)">X</button></td></tr>
+<tr><td><input type="checkbox" class="checkbox"></td><td class="mono">KAS-2026-0153</td><td><strong>Dewi Lestari</strong><br><span class="text-muted text-sm">XII MM 2</span></td><td>Titip Absen</td><td class="mono">-25</td><td class="text-sm">Bu Rina</td><td><span class="badge badge-success">Selesai</span></td><td class="text-sm text-muted">17 Sep 2026</td><td class="action-cell"><button class="action-btn">V</button><button class="action-btn">E</button><button class="action-btn" style="color:var(--danger)">X</button></td></tr>
+<tr><td><input type="checkbox" class="checkbox"></td><td class="mono">KAS-2026-0152</td><td><strong>Rizki Pratama</strong><br><span class="text-muted text-sm">X RPL 1</span></td><td>Bolos</td><td class="mono">-50</td><td class="text-sm">Pak Budi</td><td><span class="badge badge-danger">Berat</span></td><td class="text-sm text-muted">17 Sep 2026</td><td class="action-cell"><button class="action-btn">V</button><button class="action-btn">E</button><button class="action-btn" style="color:var(--danger)">X</button></td></tr>
+<tr><td><input type="checkbox" class="checkbox"></td><td class="mono">KAS-2026-0151</td><td><strong>Maya Putri</strong><br><span class="text-muted text-sm">XI BD 2</span></td><td>Terlambat Masuk</td><td class="mono">-10</td><td class="text-sm">Bu Sari</td><td><span class="badge badge-warning">Diproses</span></td><td class="text-sm text-muted">16 Sep 2026</td><td class="action-cell"><button class="action-btn">V</button><button class="action-btn">E</button><button class="action-btn" style="color:var(--danger)">X</button></td></tr>
+<tr><td><input type="checkbox" class="checkbox"></td><td class="mono">KAS-2026-0150</td><td><strong>Andi Kurniawan</strong><br><span class="text-muted text-sm">X MM 1</span></td><td>Seragam Tidak Lengkap</td><td class="mono">-5</td><td class="text-sm">Pak Andi</td><td><span class="badge badge-success">Selesai</span></td><td class="text-sm text-muted">16 Sep 2026</td><td class="action-cell"><button class="action-btn">V</button><button class="action-btn">E</button><button class="action-btn" style="color:var(--danger)">X</button></td></tr>
+</tbody>
+</table>
+</div>
+
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--sp-sm);margin-top:var(--sp-lg)">
+<span class="text-sm text-muted">Menampilkan 1-7 dari 156 kasus</span>
+<div class="pagination" style="margin-top:0">
+<button class="page-btn">&laquo;</button>
+<button class="page-btn active">1</button>
+<button class="page-btn">2</button>
+<button class="page-btn">3</button>
+<button class="page-btn">...</button>
+<button class="page-btn">23</button>
+<button class="page-btn">&raquo;</button>
+</div>
+</div>
+
+<!-- Skeleton -->
+<div class="section">
+<div class="section-header"><h2>Loading State</h2></div>
+<div class="table-wrap">
+<table>
+<thead><tr><th style="width:40px"><div class="skeleton" style="width:18px;height:18px;border-radius:4px"></div></th><th>No. Kasus</th><th>Siswa</th><th>Kategori</th><th>Poin</th><th>Pelapor</th><th>Status</th><th>Tanggal</th><th>Aksi</th></tr></thead>
+<tbody>
+<tr><td><div class="skeleton" style="width:18px;height:18px;border-radius:4px"></div></td><td><div class="skeleton" style="width:110px;height:14px"></div></td><td><div class="skeleton" style="width:120px;height:14px"></div></td><td><div class="skeleton" style="width:100px;height:14px"></div></td><td><div class="skeleton" style="width:40px;height:14px"></div></td><td><div class="skeleton" style="width:70px;height:14px"></div></td><td><div class="skeleton" style="width:80px;height:24px;border-radius:9999px"></div></td><td><div class="skeleton" style="width:90px;height:14px"></div></td><td><div class="skeleton" style="width:80px;height:32px;border-radius:8px"></div></td></tr>
+<tr><td><div class="skeleton" style="width:18px;height:18px;border-radius:4px"></div></td><td><div class="skeleton" style="width:110px;height:14px"></div></td><td><div class="skeleton" style="width:100px;height:14px"></div></td><td><div class="skeleton" style="width:80px;height:14px"></div></td><td><div class="skeleton" style="width:40px;height:14px"></div></td><td><div class="skeleton" style="width:60px;height:14px"></div></td><td><div class="skeleton" style="width:80px;height:24px;border-radius:9999px"></div></td><td><div class="skeleton" style="width:90px;height:14px"></div></td><td><div class="skeleton" style="width:80px;height:32px;border-radius:8px"></div></td></tr>
+<tr><td><div class="skeleton" style="width:18px;height:18px;border-radius:4px"></div></td><td><div class="skeleton" style="width:110px;height:14px"></div></td><td><div class="skeleton" style="width:90px;height:14px"></div></td><td><div class="skeleton" style="width:110px;height:14px"></div></td><td><div class="skeleton" style="width:40px;height:14px"></div></td><td><div class="skeleton" style="width:70px;height:14px"></div></td><td><div class="skeleton" style="width:80px;height:24px;border-radius:9999px"></div></td><td><div class="skeleton" style="width:90px;height:14px"></div></td><td><div class="skeleton" style="width:80px;height:32px;border-radius:8px"></div></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</main>
+<script>
+function toggleTheme(){const h=document.documentElement,d=h.classList.toggle('dark');h.classList.toggle('light',!d);localStorage.setItem('theme',d?'dark':'light')}
+(function(){const s=localStorage.getItem('theme'),p=window.matchMedia('(prefers-color-scheme:dark)').matches;if(s==='dark'||(!s&&p)){document.documentElement.classList.remove('light');document.documentElement.classList.add('dark')}})();
+</script>
+</body>
+</html>

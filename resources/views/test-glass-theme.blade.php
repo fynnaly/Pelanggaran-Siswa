@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Glass Lab — Kumpulan Komponen Interaktif</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script>
         if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
@@ -14,49 +14,49 @@
         }
     </script>
     <style>
-        /* ============ TOKENS ( bisa diubah live via panel ) ============ */
+        /* ============ TOKENS ============ */
         :root {
-            --blur-px: 18px;
-            --radius-lg: 28px;
-            --radius-md: 20px;
-            --glass-bg: rgba(255, 255, 255, 0.62);
-            --glass-bg-strong: rgba(255, 255, 255, 0.80);
-            --glass-bg-subtle: rgba(255, 255, 255, 0.38);
+            --blur-px: 14px;
+            --radius-lg: 20px;
+            --radius-md: 14px;
+            --glass-bg: rgba(255, 255, 255, 0.72);
+            --glass-bg-strong: rgba(255, 255, 255, 0.88);
+            --glass-bg-subtle: rgba(255, 255, 255, 0.50);
             --glass-border: rgba(255, 255, 255, 0.55);
             --glass-border-strong: rgba(255, 255, 255, 0.70);
-            --glass-shadow: 0 8px 32px rgba(15, 23, 42, 0.10);
-            --glass-shadow-lg: 0 16px 48px rgba(15, 23, 42, 0.14);
-            --accent: #7c3aed;
-            --accent-soft: rgba(124, 58, 237, 0.16);
+            --glass-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+            --glass-shadow-lg: 0 8px 28px rgba(15, 23, 42, 0.08);
+            --accent: #1e3a5f;
+            --accent-soft: rgba(30, 58, 95, 0.10);
             --success: #059669;
-            --success-soft: rgba(5, 150, 105, 0.14);
+            --success-soft: rgba(5, 150, 105, 0.10);
             --warning: #d97706;
-            --warning-soft: rgba(217, 119, 6, 0.14);
+            --warning-soft: rgba(217, 119, 6, 0.10);
             --danger: #dc2626;
-            --danger-soft: rgba(220, 38, 38, 0.12);
+            --danger-soft: rgba(220, 38, 38, 0.10);
             --ink: #0f172a;
-            --ink-soft: #475569;
-            --page-bg: linear-gradient(135deg, #e8e0f0 0%, #dce4f8 50%, #f0e8e4 100%);
+            --ink-soft: #64748b;
+            --page-bg: #f1f5f9;
         }
         .dark {
-            --glass-bg: rgba(20, 18, 40, 0.62);
-            --glass-bg-strong: rgba(20, 18, 40, 0.82);
-            --glass-bg-subtle: rgba(20, 18, 40, 0.42);
-            --glass-border: rgba(255, 255, 255, 0.14);
-            --glass-border-strong: rgba(255, 255, 255, 0.22);
-            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.32);
-            --glass-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.42);
-            --accent: #a78bfa;
-            --accent-soft: rgba(167, 139, 250, 0.20);
+            --glass-bg: rgba(15, 23, 42, 0.70);
+            --glass-bg-strong: rgba(15, 23, 42, 0.86);
+            --glass-bg-subtle: rgba(15, 23, 42, 0.48);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --glass-border-strong: rgba(255, 255, 255, 0.20);
+            --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.24);
+            --glass-shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.32);
+            --accent: #60a5fa;
+            --accent-soft: rgba(96, 165, 250, 0.16);
             --success: #34d399;
-            --success-soft: rgba(52, 211, 153, 0.18);
+            --success-soft: rgba(52, 211, 153, 0.14);
             --warning: #fbbf24;
-            --warning-soft: rgba(251, 191, 36, 0.18);
+            --warning-soft: rgba(251, 191, 36, 0.14);
             --danger: #f87171;
-            --danger-soft: rgba(248, 113, 113, 0.18);
+            --danger-soft: rgba(248, 113, 113, 0.14);
             --ink: #f1f5f9;
             --ink-soft: #94a3b8;
-            --page-bg: linear-gradient(135deg, #0f0a1e 0%, #0a0e1e 50%, #1a0f0e 100%);
+            --page-bg: #0f172a;
         }
 
         body { font-family: 'Figtree', system-ui, sans-serif; color: var(--ink); }
@@ -64,92 +64,87 @@
 
         .glass {
             background: var(--glass-bg);
-            backdrop-filter: blur(var(--blur-px)) saturate(180%);
-            -webkit-backdrop-filter: blur(var(--blur-px)) saturate(180%);
+            backdrop-filter: blur(var(--blur-px)) saturate(140%);
+            -webkit-backdrop-filter: blur(var(--blur-px)) saturate(140%);
             border: 1px solid var(--glass-border);
             box-shadow: var(--glass-shadow);
         }
         .glass-strong {
             background: var(--glass-bg-strong);
-            backdrop-filter: blur(calc(var(--blur-px) + 12px)) saturate(200%);
-            -webkit-backdrop-filter: blur(calc(var(--blur-px) + 12px)) saturate(200%);
+            backdrop-filter: blur(calc(var(--blur-px) + 6px)) saturate(150%);
+            -webkit-backdrop-filter: blur(calc(var(--blur-px) + 6px)) saturate(150%);
             border: 1px solid var(--glass-border-strong);
             box-shadow: var(--glass-shadow-lg);
         }
         .glass-subtle {
             background: var(--glass-bg-subtle);
-            backdrop-filter: blur(var(--blur-px)) saturate(160%);
-            -webkit-backdrop-filter: blur(var(--blur-px)) saturate(160%);
+            backdrop-filter: blur(var(--blur-px)) saturate(120%);
+            -webkit-backdrop-filter: blur(var(--blur-px)) saturate(120%);
             border: 1px solid var(--glass-border);
         }
         .r-lg { border-radius: var(--radius-lg); }
         .r-md { border-radius: var(--radius-md); }
 
-        /* Mesh background */
-        .mesh-bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: var(--page-bg); transition: background 0.4s ease; }
-        .mesh-blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.6; animation: drift 22s ease-in-out infinite alternate; }
-        .dark .mesh-blob { opacity: 0.32; }
-        .mesh-blob-1 { width: 520px; height: 520px; top: -12%; left: -6%; background: radial-gradient(circle, var(--blob-1, #c084fc) 0%, transparent 70%); }
-        .mesh-blob-2 { width: 620px; height: 620px; bottom: -18%; right: -10%; background: radial-gradient(circle, var(--blob-2, #60a5fa) 0%, transparent 70%); animation-delay: -7s; }
-        .mesh-blob-3 { width: 420px; height: 420px; top: 42%; left: 48%; background: radial-gradient(circle, var(--blob-3, #fb923c) 0%, transparent 70%); animation-delay: -14s; }
-        .bg-sunset { --blob-1: #f472b6; --blob-2: #fb923c; --blob-3: #facc15; }
-        .bg-ocean { --blob-1: #22d3ee; --blob-2: #3b82f6; --blob-3: #34d399; }
-        .bg-candy { --blob-1: #c084fc; --blob-2: #f472b6; --blob-3: #60a5fa; }
-        .bg-plain .mesh-blob { display: none; }
-        @keyframes drift {
-            0% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(30px, -20px) scale(1.05); }
-            100% { transform: translate(-20px, 30px) scale(0.95); }
+        /* Background: dot grid, no blobs */
+        .mesh-bg {
+            position: fixed; inset: 0; z-index: -1; overflow: hidden;
+            background: var(--page-bg);
+            background-image: radial-gradient(rgba(15, 23, 42, 0.04) 1px, transparent 1px);
+            background-size: 22px 22px;
+            transition: background 0.3s ease;
+        }
+        .dark .mesh-bg {
+            background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
         }
 
         /* Motion */
-        .press { transition: transform 0.18s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.18s ease, background-color 0.2s ease, border-radius 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
-        .press:active { transform: scale(0.96); }
+        .press { transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease; }
+        .press:active { transform: scale(0.98); }
         .no-anim *, .no-anim *::before, .no-anim *::after { animation: none !important; transition-duration: 0.01ms !important; }
 
         /* QS tile */
-        .qs-tile { transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
-        .qs-off { background: var(--glass-bg-subtle); border: 1px solid var(--glass-border); color: var(--ink-soft); border-radius: 9999px; }
-        .qs-on { background: var(--accent); border: 1px solid var(--accent); color: #fff; border-radius: var(--radius-md); box-shadow: 0 4px 20px rgba(124, 58, 237, 0.35); }
+        .qs-tile { transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, border-radius 0.18s ease; }
+        .qs-off { background: var(--glass-bg-subtle); border: 1px solid var(--glass-border); color: var(--ink-soft); border-radius: var(--radius-md); }
+        .qs-on { background: var(--accent); border: 1px solid var(--accent); color: #fff; border-radius: var(--radius-md); box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08); }
 
         .pill { border-radius: 9999px; }
-        .seg-btn { transition: background-color 0.2s ease, color 0.2s ease; }
+        .seg-btn { transition: background-color 0.18s ease, color 0.18s ease; }
         .seg-on { background: var(--accent); color: #fff; }
         .seg-off { color: var(--ink-soft); }
-        .seg-off:hover { background: rgba(127, 127, 160, 0.15); }
+        html:not(.touch-device) .seg-off:hover { background: rgba(100, 116, 139, 0.12); }
 
         /* Switch */
-        .switch { width: 44px; height: 24px; border-radius: 9999px; position: relative; cursor: pointer; transition: background-color 0.2s ease; background: rgba(127,127,160,0.35); border: 1px solid var(--glass-border); flex-shrink: 0; }
-        .switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.3); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .switch { width: 48px; height: 28px; border-radius: 9999px; position: relative; cursor: pointer; transition: background-color 0.18s ease; background: rgba(100,116,139,0.28); border: 1px solid var(--glass-border); flex-shrink: 0; }
+        .switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: transform 0.18s ease; }
         .switch[aria-checked="true"] { background: var(--accent); }
         .switch[aria-checked="true"]::after { transform: translateX(20px); }
 
         /* Slider */
-        input[type="range"].m3 { -webkit-appearance: none; appearance: none; width: 100%; height: 8px; border-radius: 4px; background: rgba(127,127,160,0.30); outline: none; cursor: pointer; }
-        input[type="range"].m3::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.25); cursor: pointer; transition: transform 0.15s ease; }
-        .dark input[type="range"].m3::-webkit-slider-thumb { border-color: #1e1b4b; }
-        input[type="range"].m3::-webkit-slider-thumb:active { transform: scale(1.15); }
-        input[type="range"].m3::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); border: 3px solid #fff; cursor: pointer; }
+        input[type="range"].m3 { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 3px; background: rgba(100,116,139,0.22); outline: none; cursor: pointer; }
+        input[type="range"].m3::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); border: 3px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.18); cursor: pointer; transition: transform 0.15s ease; }
+        .dark input[type="range"].m3::-webkit-slider-thumb { border-color: #1e293b; }
+        input[type="range"].m3::-webkit-slider-thumb:active { transform: scale(1.12); }
+        input[type="range"].m3::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: var(--accent); border: 3px solid #fff; cursor: pointer; }
 
-        .field { width: 100%; border-radius: 16px; padding: 10px 16px; font-size: 0.875rem; font-weight: 500; outline: none; background: var(--glass-bg-subtle); border: 1px solid var(--glass-border); color: var(--ink); transition: box-shadow 0.2s ease, border-color 0.2s ease; }
+        .field { width: 100%; border-radius: var(--radius-md); padding: 10px 16px; font-size: 0.875rem; font-weight: 500; outline: none; background: var(--glass-bg-subtle); border: 1px solid var(--glass-border); color: var(--ink); transition: box-shadow 0.18s ease, border-color 0.18s ease; }
         .field::placeholder { color: var(--ink-soft); }
         .field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
         select.field option { color: #0f172a; }
 
         .th-sort { cursor: pointer; user-select: none; }
-        .th-sort:hover { color: var(--accent); }
+        html:not(.touch-device) .th-sort:hover { color: var(--accent); }
 
         .modal-overlay { background: rgba(2, 6, 23, 0.38); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
         .dark .modal-overlay { background: rgba(0, 0, 0, 0.55); }
 
-        .toast-in { animation: toast-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
-        @keyframes toast-in { from { opacity: 0; transform: translateY(12px) scale(0.96); } to { opacity: 1; transform: none; } }
+        .toast-in { animation: toast-in 0.22s ease-out; }
+        @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .pulse-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
         @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 
-        /* Touch/Mobile: disable hover effects */
+        /* Touch/Mobile: disable hover + remove tap outline */
         .touch-device *:hover {
             color: revert !important;
             background-color: revert !important;
@@ -157,53 +152,58 @@
             box-shadow: revert !important;
             transform: revert !important;
             opacity: revert !important;
+            text-decoration-color: transparent !important;
         }
         .touch-device .group:hover .group-hover\:scale-105,
         .touch-device .group:hover .group-hover\:scale-110 {
             transform: none !important;
         }
-
-        /* Mobile performance: lighter glass + no blob animation */
-        @media (max-width: 640px) {
-            :root { --blur-px: 10px; }
-            .glass-strong { backdrop-filter: blur(12px) saturate(150%); -webkit-backdrop-filter: blur(12px) saturate(150%); }
-            .mesh-blob { animation: none !important; opacity: 0.3 !important; filter: blur(60px); }
-            .mesh-blob-1 { width: 300px; height: 300px; }
-            .mesh-blob-2 { width: 350px; height: 350px; }
-            .mesh-blob-3 { width: 250px; height: 250px; }
+        /* Remove ugly black focus ring on tap — mobile has no cursor */
+        .touch-device *:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+        /* Keep focus-visible for keyboard nav on desktop only */
+        html:not(.touch-device) *:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
         }
 
-        /* GPU hints for animated elements */
-        .glass, .glass-strong, .mesh-blob { will-change: auto; contain: layout style; }
-        .mesh-blob { content-visibility: auto; }
+        /* Mobile performance */
+        @media (max-width: 640px) {
+            :root { --blur-px: 8px; }
+            .glass-strong { backdrop-filter: blur(10px) saturate(130%); -webkit-backdrop-filter: blur(10px) saturate(130%); }
+            .glass-subtle { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255,255,255,0.88); }
+            .dark .glass-subtle { background: rgba(15,23,42,0.88); }
+            .mesh-bg { background-size: 28px 28px; }
+        }
+
+        /* Containment & GPU hints */
+        .glass, .glass-strong { contain: layout paint; }
         .press { will-change: transform; }
 
         @supports not (backdrop-filter: blur(1px)) {
             .glass { background: rgba(255,255,255,0.94); }
             .glass-strong { background: rgba(255,255,255,0.97); }
             .glass-subtle { background: rgba(255,255,255,0.88); }
-            .dark .glass { background: rgba(20,18,40,0.95); }
-            .dark .glass-strong { background: rgba(20,18,40,0.97); }
-            .dark .glass-subtle { background: rgba(20,18,40,0.90); }
+            .dark .glass { background: rgba(15,23,42,0.95); }
+            .dark .glass-strong { background: rgba(15,23,42,0.97); }
+            .dark .glass-subtle { background: rgba(15,23,42,0.90); }
         }
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
-            .mesh-blob { animation: none; }
+            html { scroll-behavior: auto; }
         }
     </style>
 </head>
-<body class="min-h-screen antialiased" x-data="glassLab()" :class="{ 'dark': dark, 'no-anim': !anim, 'bg-sunset': bg==='sunset', 'bg-ocean': bg==='ocean', 'bg-candy': bg==='candy', 'bg-plain': bg==='plain' }" x-init="init()">
+<body class="min-h-screen antialiased" x-data="glassLab()" :class="{ 'dark': dark, 'no-anim': !anim }" x-init="init()">
 
-    <div class="mesh-bg" aria-hidden="true">
-        <div class="mesh-blob mesh-blob-1"></div>
-        <div class="mesh-blob mesh-blob-2"></div>
-        <div class="mesh-blob mesh-blob-3"></div>
-    </div>
+    <div class="mesh-bg" aria-hidden="true"></div>
 
     <!-- ================= NAVBAR ================= -->
-    <nav class="sticky top-3 sm:top-4 z-50 mx-3 sm:mx-4 lg:mx-auto lg:max-w-7xl rounded-[24px] glass-strong px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+    <nav class="sticky top-3 sm:top-4 z-50 mx-3 sm:mx-4 lg:mx-auto lg:max-w-7xl rounded-[20px] glass-strong px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
         <div class="flex items-center gap-3 min-w-0">
-            <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center flex-shrink-0">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background: var(--accent)">
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
             </div>
             <div class="min-w-0">
@@ -212,9 +212,9 @@
             </div>
         </div>
         <div class="flex items-center gap-2">
-            <a href="/" class="hidden md:inline-flex text-sm font-semibold px-4 py-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors" style="color: var(--ink-soft)">Beranda</a>
-            <a href="/dashboard" class="hidden md:inline-flex text-sm font-semibold px-4 py-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors" style="color: var(--ink-soft)">Dashboard</a>
-            <button @click="toggleDark()" class="w-10 h-10 rounded-full glass flex items-center justify-center press cursor-pointer" :aria-label="dark ? 'Mode terang' : 'Mode gelap'">
+            <a href="/" class="hidden md:inline-flex text-sm font-semibold px-4 py-2 rounded-lg transition-colors" style="color: var(--ink-soft)">Beranda</a>
+            <a href="/dashboard" class="hidden md:inline-flex text-sm font-semibold px-4 py-2 rounded-lg transition-colors" style="color: var(--ink-soft)">Dashboard</a>
+            <button @click="toggleDark()" class="w-10 h-10 rounded-xl glass flex items-center justify-center press cursor-pointer" :aria-label="dark ? 'Mode terang' : 'Mode gelap'">
                 <svg x-show="!dark" class="w-5 h-5" style="color: var(--ink)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
                 <svg x-show="dark" x-cloak class="w-5 h-5 text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
             </button>
@@ -225,8 +225,8 @@
 
         <!-- ================= HERO ================= -->
         <header class="text-center pt-10 pb-6">
-            <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight" style="color: var(--ink)">Glass Lab</h1>
-            <p class="mt-3 text-sm sm:text-lg max-w-2xl mx-auto" style="color: var(--ink-soft)">
+            <h1 class="text-[28px] sm:text-[36px] font-extrabold tracking-tight" style="color: var(--ink)">Glass Lab</h1>
+            <p class="mt-3 text-sm max-w-xl mx-auto leading-relaxed" style="color: var(--ink-soft)">
                 Semua komponen dalam satu halaman. Setiap komponen bisa di-toggle, diubah propertinya, dan langsung terlihat hasilnya.
             </p>
         </header>
@@ -234,59 +234,51 @@
         <!-- ================= PANEL GLOBAL ================= -->
         <section class="glass-strong r-lg p-5 sm:p-6 mb-8" aria-label="Pengaturan global tema">
             <div class="flex items-center justify-between flex-wrap gap-2 mb-4">
-                <h2 class="font-bold text-sm sm:text-base" style="color: var(--ink)">Pengaturan Global</h2>
+                <h2 class="font-semibold text-sm sm:text-base" style="color: var(--ink)">Pengaturan Global</h2>
                 <button @click="resetGlobal()" class="text-xs font-bold px-4 py-2 pill glass-subtle press cursor-pointer" style="color: var(--ink-soft)">Reset</button>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="flex items-center justify-between gap-3 glass-subtle r-md px-4 py-3">
                     <span class="text-sm font-semibold" style="color: var(--ink)">Mode gelap</span>
-                    <div class="switch" role="switch" tabindex="0" :aria-checked="dark" @click="toggleDark()" @keydown.enter="toggleDark()" @keydown.space.prevent="toggleDark()"></div>
+                    <div class="switch" role="switch" tabindex="0" :aria-checked="dark.toString()" aria-label="Mode gelap" @click="toggleDark()" @keydown.enter="toggleDark()" @keydown.space.prevent="toggleDark()"></div>
                 </div>
                 <div class="flex items-center justify-between gap-3 glass-subtle r-md px-4 py-3">
                     <span class="text-sm font-semibold" style="color: var(--ink)">Animasi</span>
-                    <div class="switch" role="switch" tabindex="0" :aria-checked="anim" @click="anim=!anim" @keydown.enter="anim=!anim" @keydown.space.prevent="anim=!anim"></div>
+                    <div class="switch" role="switch" tabindex="0" :aria-checked="anim.toString()" aria-label="Animasi" @click="anim=!anim" @keydown.enter="anim=!anim" @keydown.space.prevent="anim=!anim"></div>
                 </div>
                 <div class="glass-subtle r-md px-4 py-3">
                     <div class="flex justify-between text-sm font-semibold mb-2" style="color: var(--ink)">
                         <span>Blur</span><span x-text="blur+'px'" style="color: var(--accent)"></span>
                     </div>
-                    <input type="range" min="0" max="32" step="1" x-model.number="blur" class="m3" aria-label="Intensitas blur">
+                    <input type="range" min="0" max="32" step="1" x-model.number="blur" :aria-valuenow="blur" aria-valuemin="0" aria-valuemax="32" class="m3" aria-label="Intensitas blur">
                 </div>
                 <div class="glass-subtle r-md px-4 py-3">
                     <div class="flex justify-between text-sm font-semibold mb-2" style="color: var(--ink)">
                         <span>Radius</span><span x-text="radius+'px'" style="color: var(--accent)"></span>
                     </div>
-                    <input type="range" min="12" max="32" step="1" x-model.number="radius" class="m3" aria-label="Radius sudut">
-                </div>
-            </div>
-            <div class="mt-4">
-                <p class="text-xs font-bold uppercase tracking-widest mb-2" style="color: var(--ink-soft)">Background</p>
-                <div class="inline-flex flex-wrap gap-1 p-1 pill glass-subtle" role="group" aria-label="Varian background">
-                    <template x-for="b in bgs" :key="b.v">
-                        <button @click="bg=b.v" class="seg-btn text-xs font-bold px-4 py-2 pill cursor-pointer" :class="bg===b.v ? 'seg-on' : 'seg-off'" x-text="b.l"></button>
-                    </template>
+                    <input type="range" min="12" max="32" step="1" x-model.number="radius" :aria-valuenow="radius" aria-valuemin="12" aria-valuemax="32" class="m3" aria-label="Radius sudut">
                 </div>
             </div>
         </section>
 
         <!-- ================= NAV SEKSI ================= -->
-        <nav class="sticky top-[76px] sm:top-[84px] z-40 -mx-4 px-4 sm:mx-0 sm:px-0 mb-8" aria-label="Navigasi komponen">
-            <div class="glass-strong r-lg px-3 py-2 flex gap-1 overflow-x-auto">
+        <nav class="sticky top-[60px] sm:top-[68px] z-40 -mx-4 px-4 sm:mx-0 sm:px-0 mb-8" aria-label="Navigasi komponen">
+            <div class="glass-strong r-lg px-3 py-2 flex gap-1 overflow-x-auto scrollbar-none">
                 <template x-for="s in sections" :key="s.id">
-                    <a :href="'#'+s.id" @click="activeSection=s.id" class="whitespace-nowrap text-xs sm:text-sm font-bold px-3 sm:px-4 py-2 pill transition-colors cursor-pointer hover:opacity-80" :style="activeSection===s.id ? 'background: var(--accent); color: #fff' : 'color: var(--ink-soft)'" x-text="s.l"></a>
+                    <a :href="'#'+s.id" @click="activeSection=s.id" class="whitespace-nowrap text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 pill transition-colors cursor-pointer min-h-[36px]" :style="activeSection===s.id ? 'background: var(--accent); color: #fff' : 'color: var(--ink-soft)'" x-text="s.l"></a>
                 </template>
             </div>
         </nav>
 
         <!-- ================= 1. TOMBOL ================= -->
         <section id="tombol" class="scroll-mt-40 mb-8">
-            <h2 class="text-xs font-bold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">01 — Tombol</h2>
+            <h2 class="text-xs font-semibold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">01 — Tombol</h2>
             <div class="glass r-lg p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-[1fr_270px] gap-6">
                 <div>
                     <p class="text-sm mb-4" style="color: var(--ink-soft)">Preview live — ubah properti dari panel kontrol.</p>
-                    <div class="glass-subtle r-md p-6 flex items-center justify-center min-h-[140px] mb-5">
+                    <div class="glass-subtle r-md p-6 flex items-center justify-center min-h-[120px] mb-5">
                         <button :disabled="btn.disabled || btn.loading"
-                            class="press font-bold tracking-wide cursor-pointer inline-flex items-center gap-2 focus:outline-none focus-visible:ring-2"
+                            class="press font-semibold tracking-wide cursor-pointer inline-flex items-center gap-2 focus:outline-none focus-visible:ring-2 min-h-[44px]"
                             :class="[btn.size, btn.rounded, btn.block ? 'w-full justify-center' : '']"
                             :style="btnStyle()">
                             <svg x-show="btn.loading" class="w-4 h-4 spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
@@ -294,15 +286,15 @@
                             <span x-text="btn.loading ? 'Memproses...' : btn.label"></span>
                         </button>
                     </div>
-                    <p class="text-xs font-bold uppercase tracking-widest mb-2" style="color: var(--ink-soft)">Semua varian</p>
+                    <p class="text-xs font-semibold uppercase tracking-widest mb-2" style="color: var(--ink-soft)">Semua varian</p>
                     <div class="flex flex-wrap gap-2">
                         <template x-for="v in btnVariants" :key="v.v">
-                            <button @click="btn.variant=v.v; pushToast('Varian tombol: '+v.l, 'info')" class="press text-xs font-bold px-4 py-2 pill cursor-pointer" :style="variantStyle(v.v)" x-text="v.l"></button>
+                            <button @click="btn.variant=v.v; pushToast('Varian tombol: '+v.l, 'info')" class="press text-xs font-bold px-4 py-2 pill cursor-pointer min-h-[44px]" :style="variantStyle(v.v)" x-text="v.l"></button>
                         </template>
                     </div>
                 </div>
                 <div class="space-y-3 lg:border-l lg:pl-6" :style="'border-color: var(--glass-border)'">
-                    <p class="text-xs font-bold uppercase tracking-widest" style="color: var(--ink-soft)">Kontrol</p>
+                    <p class="text-xs font-semibold uppercase tracking-widest" style="color: var(--ink-soft)">Kontrol</p>
                     <div>
                         <label class="text-xs font-semibold block mb-1" style="color: var(--ink)">Label</label>
                         <input type="text" x-model="btn.label" class="field" maxlength="24">
@@ -311,29 +303,29 @@
                         <label class="text-xs font-semibold block mb-1" style="color: var(--ink)">Ukuran</label>
                         <div class="flex gap-1 p-1 pill glass-subtle">
                             <template x-for="s in btnSizes" :key="s.v">
-                                <button @click="btn.size=s.v" class="seg-btn text-xs font-bold px-3 py-1.5 pill flex-1 cursor-pointer" :class="btn.size===s.v?'seg-on':'seg-off'" x-text="s.l"></button>
+                                <button @click="btn.size=s.v" class="seg-btn text-xs font-bold px-3 py-1.5 pill flex-1 cursor-pointer min-h-[36px]" :class="btn.size===s.v?'seg-on':'seg-off'" x-text="s.l"></button>
                             </template>
                         </div>
                     </div>
                     <div class="flex items-center justify-between gap-2">
                         <span class="text-xs font-semibold" style="color: var(--ink)">Ikon</span>
-                        <div class="switch" role="switch" tabindex="0" :aria-checked="btn.icon" @click="btn.icon=!btn.icon" @keydown.enter="btn.icon=!btn.icon"></div>
+                        <div class="switch" role="switch" tabindex="0" :aria-checked="btn.icon.toString()" aria-label="Ikon" @click="btn.icon=!btn.icon" @keydown.enter="btn.icon=!btn.icon"></div>
                     </div>
                     <div class="flex items-center justify-between gap-2">
                         <span class="text-xs font-semibold" style="color: var(--ink)">Pill penuh</span>
-                        <div class="switch" role="switch" tabindex="0" :aria-checked="btn.rounded==='pill'" @click="btn.rounded = btn.rounded==='pill' ? 'r-md' : 'pill'" @keydown.enter="btn.rounded = btn.rounded==='pill' ? 'r-md' : 'pill'"></div>
+                        <div class="switch" role="switch" tabindex="0" :aria-checked="(btn.rounded==='pill').toString()" aria-label="Pill penuh" @click="btn.rounded = btn.rounded==='pill' ? 'r-md' : 'pill'" @keydown.enter="btn.rounded = btn.rounded==='pill' ? 'r-md' : 'pill'"></div>
                     </div>
                     <div class="flex items-center justify-between gap-2">
                         <span class="text-xs font-semibold" style="color: var(--ink)">Loading</span>
-                        <div class="switch" role="switch" tabindex="0" :aria-checked="btn.loading" @click="btn.loading=!btn.loading" @keydown.enter="btn.loading=!btn.loading"></div>
+                        <div class="switch" role="switch" tabindex="0" :aria-checked="btn.loading.toString()" aria-label="Loading" @click="btn.loading=!btn.loading" @keydown.enter="btn.loading=!btn.loading"></div>
                     </div>
                     <div class="flex items-center justify-between gap-2">
                         <span class="text-xs font-semibold" style="color: var(--ink)">Disabled</span>
-                        <div class="switch" role="switch" tabindex="0" :aria-checked="btn.disabled" @click="btn.disabled=!btn.disabled" @keydown.enter="btn.disabled=!btn.disabled"></div>
+                        <div class="switch" role="switch" tabindex="0" :aria-checked="btn.disabled.toString()" aria-label="Disabled" @click="btn.disabled=!btn.disabled" @keydown.enter="btn.disabled=!btn.disabled"></div>
                     </div>
                     <div class="flex items-center justify-between gap-2">
                         <span class="text-xs font-semibold" style="color: var(--ink)">Lebar penuh</span>
-                        <div class="switch" role="switch" tabindex="0" :aria-checked="btn.block" @click="btn.block=!btn.block" @keydown.enter="btn.block=!btn.block"></div>
+                        <div class="switch" role="switch" tabindex="0" :aria-checked="btn.block.toString()" aria-label="Lebar penuh" @click="btn.block=!btn.block" @keydown.enter="btn.block=!btn.block"></div>
                     </div>
                 </div>
             </div>
@@ -341,45 +333,45 @@
 
         <!-- ================= 2. CHIP & BADGE ================= -->
         <section id="chip" class="scroll-mt-40 mb-8">
-            <h2 class="text-xs font-bold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">02 — Chip & Badge</h2>
+            <h2 class="text-xs font-semibold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">02 — Chip & Badge</h2>
             <div class="glass r-lg p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-[1fr_270px] gap-6">
                 <div>
                     <p class="text-sm mb-3" style="color: var(--ink-soft)">Filter aktif: <b x-text="chipActive" style="color: var(--accent)"></b></p>
                     <div class="flex flex-wrap gap-2 mb-5">
                         <template x-for="c in chips" :key="c">
-                            <button @click="chipActive=c" class="press text-xs font-bold px-4 py-2 pill cursor-pointer inline-flex items-center gap-2" :style="chipActive===c ? 'background: var(--accent); color:#fff; border:1px solid var(--accent)' : 'background: var(--glass-bg-subtle); color: var(--ink-soft); border:1px solid var(--glass-border)'">
+                            <button @click="chipActive=c" class="press text-xs font-bold px-4 py-2 pill cursor-pointer inline-flex items-center gap-2 min-h-[44px]" :style="chipActive===c ? 'background: var(--accent); color:#fff; border:1px solid var(--accent)' : 'background: var(--glass-bg-subtle); color: var(--ink-soft); border:1px solid var(--glass-border)'">
                                 <span x-text="c"></span>
                                 <span x-show="chipActive===c" class="w-1.5 h-1.5 rounded-full bg-white pulse-dot"></span>
                             </button>
                         </template>
                     </div>
-                    <p class="text-xs font-bold uppercase tracking-widest mb-2" style="color: var(--ink-soft)">Bisa dihapus</p>
+                    <p class="text-xs font-semibold uppercase tracking-widest mb-2" style="color: var(--ink-soft)">Bisa dihapus</p>
                     <div class="flex flex-wrap gap-2">
                         <template x-for="t in tags" :key="t">
-                            <span class="text-xs font-bold px-4 py-2 pill glass-subtle inline-flex items-center gap-2" style="color: var(--ink)">
+                            <span class="text-xs font-bold px-4 py-2 pill glass-subtle inline-flex items-center gap-2 min-h-[44px]" style="color: var(--ink)">
                                 <span x-text="t"></span>
-                                <button @click="removeTag(t)" class="w-4 h-4 rounded-full inline-flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/20 cursor-pointer" aria-label="Hapus tag">
+                                <button @click="removeTag(t)" class="w-4 h-4 rounded-full inline-flex items-center justify-center cursor-pointer" style="color: var(--ink-soft)" aria-label="Hapus tag">
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>
                                 </button>
                             </span>
                         </template>
-                        <button x-show="tags.length < 6" @click="resetTags()" class="text-xs font-bold px-4 py-2 pill press cursor-pointer" style="background: var(--accent-soft); color: var(--accent)">+ Reset</button>
+                        <button x-show="tags.length < 6" @click="resetTags()" class="text-xs font-bold px-4 py-2 pill press cursor-pointer min-h-[44px]" style="background: var(--accent-soft); color: var(--accent)">+ Reset</button>
                     </div>
                 </div>
                 <div class="space-y-3 lg:border-l lg:pl-6" :style="'border-color: var(--glass-border)'">
-                    <p class="text-xs font-bold uppercase tracking-widest" style="color: var(--ink-soft)">Kontrol</p>
+                    <p class="text-xs font-semibold uppercase tracking-widest" style="color: var(--ink-soft)">Kontrol</p>
                     <div>
                         <label class="text-xs font-semibold block mb-1" style="color: var(--ink)">Tambah chip filter</label>
                         <div class="flex gap-2">
                             <input type="text" x-model="newChip" @keydown.enter="addChip()" placeholder="Nama chip..." class="field">
-                            <button @click="addChip()" class="press pill px-4 text-sm font-bold text-white cursor-pointer flex-shrink-0" style="background: var(--accent)">+</button>
+                            <button @click="addChip()" class="press pill px-4 text-sm font-bold text-white cursor-pointer flex-shrink-0 min-h-[44px]" style="background: var(--accent)">+</button>
                         </div>
                     </div>
                     <div>
                         <label class="text-xs font-semibold block mb-1" style="color: var(--ink)">Tambah tag</label>
                         <div class="flex gap-2">
                             <input type="text" x-model="newTag" @keydown.enter="addTag()" placeholder="Nama tag..." class="field">
-                            <button @click="addTag()" class="press pill px-4 text-sm font-bold text-white cursor-pointer flex-shrink-0" style="background: var(--accent)">+</button>
+                            <button @click="addTag()" class="press pill px-4 text-sm font-bold text-white cursor-pointer flex-shrink-0 min-h-[44px]" style="background: var(--accent)">+</button>
                         </div>
                     </div>
                 </div>
@@ -388,12 +380,12 @@
 
         <!-- ================= 3. FORM ================= -->
         <section id="form" class="scroll-mt-40 mb-8">
-            <h2 class="text-xs font-bold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">03 — Form</h2>
+            <h2 class="text-xs font-semibold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">03 — Form</h2>
             <div class="glass r-lg p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-[1fr_270px] gap-6">
                 <div class="space-y-4">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="text-xs font-bold block mb-1.5" style="color: var(--ink)">Nama siswa <span style="color: var(--danger)">*</span></label>
+                            <label class="text-xs font-semibold block mb-1.5" style="color: var(--ink)">Nama siswa <span style="color: var(--danger)">*</span></label>
                             <input type="text" x-model="form.nama" placeholder="cth: Ahmad Rizki" class="field" maxlength="40">
                             <p class="text-[11px] mt-1 flex justify-between" style="color: var(--ink-soft)">
                                 <span x-show="form.nama.length>0 && form.nama.length<3" style="color: var(--danger)">Minimal 3 karakter</span>
@@ -402,7 +394,7 @@
                             </p>
                         </div>
                         <div>
-                            <label class="text-xs font-bold block mb-1.5" style="color: var(--ink)">Kelas</label>
+                            <label class="text-xs font-semibold block mb-1.5" style="color: var(--ink)">Kelas</label>
                             <select x-model="form.kelas" class="field cursor-pointer">
                                 <option value="">Pilih kelas...</option>
                                 <option>X TKJ 1</option><option>X TKJ 2</option>
@@ -412,45 +404,45 @@
                         </div>
                     </div>
                     <div>
-                        <label class="text-xs font-bold block mb-1.5" style="color: var(--ink)">Kata sandi</label>
+                        <label class="text-xs font-semibold block mb-1.5" style="color: var(--ink)">Kata sandi</label>
                         <div class="relative">
                             <input :type="form.showPw ? 'text' : 'password'" x-model="form.pw" placeholder="••••••••" class="field pr-12">
                             <button @click="form.showPw=!form.showPw" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold cursor-pointer" style="color: var(--accent)" x-text="form.showPw ? 'Sembunyi' : 'Lihat'"></button>
                         </div>
-                        <div class="h-1.5 rounded-full mt-2 overflow-hidden" style="background: rgba(127,127,160,0.25)">
+                        <div class="h-1.5 rounded-full mt-2 overflow-hidden" style="background: rgba(100,116,139,0.18)">
                             <div class="h-full rounded-full transition-all duration-300" :style="'width:'+pwScore()+'%; background:'+(pwScore()>66?'var(--success)':pwScore()>33?'var(--warning)':'var(--danger)')"></div>
                         </div>
                         <p class="text-[11px] mt-1" style="color: var(--ink-soft)">Kekuatan sandi: <b x-text="pwLabel()"></b></p>
                     </div>
                     <div>
-                        <label class="text-xs font-bold block mb-1.5" style="color: var(--ink)">Keterangan (<span x-text="form.note.length"></span>/120)</label>
+                        <label class="text-xs font-semibold block mb-1.5" style="color: var(--ink)">Keterangan (<span x-text="form.note.length"></span>/120)</label>
                         <textarea rows="2" x-model="form.note" maxlength="120" placeholder="Deskripsi singkat..." class="field resize-none"></textarea>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <p class="text-xs font-bold mb-2" style="color: var(--ink)">Tingkat</p>
+                            <p class="text-xs font-semibold mb-2" style="color: var(--ink)">Tingkat</p>
                             <div class="flex flex-col gap-2">
                                 <template x-for="r in ['Ringan','Sedang','Berat']" :key="r">
-                                    <label class="flex items-center gap-2 text-sm font-medium cursor-pointer" style="color: var(--ink)">
-                                        <input type="radio" name="tingkat" :value="r" x-model="form.tingkat" class="w-4 h-4 accent-violet-600">
+                                    <label class="flex items-center gap-2 text-sm font-medium cursor-pointer min-h-[44px]" style="color: var(--ink)">
+                                        <input type="radio" name="tingkat" :value="r" x-model="form.tingkat" class="w-4 h-4">
                                         <span x-text="r"></span>
                                     </label>
                                 </template>
                             </div>
                         </div>
                         <div>
-                            <p class="text-xs font-bold mb-2" style="color: var(--ink)">Opsi</p>
+                            <p class="text-xs font-semibold mb-2" style="color: var(--ink)">Opsi</p>
                             <div class="flex flex-col gap-2">
-                                <label class="flex items-center justify-between gap-2 text-sm font-medium cursor-pointer" style="color: var(--ink)">
+                                <label class="flex items-center justify-between gap-2 text-sm font-medium cursor-pointer min-h-[44px]" style="color: var(--ink)">
                                     <span>Hubungi wali</span>
-                                    <div class="switch" role="switch" :aria-checked="form.wali" @click="form.wali=!form.wali"></div>
+                                    <div class="switch" role="switch" :aria-checked="form.wali.toString()" aria-label="Hubungi wali" @click="form.wali=!form.wali"></div>
                                 </label>
-                                <label class="flex items-center justify-between gap-2 text-sm font-medium cursor-pointer" style="color: var(--ink)">
+                                <label class="flex items-center justify-between gap-2 text-sm font-medium cursor-pointer min-h-[44px]" style="color: var(--ink)">
                                     <span>Butuh konseling</span>
-                                    <div class="switch" role="switch" :aria-checked="form.konseling" @click="form.konseling=!form.konseling"></div>
+                                    <div class="switch" role="switch" :aria-checked="form.konseling.toString()" aria-label="Butuh konseling" @click="form.konseling=!form.konseling"></div>
                                 </label>
-                                <label class="flex items-center gap-2 text-sm font-medium cursor-pointer" style="color: var(--ink)">
-                                    <input type="checkbox" x-model="form.setuju" class="w-4 h-4 rounded accent-violet-600">
+                                <label class="flex items-center gap-2 text-sm font-medium cursor-pointer min-h-[44px]" style="color: var(--ink)">
+                                    <input type="checkbox" x-model="form.setuju" class="w-4 h-4 rounded">
                                     <span>Data sudah benar</span>
                                 </label>
                             </div>
@@ -458,11 +450,11 @@
                     </div>
                 </div>
                 <div class="lg:border-l lg:pl-6 space-y-3" :style="'border-color: var(--glass-border)'">
-                    <p class="text-xs font-bold uppercase tracking-widest" style="color: var(--ink-soft)">Ringkasan live</p>
+                    <p class="text-xs font-semibold uppercase tracking-widest" style="color: var(--ink-soft)">Ringkasan live</p>
                     <div class="glass-subtle r-md p-4 text-xs font-mono leading-relaxed whitespace-pre-wrap break-words" style="color: var(--ink)" x-text="formSummary()"></div>
                     <div class="flex gap-2">
-                        <button @click="submitForm()" class="press pill px-5 py-2.5 text-sm font-bold text-white cursor-pointer flex-1" style="background: var(--accent)">Simpan</button>
-                        <button @click="resetForm()" class="press pill px-5 py-2.5 text-sm font-bold glass-subtle cursor-pointer" style="color: var(--ink-soft)">Reset</button>
+                        <button @click="submitForm()" class="press pill px-5 py-2.5 text-sm font-bold text-white cursor-pointer flex-1 min-h-[44px]" style="background: var(--accent)">Simpan</button>
+                        <button @click="resetForm()" class="press pill px-5 py-2.5 text-sm font-bold glass-subtle cursor-pointer min-h-[44px]" style="color: var(--ink-soft)">Reset</button>
                     </div>
                 </div>
             </div>
@@ -470,35 +462,35 @@
 
         <!-- ================= 4. QUICK SETTINGS ================= -->
         <section id="qs" class="scroll-mt-40 mb-8">
-            <h2 class="text-xs font-bold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">04 — Quick Settings Tiles</h2>
+            <h2 class="text-xs font-semibold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">04 — Quick Settings Tiles</h2>
             <div class="glass r-lg p-5 sm:p-7">
                 <div class="flex items-center justify-between flex-wrap gap-2 mb-4">
                     <p class="text-sm" style="color: var(--ink-soft)"><b x-text="qsOn().length" style="color: var(--accent)"></b> dari <span x-text="qs.length"></span> aktif</p>
                     <div class="flex gap-2">
-                        <button @click="qs.forEach(q=>q.on=true)" class="text-xs font-bold px-4 py-2 pill glass-subtle press cursor-pointer" style="color: var(--ink)">Semua on</button>
-                        <button @click="qs.forEach(q=>q.on=false)" class="text-xs font-bold px-4 py-2 pill glass-subtle press cursor-pointer" style="color: var(--ink)">Semua off</button>
+                        <button @click="qs.forEach(q=>q.on=true)" class="text-xs font-bold px-4 py-2 pill glass-subtle press cursor-pointer min-h-[44px]" style="color: var(--ink)">Semua on</button>
+                        <button @click="qs.forEach(q=>q.on=false)" class="text-xs font-bold px-4 py-2 pill glass-subtle press cursor-pointer min-h-[44px]" style="color: var(--ink)">Semua off</button>
                     </div>
                 </div>
-                <div class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+                <div class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
                     <template x-for="q in qs" :key="q.id">
-                        <button @click="q.on=!q.on" class="qs-tile press flex flex-col items-center gap-2 py-4 px-2 cursor-pointer" :class="q.on?'qs-on':'qs-off'">
+                        <button @click="q.on=!q.on" class="qs-tile press flex flex-col items-center gap-2 py-4 px-2 cursor-pointer min-h-[88px]" :class="q.on?'qs-on':'qs-off'" :aria-pressed="q.on.toString()" :aria-label="q.label">
                             <span x-html="q.icon"></span>
-                            <span class="text-[11px] sm:text-xs font-bold" x-text="q.label"></span>
+                            <span class="text-[11px] sm:text-xs font-semibold" x-text="q.label"></span>
                         </button>
                     </template>
                 </div>
                 <div class="mt-5">
-                    <div class="flex justify-between text-sm font-bold mb-2" style="color: var(--ink)">
+                    <div class="flex justify-between text-sm font-semibold mb-2" style="color: var(--ink)">
                         <span>Kecerahan</span><span x-text="brightness+'%'" style="color: var(--accent)"></span>
                     </div>
-                    <input type="range" min="0" max="100" x-model.number="brightness" class="m3" aria-label="Kecerahan">
+                    <input type="range" min="0" max="100" x-model.number="brightness" :aria-valuenow="brightness" aria-valuemin="0" aria-valuemax="100" class="m3" aria-label="Kecerahan">
                 </div>
             </div>
         </section>
 
         <!-- ================= 5. TABEL ================= -->
         <section id="tabel" class="scroll-mt-40 mb-8">
-            <h2 class="text-xs font-bold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">05 — Tabel Interaktif</h2>
+            <h2 class="text-xs font-semibold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">05 — Tabel Interaktif</h2>
             <div class="glass r-lg p-5 sm:p-7">
                 <!-- Toolbar -->
                 <div class="flex flex-col lg:flex-row gap-3 lg:items-center mb-4">
@@ -508,17 +500,31 @@
                     </div>
                     <div class="flex gap-1 p-1 pill glass-subtle overflow-x-auto">
                         <template x-for="f in ['Semua','Proses','Selesai','Berat']" :key="f">
-                            <button @click="fStatus=f; page=1" class="seg-btn text-xs font-bold px-3 sm:px-4 py-2 pill whitespace-nowrap cursor-pointer" :class="fStatus===f?'seg-on':'seg-off'" x-text="f"></button>
+                            <button @click="fStatus=f; page=1" class="seg-btn text-xs font-bold px-3 sm:px-4 py-2 pill whitespace-nowrap cursor-pointer min-h-[36px]" :class="fStatus===f?'seg-on':'seg-off'" x-text="f"></button>
                         </template>
                     </div>
                 </div>
 
-                <!-- Bulk bar -->
-                <div x-show="selected.length>0" x-cloak class="flex flex-wrap items-center gap-2 mb-3 p-3 r-md" style="background: var(--accent-soft)">
-                    <span class="text-xs font-bold" style="color: var(--accent)" x-text="selected.length+' dipilih'"></span>
-                    <button @click="bulkStatus('Selesai')" class="text-xs font-bold px-3 py-1.5 pill bg-white/70 dark:bg-black/30 press cursor-pointer" style="color: var(--success)">Tandai selesai</button>
-                    <button @click="bulkDelete()" class="text-xs font-bold px-3 py-1.5 pill bg-white/70 dark:bg-black/30 press cursor-pointer" style="color: var(--danger)">Hapus</button>
-                    <button @click="selected=[]" class="text-xs font-bold px-3 py-1.5 cursor-pointer" style="color: var(--ink-soft)">Batal</button>
+                <!-- Bulk bar — floating overlay, zero layout shift (height:0 sticky wrapper) -->
+                <div class="sticky top-[72px] sm:top-[80px] z-30 flex justify-center pointer-events-none" style="height:0; overflow:visible;">
+                    <div x-show="selected.length>0" x-cloak
+                        x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 -translate-y-2 scale-[0.98]"
+                        x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                        x-transition:leave="transition ease-in duration-150"
+                        x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                        x-transition:leave-end="opacity-0 -translate-y-2 scale-[0.98]"
+                        role="toolbar" aria-label="Aksi massal"
+                        class="pointer-events-auto flex flex-wrap items-center gap-2 p-2 pl-3 pr-2 r-lg glass-strong mt-2 max-w-[calc(100vw-2rem)] sm:max-w-none"
+                        style="box-shadow: var(--glass-shadow-lg); border: 1px solid var(--glass-border-strong);">
+                        <span class="w-7 h-7 rounded-full inline-flex items-center justify-center text-xs font-extrabold text-white flex-shrink-0" style="background: var(--accent)" x-text="selected.length"></span>
+                        <span class="text-xs font-bold whitespace-nowrap" style="color: var(--ink)" x-text="selected.length+' dipilih'"></span>
+                        <span class="hidden sm:inline-flex w-px h-5 mx-1 flex-shrink-0" style="background: var(--glass-border)"></span>
+                        <button @click="bulkStatus('Selesai')" class="text-xs font-bold px-3 py-1.5 pill glass-subtle press cursor-pointer min-h-[36px] whitespace-nowrap" style="color: var(--success)">Tandai selesai</button>
+                        <button @click="bulkDelete()" class="text-xs font-bold px-3 py-1.5 pill glass-subtle press cursor-pointer min-h-[36px] whitespace-nowrap" style="color: var(--danger)">Hapus</button>
+                        <span class="w-px h-5 mx-1 hidden sm:inline-flex flex-shrink-0" style="background: var(--glass-border)"></span>
+                        <button @click="selected=[]" class="text-xs font-bold px-2.5 py-1.5 rounded-lg press cursor-pointer min-h-[36px] min-w-[44px] inline-flex items-center justify-center" style="color: var(--ink-soft)" aria-label="Batal pilih">✕</button>
+                    </div>
                 </div>
 
                 <!-- Desktop table -->
@@ -526,35 +532,35 @@
                     <table class="w-full text-sm min-w-[640px]">
                         <thead>
                             <tr class="border-b text-left" style="border-color: var(--glass-border)">
-                                <th class="py-3 px-4 w-10"><input type="checkbox" :checked="allChecked()" @change="toggleAll($event.target.checked)" class="w-4 h-4 rounded accent-violet-600 cursor-pointer" aria-label="Pilih semua"></th>
-                                <th class="py-3 px-4 font-bold th-sort" @click="sortBy('nama')" style="color: var(--ink)">Nama <span x-text="sortIcon('nama')"></span></th>
-                                <th class="py-3 px-4 font-bold th-sort" @click="sortBy('kelas')" style="color: var(--ink)">Kelas <span x-text="sortIcon('kelas')"></span></th>
-                                <th class="py-3 px-4 font-bold" style="color: var(--ink)">Jenis</th>
-                                <th class="py-3 px-4 font-bold" style="color: var(--ink)">Status</th>
-                                <th class="py-3 px-4 font-bold text-right" style="color: var(--ink)">Aksi</th>
+                                <th class="py-3 px-4 w-10"><input type="checkbox" :checked="allChecked()" @change="toggleAll($event.target.checked)" class="w-4 h-4 rounded cursor-pointer" aria-label="Pilih semua"></th>
+                                <th class="py-3 px-4 font-semibold th-sort" @click="sortBy('nama')" style="color: var(--ink)">Nama <span x-text="sortIcon('nama')"></span></th>
+                                <th class="py-3 px-4 font-semibold th-sort" @click="sortBy('kelas')" style="color: var(--ink)">Kelas <span x-text="sortIcon('kelas')"></span></th>
+                                <th class="py-3 px-4 font-semibold" style="color: var(--ink)">Jenis</th>
+                                <th class="py-3 px-4 font-semibold" style="color: var(--ink)">Status</th>
+                                <th class="py-3 px-4 font-semibold text-right" style="color: var(--ink)">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             <template x-for="r in paged()" :key="r.id">
-                                <tr class="border-b last:border-0 transition-colors hover:bg-black/5 dark:hover:bg-white/5" style="border-color: var(--glass-border)">
-                                    <td class="py-3 px-4"><input type="checkbox" :value="r.id" x-model="selected" class="w-4 h-4 rounded accent-violet-600 cursor-pointer" aria-label="Pilih baris"></td>
-                                    <td class="py-3 px-4 font-bold" style="color: var(--ink)" x-text="r.nama"></td>
+                                <tr class="border-b last:border-0 transition-colors" style="border-color: var(--glass-border)">
+                                    <td class="py-3 px-4"><input type="checkbox" :value="r.id" x-model="selected" class="w-4 h-4 rounded cursor-pointer" aria-label="Pilih baris"></td>
+                                    <td class="py-3 px-4 font-semibold" style="color: var(--ink)" x-text="r.nama"></td>
                                     <td class="py-3 px-4" style="color: var(--ink-soft)" x-text="r.kelas"></td>
                                     <td class="py-3 px-4" style="color: var(--ink-soft)" x-text="r.jenis"></td>
                                     <td class="py-3 px-4">
-                                        <button @click="cycleStatus(r)" class="text-[11px] font-bold px-3 py-1 pill press cursor-pointer" :style="statusStyle(r.status)" x-text="r.status" :title="'Klik untuk ubah status'"></button>
+                                        <button @click="cycleStatus(r)" class="text-[11px] font-bold px-3 py-1 pill press cursor-pointer min-h-[32px]" :style="statusStyle(r.status)" x-text="r.status" :title="'Klik untuk ubah status'"></button>
                                     </td>
                                     <td class="py-3 px-4 text-right whitespace-nowrap">
-                                        <button @click="delRow(r.id)" class="text-xs font-bold px-3 py-1.5 pill glass-subtle press cursor-pointer" style="color: var(--danger)">Hapus</button>
+                                        <button @click="delRow(r.id)" class="text-xs font-bold px-3 py-1.5 pill glass-subtle press cursor-pointer min-h-[36px]" style="color: var(--danger)">Hapus</button>
                                     </td>
                                 </tr>
                             </template>
                         </tbody>
                     </table>
                     <div x-show="filtered().length===0" class="p-10 text-center">
-                        <p class="font-bold mb-1" style="color: var(--ink)">Tidak ada hasil</p>
+                        <p class="font-semibold mb-1" style="color: var(--ink)">Tidak ada hasil</p>
                         <p class="text-sm mb-4" style="color: var(--ink-soft)">Coba ubah kata kunci atau filter.</p>
-                        <button @click="q=''; fStatus='Semua'" class="text-xs font-bold px-4 py-2 pill press cursor-pointer text-white" style="background: var(--accent)">Reset filter</button>
+                        <button @click="q=''; fStatus='Semua'" class="text-xs font-bold px-4 py-2 pill press cursor-pointer text-white min-h-[44px]" style="background: var(--accent)">Reset filter</button>
                     </div>
                 </div>
 
@@ -563,21 +569,21 @@
                     <template x-for="r in paged()" :key="'m'+r.id">
                         <div class="glass-subtle r-md p-4">
                             <div class="flex items-start justify-between gap-2 mb-1">
-                                <p class="font-bold text-sm" style="color: var(--ink)" x-text="r.nama"></p>
-                                <button @click="cycleStatus(r)" class="text-[11px] font-bold px-3 py-1 pill press cursor-pointer flex-shrink-0" :style="statusStyle(r.status)" x-text="r.status"></button>
+                                <p class="font-semibold text-sm" style="color: var(--ink)" x-text="r.nama"></p>
+                                <button @click="cycleStatus(r)" class="text-[11px] font-bold px-3 py-1 pill press cursor-pointer flex-shrink-0 min-h-[32px]" :style="statusStyle(r.status)" x-text="r.status"></button>
                             </div>
                             <p class="text-xs mb-3" style="color: var(--ink-soft)" x-text="r.kelas+' • '+r.jenis"></p>
                             <div class="flex items-center justify-between">
-                                <label class="flex items-center gap-2 text-xs font-semibold cursor-pointer" style="color: var(--ink-soft)">
-                                    <input type="checkbox" :value="r.id" x-model="selected" class="w-4 h-4 rounded accent-violet-600"> Pilih
+                                <label class="flex items-center gap-2 text-xs font-semibold cursor-pointer min-h-[44px]" style="color: var(--ink-soft)">
+                                    <input type="checkbox" :value="r.id" x-model="selected" class="w-4 h-4 rounded"> Pilih
                                 </label>
-                                <button @click="delRow(r.id)" class="text-xs font-bold cursor-pointer" style="color: var(--danger)">Hapus</button>
+                                <button @click="delRow(r.id)" class="text-xs font-bold cursor-pointer min-h-[44px]" style="color: var(--danger)">Hapus</button>
                             </div>
                         </div>
                     </template>
                     <div x-show="filtered().length===0" class="glass-subtle r-md p-8 text-center">
-                        <p class="font-bold mb-1" style="color: var(--ink)">Tidak ada hasil</p>
-                        <button @click="q=''; fStatus='Semua'" class="mt-3 text-xs font-bold px-4 py-2 pill press cursor-pointer text-white" style="background: var(--accent)">Reset filter</button>
+                        <p class="font-semibold mb-1" style="color: var(--ink)">Tidak ada hasil</p>
+                        <button @click="q=''; fStatus='Semua'" class="mt-3 text-xs font-bold px-4 py-2 pill press cursor-pointer text-white min-h-[44px]" style="background: var(--accent)">Reset filter</button>
                     </div>
                 </div>
 
@@ -585,56 +591,56 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-4">
                     <p class="text-xs font-semibold" style="color: var(--ink-soft)" x-text="pageInfo()"></p>
                     <div class="flex items-center gap-2">
-                        <button @click="prevPage()" :disabled="page<=1" class="text-xs font-bold px-4 py-2 pill glass-subtle press cursor-pointer disabled:opacity-40" style="color: var(--ink)">‹ Prev</button>
+                        <button @click="prevPage()" :disabled="page<=1" class="text-xs font-bold px-4 py-2 pill glass-subtle press cursor-pointer disabled:opacity-40 min-h-[44px]" style="color: var(--ink)">‹ Prev</button>
                         <template x-for="p in pages()" :key="p">
-                            <button @click="page=p" class="w-8 h-8 text-xs font-bold pill press cursor-pointer" :style="page===p ? 'background:var(--accent);color:#fff' : 'background:var(--glass-bg-subtle);color:var(--ink-soft)'" x-text="p"></button>
+                            <button @click="page=p" class="w-9 h-9 text-xs font-bold rounded-lg press cursor-pointer" :style="page===p ? 'background:var(--accent);color:#fff' : 'background:var(--glass-bg-subtle);color:var(--ink-soft)'" x-text="p"></button>
                         </template>
-                        <button @click="nextPage()" :disabled="page>=maxPage()" class="text-xs font-bold px-4 py-2 pill glass-subtle press cursor-pointer disabled:opacity-40" style="color: var(--ink)">Next ›</button>
+                        <button @click="nextPage()" :disabled="page>=maxPage()" class="text-xs font-bold px-4 py-2 pill glass-subtle press cursor-pointer disabled:opacity-40 min-h-[44px]" style="color: var(--ink)">Next ›</button>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-[1fr_160px_1fr_auto] gap-2 mt-4">
                     <input type="text" x-model="nNama" placeholder="Nama baru..." class="field">
                     <input type="text" x-model="nKelas" placeholder="Kelas..." class="field">
                     <input type="text" x-model="nJenis" placeholder="Jenis..." class="field">
-                    <button @click="addRow()" class="press pill px-5 py-2.5 text-sm font-bold text-white cursor-pointer" style="background: var(--success)">+ Tambah</button>
+                    <button @click="addRow()" class="press pill px-5 py-2.5 text-sm font-bold text-white cursor-pointer min-h-[44px]" style="background: var(--success)">+ Tambah</button>
                 </div>
             </div>
         </section>
 
         <!-- ================= 6. OVERLAY: MODAL & TOAST ================= -->
         <section id="overlay" class="scroll-mt-40 mb-8">
-            <h2 class="text-xs font-bold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">06 — Modal, Toast & Alert</h2>
+            <h2 class="text-xs font-semibold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">06 — Modal, Toast & Alert</h2>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 <div class="glass r-lg p-5 sm:p-6">
-                    <p class="text-xs font-bold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">Modal</p>
+                    <p class="text-xs font-semibold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">Modal</p>
                     <div class="flex flex-wrap gap-2 mb-4">
-                        <button @click="openModal('info')" class="press text-xs font-bold px-4 py-2 pill text-white cursor-pointer" style="background: var(--accent)">Info</button>
-                        <button @click="openModal('confirm')" class="press text-xs font-bold px-4 py-2 pill glass-subtle cursor-pointer" style="color: var(--ink)">Konfirmasi</button>
-                        <button @click="openModal('danger')" class="press text-xs font-bold px-4 py-2 pill text-white cursor-pointer" style="background: var(--danger)">Bahaya</button>
+                        <button @click="openModal('info')" class="press text-xs font-bold px-4 py-2 pill text-white cursor-pointer min-h-[44px]" style="background: var(--accent)">Info</button>
+                        <button @click="openModal('confirm')" class="press text-xs font-bold px-4 py-2 pill glass-subtle cursor-pointer min-h-[44px]" style="color: var(--ink)">Konfirmasi</button>
+                        <button @click="openModal('danger')" class="press text-xs font-bold px-4 py-2 pill text-white cursor-pointer min-h-[44px]" style="background: var(--danger)">Bahaya</button>
                     </div>
                     <div class="flex gap-1 p-1 pill glass-subtle w-max">
                         <template x-for="s in ['sm','md','lg']" :key="s">
-                            <button @click="modalSize=s" class="seg-btn text-xs font-bold px-4 py-1.5 pill cursor-pointer uppercase" :class="modalSize===s?'seg-on':'seg-off'" x-text="s"></button>
+                            <button @click="modalSize=s" class="seg-btn text-xs font-bold px-4 py-1.5 pill cursor-pointer uppercase min-h-[36px]" :class="modalSize===s?'seg-on':'seg-off'" x-text="s"></button>
                         </template>
                     </div>
                     <p class="text-xs mt-3" style="color: var(--ink-soft)">Ukuran: <b x-text="modalSize" style="color: var(--accent)"></b> • Tutup via tombol, backdrop, atau ESC.</p>
                 </div>
                 <div class="glass r-lg p-5 sm:p-6">
-                    <p class="text-xs font-bold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">Toast</p>
+                    <p class="text-xs font-semibold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">Toast</p>
                     <div class="flex flex-wrap gap-2 mb-4">
-                        <button @click="pushToast('Data berhasil disimpan','success')" class="press text-xs font-bold px-4 py-2 pill text-white cursor-pointer" style="background: var(--success)">Sukses</button>
-                        <button @click="pushToast('Periksa kembali isian form','warning')" class="press text-xs font-bold px-4 py-2 pill text-white cursor-pointer" style="background: var(--warning)">Peringatan</button>
-                        <button @click="pushToast('Gagal menghapus data','danger')" class="press text-xs font-bold px-4 py-2 pill text-white cursor-pointer" style="background: var(--danger)">Error</button>
-                        <button @click="pushToast('Ini info biasa','info')" class="press text-xs font-bold px-4 py-2 pill glass-subtle cursor-pointer" style="color: var(--ink)">Info</button>
+                        <button @click="pushToast('Data berhasil disimpan','success')" class="press text-xs font-bold px-4 py-2 pill text-white cursor-pointer min-h-[44px]" style="background: var(--success)">Sukses</button>
+                        <button @click="pushToast('Periksa kembali isian form','warning')" class="press text-xs font-bold px-4 py-2 pill text-white cursor-pointer min-h-[44px]" style="background: var(--warning)">Peringatan</button>
+                        <button @click="pushToast('Gagal menghapus data','danger')" class="press text-xs font-bold px-4 py-2 pill text-white cursor-pointer min-h-[44px]" style="background: var(--danger)">Error</button>
+                        <button @click="pushToast('Ini info biasa','info')" class="press text-xs font-bold px-4 py-2 pill glass-subtle cursor-pointer min-h-[44px]" style="color: var(--ink)">Info</button>
                     </div>
                     <div class="flex items-center justify-between gap-2">
                         <span class="text-xs font-semibold" style="color: var(--ink)">Alert contoh bisa ditutup</span>
-                        <div class="switch" role="switch" :aria-checked="showAlert" @click="showAlert=!showAlert"></div>
+                        <div class="switch" role="switch" :aria-checked="showAlert.toString()" aria-label="Alert" @click="showAlert=!showAlert"></div>
                     </div>
                     <div x-show="showAlert" x-cloak class="mt-3 r-md p-4 flex items-start gap-3" style="background: var(--warning-soft); border: 1px solid var(--glass-border)">
                         <svg class="w-5 h-5 flex-shrink-0 mt-0.5" style="color: var(--warning)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                         <p class="text-xs font-medium flex-1" style="color: var(--ink)">3 pelanggaran butuh tindak lanjut minggu ini.</p>
-                        <button @click="showAlert=false" class="cursor-pointer font-bold" style="color: var(--ink-soft)" aria-label="Tutup alert">✕</button>
+                        <button @click="showAlert=false" class="cursor-pointer font-bold min-h-[44px] min-w-[44px] flex items-center justify-center" style="color: var(--ink-soft)" aria-label="Tutup alert">✕</button>
                     </div>
                 </div>
             </div>
@@ -642,13 +648,13 @@
 
         <!-- ================= 7. NAVIGASI: TAB, AKORDEON, BREADCRUMB ================= -->
         <section id="navigasi" class="scroll-mt-40 mb-8">
-            <h2 class="text-xs font-bold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">07 — Tab, Akordeon & Breadcrumb</h2>
+            <h2 class="text-xs font-semibold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">07 — Tab, Akordeon & Breadcrumb</h2>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 <div class="glass r-lg p-5 sm:p-6">
-                    <p class="text-xs font-bold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">Tab</p>
+                    <p class="text-xs font-semibold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">Tab</p>
                     <div class="flex gap-1 p-1 pill glass-subtle mb-4 overflow-x-auto" role="tablist">
                         <template x-for="t in tabs" :key="t">
-                            <button @click="tab=t" role="tab" :aria-selected="tab===t" class="seg-btn text-xs font-bold px-4 py-2 pill whitespace-nowrap cursor-pointer flex-1" :class="tab===t?'seg-on':'seg-off'" x-text="t"></button>
+                            <button @click="tab=t" role="tab" :aria-selected="(tab===t).toString()" class="seg-btn text-xs font-bold px-4 py-2 pill whitespace-nowrap cursor-pointer flex-1 min-h-[40px]" :class="tab===t?'seg-on':'seg-off'" x-text="t"></button>
                         </template>
                     </div>
                     <div class="glass-subtle r-md p-4 text-sm min-h-[90px]" style="color: var(--ink)">
@@ -657,25 +663,25 @@
                         <p x-show="tab==='Kelas'" x-cloak><b>Per kelas:</b> X TKJ 1 tertinggi (21 kasus), XII TKJ 1 terendah (4 kasus).</p>
                     </div>
                     <p class="text-xs mt-4 mb-2" style="color: var(--ink-soft)"><b style="color: var(--ink)">Breadcrumb:</b></p>
-                    <nav class="flex items-center gap-1.5 text-xs font-bold flex-wrap" aria-label="Breadcrumb">
-                        <a href="#" class="hover:underline cursor-pointer" style="color: var(--ink-soft)">Home</a>
+                    <nav class="flex items-center gap-1.5 text-xs font-semibold flex-wrap" aria-label="Breadcrumb">
+                        <a href="#" class="cursor-pointer transition-colors" style="color: var(--ink-soft)">Home</a>
                         <span style="color: var(--ink-soft)">/</span>
-                        <a href="#" class="hover:underline cursor-pointer" style="color: var(--ink-soft)">Pelanggaran</a>
+                        <a href="#" class="cursor-pointer transition-colors" style="color: var(--ink-soft)">Pelanggaran</a>
                         <span style="color: var(--ink-soft)">/</span>
                         <span style="color: var(--accent)">Detail</span>
                     </nav>
                 </div>
                 <div class="glass r-lg p-5 sm:p-6">
                     <div class="flex items-center justify-between mb-3">
-                        <p class="text-xs font-bold uppercase tracking-widest" style="color: var(--ink-soft)">Akordeon</p>
-                        <label class="flex items-center gap-2 text-[11px] font-bold cursor-pointer" style="color: var(--ink-soft)">
-                            <input type="checkbox" x-model="accMulti" class="w-3.5 h-3.5 rounded accent-violet-600"> Multi-buka
+                        <p class="text-xs font-semibold uppercase tracking-widest" style="color: var(--ink-soft)">Akordeon</p>
+                        <label class="flex items-center gap-2 text-[11px] font-bold cursor-pointer min-h-[44px]" style="color: var(--ink-soft)">
+                            <input type="checkbox" x-model="accMulti" class="w-3.5 h-3.5 rounded"> Multi-buka
                         </label>
                     </div>
                     <div class="space-y-2">
                         <template x-for="(a,i) in acc" :key="i">
                             <div class="glass-subtle r-md overflow-hidden">
-                                <button @click="toggleAcc(i)" class="w-full flex items-center justify-between gap-2 px-4 py-3 text-sm font-bold cursor-pointer" style="color: var(--ink)" :aria-expanded="a.open">
+                                <button @click="toggleAcc(i)" class="w-full flex items-center justify-between gap-2 px-4 py-3 text-sm font-semibold cursor-pointer min-h-[44px]" style="color: var(--ink)" :aria-expanded="a.open.toString()">
                                     <span x-text="a.t"></span>
                                     <svg class="w-4 h-4 transition-transform duration-200 flex-shrink-0" :class="a.open?'rotate-180':''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                                 </button>
@@ -689,47 +695,47 @@
 
         <!-- ================= 8. PROGRESS & AVATAR ================= -->
         <section id="extra" class="scroll-mt-40 mb-8">
-            <h2 class="text-xs font-bold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">08 — Progress, Avatar & Stat</h2>
+            <h2 class="text-xs font-semibold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">08 — Progress, Avatar & Stat</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 <div class="glass r-lg p-6">
-                    <p class="text-xs font-bold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">Progress</p>
-                    <div class="flex justify-between text-sm font-bold mb-2" style="color: var(--ink)">
+                    <p class="text-xs font-semibold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">Progress</p>
+                    <div class="flex justify-between text-sm font-semibold mb-2" style="color: var(--ink)">
                         <span>Tindak lanjut</span><span x-text="prog+'%'" style="color: var(--accent)"></span>
                     </div>
-                    <div class="h-3 rounded-full overflow-hidden mb-3" style="background: rgba(127,127,160,0.25)">
-                        <div class="h-full rounded-full transition-all duration-300" :style="'width:'+prog+'%; background: linear-gradient(90deg, var(--accent), #3b82f6)'"></div>
+                    <div class="h-3 rounded-full overflow-hidden mb-3" style="background: rgba(100,116,139,0.18)">
+                        <div class="h-full rounded-full transition-all duration-300" :style="'width:'+prog+'%; background: var(--accent)'"></div>
                     </div>
-                    <input type="range" min="0" max="100" x-model.number="prog" class="m3 mb-4" aria-label="Progress">
+                    <input type="range" min="0" max="100" x-model.number="prog" :aria-valuenow="prog" aria-valuemin="0" aria-valuemax="100" class="m3 mb-4" aria-label="Progress">
                     <div class="flex items-center gap-3 glass-subtle r-md px-4 py-3">
                         <div x-show="loadingDemo" class="w-5 h-5 rounded-full border-[3px] spin flex-shrink-0" style="border-color: var(--accent-soft); border-top-color: var(--accent)"></div>
-                        <span class="text-xs font-bold" style="color: var(--ink)" x-text="loadingDemo ? 'Memuat data...' : 'Idle'"></span>
-                        <div class="switch ml-auto" role="switch" :aria-checked="loadingDemo" @click="loadingDemo=!loadingDemo"></div>
+                        <span class="text-xs font-semibold" style="color: var(--ink)" x-text="loadingDemo ? 'Memuat data...' : 'Idle'"></span>
+                        <div class="switch ml-auto" role="switch" :aria-checked="loadingDemo.toString()" aria-label="Loading demo" @click="loadingDemo=!loadingDemo"></div>
                     </div>
                 </div>
                 <div class="glass r-lg p-6">
-                    <p class="text-xs font-bold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">Avatar grup</p>
+                    <p class="text-xs font-semibold uppercase tracking-widest mb-3" style="color: var(--ink-soft)">Avatar grup</p>
                     <div class="flex items-center mb-4">
                         <template x-for="(a,i) in avatars" :key="i">
                             <div class="w-10 h-10 rounded-full flex items-center justify-center text-xs font-extrabold text-white border-2 -ml-2 first:ml-0" :style="'background:'+a.c+'; border-color: var(--glass-bg-strong)'" x-text="a.i" :title="a.n"></div>
                         </template>
-                        <span class="ml-2 text-xs font-bold" style="color: var(--ink-soft)">+12 wali kelas</span>
+                        <span class="ml-2 text-xs font-semibold" style="color: var(--ink-soft)">+12 wali kelas</span>
                     </div>
-                    <p class="text-xs font-bold uppercase tracking-widest mb-2" style="color: var(--ink-soft)">Skeleton loading</p>
+                    <p class="text-xs font-semibold uppercase tracking-widest mb-2" style="color: var(--ink-soft)">Skeleton loading</p>
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-semibold" style="color: var(--ink)">Tampilkan skeleton</span>
-                        <div class="switch" role="switch" :aria-checked="skel" @click="skel=!skel"></div>
+                        <div class="switch" role="switch" :aria-checked="skel.toString()" aria-label="Skeleton" @click="skel=!skel"></div>
                     </div>
                     <div x-show="skel" class="mt-3 space-y-2">
-                        <div class="h-3 rounded-full pulse-dot" style="background: rgba(127,127,160,0.30); width: 90%"></div>
-                        <div class="h-3 rounded-full pulse-dot" style="background: rgba(127,127,160,0.30); width: 65%"></div>
-                        <div class="h-3 rounded-full pulse-dot" style="background: rgba(127,127,160,0.30); width: 78%"></div>
+                        <div class="h-3 rounded-full pulse-dot" style="background: rgba(100,116,139,0.18); width: 90%"></div>
+                        <div class="h-3 rounded-full pulse-dot" style="background: rgba(100,116,139,0.18); width: 65%"></div>
+                        <div class="h-3 rounded-full pulse-dot" style="background: rgba(100,116,139,0.18); width: 78%"></div>
                     </div>
                     <div x-show="!skel" class="mt-3 text-sm font-semibold" style="color: var(--ink)">Data dimuat: 1.248 siswa aktif.</div>
                 </div>
                 <div class="glass r-lg p-6 sm:col-span-2 lg:col-span-1">
                     <div class="flex items-center justify-between mb-3">
-                        <p class="text-xs font-bold uppercase tracking-widest" style="color: var(--ink-soft)">Stat kartu</p>
-                        <div class="switch" role="switch" :aria-checked="showTrend" @click="showTrend=!showTrend" title="Tampilkan tren"></div>
+                        <p class="text-xs font-semibold uppercase tracking-widest" style="color: var(--ink-soft)">Stat kartu</p>
+                        <div class="switch" role="switch" :aria-checked="showTrend.toString()" aria-label="Tren" @click="showTrend=!showTrend"></div>
                     </div>
                     <p class="text-4xl font-extrabold" style="color: var(--accent)">87</p>
                     <p class="text-sm font-semibold" style="color: var(--ink)">Pelanggaran bulan ini</p>
@@ -748,21 +754,21 @@
         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
         x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
         class="fixed inset-0 z-[100] flex items-center justify-center p-4 modal-overlay"
-        @click.self="modal.open=false" @keydown.escape.window="modal.open=false" role="dialog" aria-modal="true">
+        @click.self="modal.open=false" @keydown.escape.window="modal.open=false" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div x-show="modal.open"
             x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95 translate-y-4" x-transition:enter-end="opacity-100 scale-100 translate-y-0"
             x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100 translate-y-0" x-transition:leave-end="opacity-0 scale-95 translate-y-4"
             class="glass-strong p-6 sm:p-8 w-full" :class="modalSize==='sm'?'max-w-sm r-md':modalSize==='lg'?'max-w-2xl r-lg':'max-w-md r-lg'" @click.stop>
             <div class="flex items-center gap-3 mb-3">
-                <div class="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0" :style="'background:'+modalCfg().soft">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" :style="'background:'+modalCfg().soft">
                     <span x-html="modalCfg().icon"></span>
                 </div>
-                <h3 class="text-lg font-extrabold" style="color: var(--ink)" x-text="modalCfg().title"></h3>
+                <h3 id="modal-title" class="text-lg font-extrabold" style="color: var(--ink)" x-text="modalCfg().title"></h3>
             </div>
             <p class="text-sm leading-relaxed mb-6" style="color: var(--ink-soft)" x-text="modalCfg().desc"></p>
             <div class="flex gap-2 justify-end flex-wrap">
-                <button @click="modal.open=false" class="press pill px-5 py-2.5 text-sm font-bold glass-subtle cursor-pointer" style="color: var(--ink-soft)">Batal</button>
-                <button @click="confirmModal()" class="press pill px-5 py-2.5 text-sm font-bold text-white cursor-pointer" :style="'background:'+modalCfg().color" x-text="modalCfg().cta"></button>
+                <button @click="modal.open=false" class="press pill px-5 py-2.5 text-sm font-bold glass-subtle cursor-pointer min-h-[44px]" style="color: var(--ink-soft)">Batal</button>
+                <button @click="confirmModal()" class="press pill px-5 py-2.5 text-sm font-bold text-white cursor-pointer min-h-[44px]" :style="'background:'+modalCfg().color" x-text="modalCfg().cta"></button>
             </div>
         </div>
     </div>
@@ -773,7 +779,7 @@
             <div class="toast-in glass-strong r-md px-4 py-3 flex items-start gap-3">
                 <span class="w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0" :style="'background:'+toastColor(t.type)"></span>
                 <p class="text-sm font-semibold flex-1" style="color: var(--ink)" x-text="t.msg"></p>
-                <button @click="dismissToast(t.id)" class="font-bold cursor-pointer" style="color: var(--ink-soft)" aria-label="Tutup notifikasi">✕</button>
+                <button @click="dismissToast(t.id)" class="font-bold cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center" style="color: var(--ink-soft)" aria-label="Tutup notifikasi">✕</button>
             </div>
         </template>
     </div>
@@ -785,13 +791,11 @@ function glassLab() {
         bt: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>',
         plane: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>',
         moon: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>',
-        lamp: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>',
         bell: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>'
     };
     return {
         /* global */
-        dark: false, anim: true, blur: 18, radius: 28, bg: 'candy',
-        bgs: [{v:'candy',l:'Candy'},{v:'sunset',l:'Sunset'},{v:'ocean',l:'Ocean'},{v:'plain',l:'Polos'}],
+        dark: false, anim: true, blur: 14, radius: 20,
         activeSection: 'tombol',
         sections: [
             {id:'tombol',l:'Tombol'},{id:'chip',l:'Chip'},{id:'form',l:'Form'},
@@ -803,26 +807,39 @@ function glassLab() {
             this.dark = t ? t==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
             document.documentElement.style.setProperty('--blur-px', this.blur+'px');
             document.documentElement.style.setProperty('--radius-lg', this.radius+'px');
-            document.documentElement.style.setProperty('--radius-md', Math.max(12,this.radius-8)+'px');
-            this.$watch('blur', v => document.documentElement.style.setProperty('--blur-px', v+'px'));
+            document.documentElement.style.setProperty('--radius-md', Math.max(12,this.radius-6)+'px');
+
+            /* debounced blur/radius watchers */
+            let blurTimer, radiusTimer;
+            this.$watch('blur', v => { clearTimeout(blurTimer); blurTimer = setTimeout(()=> document.documentElement.style.setProperty('--blur-px', v+'px'), 16); });
             this.$watch('radius', v => {
-                document.documentElement.style.setProperty('--radius-lg', v+'px');
-                document.documentElement.style.setProperty('--radius-md', Math.max(12,v-8)+'px');
+                clearTimeout(radiusTimer);
+                radiusTimer = setTimeout(()=> {
+                    document.documentElement.style.setProperty('--radius-lg', v+'px');
+                    document.documentElement.style.setProperty('--radius-md', Math.max(12,v-6)+'px');
+                }, 16);
             });
-            /* scrollspy tanpa plugin: tandai seksi terdekat */
+
+            /* throttled scrollspy */
+            let ticking = false;
             const spy = () => {
-                const ids = this.sections.map(s=>s.id);
-                let cur = ids[0];
-                for (const id of ids) {
-                    const el = document.getElementById(id);
-                    if (el && el.getBoundingClientRect().top < 220) cur = id;
-                }
-                this.activeSection = cur;
+                if (ticking) return;
+                ticking = true;
+                requestAnimationFrame(() => {
+                    const ids = this.sections.map(s=>s.id);
+                    let cur = ids[0];
+                    for (const id of ids) {
+                        const el = document.getElementById(id);
+                        if (el && el.getBoundingClientRect().top < 220) cur = id;
+                    }
+                    this.activeSection = cur;
+                    ticking = false;
+                });
             };
             window.addEventListener('scroll', spy, { passive: true });
         },
         toggleDark() { this.dark = !this.dark; localStorage.setItem('glasslab-theme', this.dark?'dark':'light'); },
-        resetGlobal() { this.dark=false; this.anim=true; this.blur=18; this.radius=28; this.bg='candy'; localStorage.removeItem('glasslab-theme'); },
+        resetGlobal() { this.dark=false; this.anim=true; this.blur=14; this.radius=20; localStorage.removeItem('glasslab-theme'); },
 
         /* tombol */
         btn: { label:'Simpan Data', variant:'primer', size:'px-6 py-3 text-sm', rounded:'pill', icon:true, loading:false, disabled:false, block:false },
@@ -864,11 +881,11 @@ function glassLab() {
         },
         resetForm() { this.form = { nama:'', kelas:'', pw:'', showPw:false, note:'', tingkat:'Sedang', wali:true, konseling:false, setuju:false }; },
 
-        /* QS */
+        /* QS — senter dihapus (web tidak bisa toggle flash HP) */
         qs: [
             {id:1,label:'Wi-Fi',on:true,icon:ICONS.wifi},{id:2,label:'Bluetooth',on:false,icon:ICONS.bt},
             {id:3,label:'Pesawat',on:false,icon:ICONS.plane},{id:4,label:'Diam',on:true,icon:ICONS.moon},
-            {id:5,label:'Senter',on:false,icon:ICONS.lamp},{id:6,label:'Notifikasi',on:true,icon:ICONS.bell}
+            {id:6,label:'Notifikasi',on:true,icon:ICONS.bell}
         ],
         brightness: 65,
         qsOn() { return this.qs.filter(q=>q.on); },
@@ -970,7 +987,7 @@ function glassLab() {
         /* extra */
         prog: 72, loadingDemo: true, skel: true, showTrend: true,
         avatars: [
-            {i:'AR',n:'Ahmad Rizki',c:'#7c3aed'},{i:'SN',n:'Siti Nurhaliza',c:'#059669'},
+            {i:'AR',n:'Ahmad Rizki',c:'#1e3a5f'},{i:'SN',n:'Siti Nurhaliza',c:'#059669'},
             {i:'BS',n:'Budi Santoso',c:'#d97706'},{i:'DL',n:'Dewi Lestari',c:'#dc2626'},{i:'RH',n:'Rudi Hartono',c:'#2563eb'}
         ]
     };
@@ -978,3 +995,4 @@ function glassLab() {
 </script>
 </body>
 </html>
+[H[2J[3J

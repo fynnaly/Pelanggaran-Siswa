@@ -8,6 +8,8 @@ use App\Models\ViolationCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
+use Illuminate\Support\Facades\DB;
+
 class DisciplineCaseController extends Controller
 {
     /** Menampilkan daftar semua pelanggaran berdasarkan status */
@@ -30,13 +32,26 @@ class DisciplineCaseController extends Controller
     /** Menampilkan form pelaporan pelanggaran baru */
     public function create()
     {
-        $students = Student::where('status', 'active')
-            ->pluck('full_name', 'id');
-
         $categories = ViolationCategory::where('status', 'active')
             ->pluck('name', 'id');
 
-        return view('discipline-cases.create', compact('students', 'categories'));
+        // Ambil data siswa terpilih jika ada old() (redirect setelah validasi gagal)
+        $selectedStudent = null;
+        if (old('student_id')) {
+            $record = Student::with('schoolClass')
+                ->where('status', 'active')
+                ->find(old('student_id'));
+            if ($record) {
+                $selectedStudent = [
+                    'id' => $record->id,
+                    'full_name' => $record->full_name,
+                    'nis' => $record->nis,
+                    'kelas' => $record->schoolClass?->name ?? '-',
+                ];
+            }
+        }
+
+        return view('discipline-cases.create', compact('categories', 'selectedStudent'));
     }
 
     /** Menyimpan pelaporan pelanggaran baru */
@@ -67,60 +82,66 @@ class DisciplineCaseController extends Controller
     }
 
     /** Menampilkan detail pelanggaran tertentu */
-    public function show(DisciplineCase $case)
+    public function show(DisciplineCase $disciplineCase)
     {
-        return view('discipline-cases.show', compact('case'));
+        return view('discipline-cases.show', compact('disciplineCase'));
     }
 
     /** Validasi pelanggaran: found -> validated + potong poin */
     public function validate(Request $request, DisciplineCase $disciplineCase)
     {
-        // Policy, dari policies/disciplinecasePolicy
         $this->authorize('validate', $disciplineCase);
 
         $validated = $request->validate([
             'validation_passed' => 'required|boolean',
         ]);
 
+        $violation = $disciplineCase->violationCategory;
+        $points = $violation->points;
+
         if ($validated['validation_passed']) {
-            // Ubah status jadi validated
-            $disciplineCase->status = 'validated';
-            $disciplineCase->validated_by = auth()->id();
-            $disciplineCase->validated_at = now();
-            $disciplineCase->save();
+            DB::transaction(function () use ($disciplineCase, $violation, $points) {
+                $academicYearId = $disciplineCase->student?->schoolClass?->academic_year_id
+                    ?? \App\Models\AcademicYear::where('is_active', true)->first()?->id;
 
-            // Buat ledger debit (kurangi poin)
-            $violation = $disciplineCase->violationCategory;
-            $points = $violation->points;
+                $lastBalance = $disciplineCase->student->pointLedgers()
+                    ->lockForUpdate()
+                    ->latest('id')
+                    ->value('balance_after') ?? 2000;
+                $balanceAfter = $lastBalance - $points;
 
-            $academicYearId = $disciplineCase->student?->schoolClass?->academic_year_id ?? \App\Models\AcademicYear::where('is_active', true)->first()?->id;
+                $disciplineCase->status = 'validated';
+                $disciplineCase->validated_by = auth()->id();
+                $disciplineCase->validated_at = now();
+                $disciplineCase->save();
 
-            $disciplineCase->student->pointLedgers()->create([
-                'student_id' => $disciplineCase->student_id,
-                'academic_year_id' => $academicYearId,
-                'direction' => 'debit',
-                'amount' => $points,
-                'balance_after' => $disciplineCase->student->pointLedgers()->latest('id')->value('balance_after') ?? 2000 - $points,
-                'transaction_type' => 'VIOLATION',
-                'source_type' => DisciplineCase::class,
-                'source_id' => $disciplineCase->id,
-                'reason' => 'Pelanggaran: ' . $violation->code,
-                'verified_by' => auth()->id(),
-                'verified_at' => now(),
-            ]);
+                $disciplineCase->student->pointLedgers()->create([
+                    'student_id' => $disciplineCase->student_id,
+                    'academic_year_id' => $academicYearId,
+                    'direction' => 'debit',
+                    'amount' => $points,
+                    'balance_after' => $balanceAfter,
+                    'transaction_type' => 'VIOLATION',
+                    'source_type' => DisciplineCase::class,
+                    'source_id' => $disciplineCase->id,
+                    'reason' => 'Pelanggaran: ' . $violation->code,
+                    'verified_by' => auth()->id(),
+                    'verified_at' => now(),
+                ]);
+            });
 
             return redirect()
                 ->route('discipline-cases.index')
                 ->with('success', 'Pelanggaran ' . $disciplineCase->case_number . ' diverifikasi, poin ' . $points . ' berhasil dikurang.');
-        } else {
-            // Status dibubut tapi bukti tidak cukup -> dismissed (poin tetap, kasus dibuang)
-            $disciplineCase->status = 'dismissed';
-            $disciplineCase->save();
-
-            return redirect()
-                ->route('discipline-cases.index')
-                ->with('warning', 'Pelanggaran ' . $disciplineCase->case_number . ' dibuang, poin tidak dikurang.');
         }
+
+        // Bukti tidak cukup -> dibuang, poin tetap
+        $disciplineCase->status = 'dismissed';
+        $disciplineCase->save();
+
+        return redirect()
+            ->route('discipline-cases.index')
+            ->with('warning', 'Pelanggaran ' . $disciplineCase->case_number . ' dibuang, poin tidak dikurang.');
     }
 
     /** Selesaikan kasus: validated -> done */

@@ -23,8 +23,9 @@ return new class extends Migration
             $table->enum('transaction_type', ['OPENING_BALANCE', 'ACHIEVEMENT', 'VIOLATION', 'RECOVERY', 'REVERSAL']);
             $table->nullableMorphs('source');
             $table->string('reason')->nullable();
-            $table->foreignId('verified_by')->constrained('users')->restrictOnDelete();
-            $table->foreignId('verified_at')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('verified_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('verified_at')->nullable();
+            $table->unsignedBigInteger('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
             $table->index(['student_id', 'academic_year_id']);
@@ -32,6 +33,9 @@ return new class extends Migration
             $table->unique(['student_id','academic_year_id', 'transaction_type', 'source_id'], 'ledger_idempotency')
                     ->where('source_id IS NOT NULL');
 
+            // UNIQUE: hanya 1 OPENING_BALANCE per siswa per tahun.
+            // MySQL tidak support partial unique index (WHERE), jadi pakai
+            // standard unique + handle idempotensi di ensureOpeningBalance() via exists() check.
             $table->unique(['student_id', 'academic_year_id', 'transaction_type'], 'uniq_opening_balance');
 
             $table->unique(['source_type', 'source_id'], 'uniq_source_idempotency');
