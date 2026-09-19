@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Kategori Pelanggaran</h2>
-            <a href="{{ route('violation-categories.create') }}" class="px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700">+ Tambah Kategori</a>
+            <a href="{{ route('violation-categories.create') }}" class="px-4 py-2 bg-tertiary text-white text-sm font-semibold rounded-lg hover:bg-emerald-700">Tambah Kategori</a>
         </div>
     </x-slot>
 
@@ -11,7 +11,7 @@
             @if(session('success'))
                 <div class="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm">{{ session('success') }}</div>
             @endif
-            <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
+            <div class="bg-white rounded-lg overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
                         <thead class="bg-gray-50 text-gray-600">
@@ -33,10 +33,10 @@
                                     <td class="px-4 py-3 text-center font-semibold">{{ $cat->points }}</td>
                                     <td class="px-4 py-3 text-center"><span class="px-2 py-1 rounded-full text-xs {{ $cat->status==='active'?'bg-emerald-100 text-emerald-700':'bg-gray-100 text-gray-600' }}">{{ $cat->status }}</span></td>
                                     <td class="px-4 py-3 text-right space-x-2">
-                                        <a href="{{ route('violation-categories.edit', $cat) }}" class="text-blue-600 hover:underline text-xs">Edit</a>
+                                        <a href="{{ route('violation-categories.edit', $cat) }}" class="text-tertiary hover:underline text-xs font-semibold">Edit</a>
                                         <form action="{{ route('violation-categories.destroy', $cat) }}" method="POST" class="inline" onsubmit="return confirm('Hapus kategori ini?')">
                                             @csrf @method('DELETE')
-                                            <button class="text-red-600 hover:underline text-xs">Hapus</button>
+                                            <button class="text-danger hover:underline text-xs font-semibold">Hapus</button>
                                         </form>
                                     </td>
                                 </tr>
