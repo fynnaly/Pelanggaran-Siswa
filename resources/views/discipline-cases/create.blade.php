@@ -53,6 +53,33 @@
                 </div>
             </form>
         </div>
+
+        {{-- Rekomendasi Pemulihan Poin --}}
+        <div class="card" style="max-width:600px;margin-top:var(--sp-lg)">
+            <h2 style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)"><i data-lucide="rotate-ccw" class="icon"></i> Rekomendasi Pemulihan Poin</h2>
+            <p class="text-sm text-muted" style="margin-bottom:var(--sp-md)">Setiap pelanggaran mengurangi poin siswa. Poin dapat dipulihkan melalui pencapaian/prestasi berikut:</p>
+            @php
+                $achievements = \App\Models\AchievementCategory::where('status', 'active')->orderByDesc('points')->get();
+            @endphp
+            @if($achievements->count())
+                <div style="display:grid;gap:var(--sp-sm)">
+                    @foreach($achievements as $ach)
+                        <div style="display:flex;align-items:center;gap:var(--sp-md);padding:var(--sp-md);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm)">
+                            <div style="width:40px;height:40px;border-radius:var(--r-sm);background:var(--bs);color:var(--bt);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i data-lucide="trophy" style="width:18px;height:18px"></i></div>
+                            <div style="flex:1;min-width:0">
+                                <div style="font-weight:600;font-size:.875rem">{{ $ach->name }}</div>
+                                <div class="text-sm text-muted">{{ $ach->code }} &middot; +{{ $ach->points }} poin per pencapaian</div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--sp-md);text-align:center">
+                    <p class="text-sm text-muted">Belum ada kategori pencapaian aktif.</p>
+                    <a href="{{ route('achievement-categories.create') }}" class="btn btn-secondary btn-sm" style="margin-top:var(--sp-sm)"><i data-lucide="plus" class="icon-sm"></i> Buat Kategori Pencapaian</a>
+                </div>
+            @endif
+        </div>
     </div>
     <script>document.addEventListener('DOMContentLoaded',()=>{lucide.createIcons()})</script>
     <script>

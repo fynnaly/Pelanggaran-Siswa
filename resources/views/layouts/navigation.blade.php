@@ -3,7 +3,7 @@
         ['route' => 'dashboard', 'label' => 'Dashboard', 'pattern' => 'dashboard', 'icon' => 'layout-dashboard'],
         ['route' => 'students.index', 'label' => 'Siswa', 'pattern' => 'students.*', 'icon' => 'users'],
         ['route' => 'classes.index', 'label' => 'Kelas', 'pattern' => 'classes.*', 'icon' => 'school'],
-        ['route' => 'violation-categories.index', 'label' => 'Kategori', 'pattern' => 'violation-categories.*', 'icon' => 'tags'],
+        ['route' => 'violation-categories.index', 'label' => 'Pelanggaran', 'pattern' => 'violation-categories.*', 'icon' => 'tags'],
         ['route' => 'discipline-cases.index', 'label' => 'Kasus', 'pattern' => 'discipline-cases.*', 'icon' => 'file-text'],
         ['route' => 'academic-years.index', 'label' => 'Tahun Ajaran', 'pattern' => 'academic-years.*', 'icon' => 'calendar'],
     ];
@@ -20,7 +20,7 @@
     <div style="padding:var(--sp-lg);border-bottom:1px solid var(--border)">
         <a href="{{ route('dashboard') }}" style="display:flex;align-items:center;gap:var(--sp-sm);text-decoration:none;color:var(--primary);font-size:1.125rem;font-weight:700">
             <i data-lucide="shield" style="width:24px;height:24px"></i>
-            <span>SMK Pelanggaran</span>
+            <span>Pelanggaran Kuy</span>
         </a>
     </div>
 
@@ -124,7 +124,7 @@
         {{-- Drawer header --}}
         <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp-md);border-bottom:1px solid var(--border)">
             <a href="{{ route('dashboard') }}" style="display:flex;align-items:center;gap:var(--sp-sm);text-decoration:none;color:var(--primary);font-size:1rem;font-weight:700">
-                <i data-lucide="shield" style="width:20px;height:20px"></i> SMK Pelanggaran
+                <i data-lucide="shield" style="width:20px;height:20px"></i> Pelanggaran Kuy
             </a>
             <button @click="open = false" style="width:32px;height:32px;border:none;background:transparent;color:var(--on-surface-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:var(--r-sm)">
                 <i data-lucide="x" style="width:18px;height:18px"></i>

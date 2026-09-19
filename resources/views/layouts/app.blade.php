@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ config('app.name', 'Pelanggaran Siswa') }}</title>
+    <title>{{ config('app.name', 'Pelanggaran Kuy') }}</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -54,7 +54,7 @@
         .page-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:var(--sp-md); margin-bottom: var(--sp-xl); width:100%; }
         .page-header h1 { margin-bottom: var(--sp-xs); }
         .page-header > div:first-child{flex:1; min-width:200px;}
-        @media(max-width:639px){ .page-header{flex-direction:column; align-items:stretch;} .page-header .btn{width:100%; justify-content:center;} .page-header > div:last-child{width:100%; display:flex; flex-wrap:wrap; gap:var(--sp-sm);} .page-header > div:last-child .btn{flex:1; min-width:120px;} }
+        @media(max-width:639px){ .page-header{flex-direction:column; align-items:stretch;} .page-header .btn{width:100%; justify-content:center;} .page-header > div:last-child{width:100%; display:flex; flex-wrap:wrap; gap:var(--sp-sm);} .page-header > div:last-child .btn{flex:1; min-width:120px;} .grid-4,.grid-2{grid-template-columns:1fr !important} .grid-4 > div,.grid-2 > div{width:100% !important;margin:0 auto} }
         .breadcrumb { font-size: .875rem; color: var(--on-surface-muted); margin-bottom: var(--sp-sm); }
         .section { margin-top: var(--sp-xl); }
         .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-lg); flex-wrap: wrap; gap: var(--sp-sm); }
