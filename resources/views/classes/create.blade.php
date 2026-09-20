@@ -1,6 +1,5 @@
 <x-app-layout>
     <x-slot name="header">
-
         <div class="page-header">
             <div><h1>Tambah Kelas</h1></div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
@@ -9,11 +8,21 @@
         </div>
     </x-slot>
     <div class="main-wrap">
-        <div class="card">
+        <div class="card card-form">
             @if($errors->any())<div class="alert alert-error" style="margin-bottom:var(--sp-lg)"><i data-lucide="alert-circle" class="icon-sm"></i> {{ $errors->first() }}</div>@endif
             <form action="{{ route('classes.store') }}" method="POST">
                 @csrf
-                <div class="field"><label class="field-label">Nama Kelas <span class="text-danger">*</span></label><input type="text" name="name" value="{{ old('name') }}" class="field-input" required placeholder="Contoh: X RPL 1"></div>
+                <div class="field"><label class="field-label">Nama Kelas <span class="text-danger">*</span></label>
+                    <input type="text" name="name" value="{{ old('name') }}" class="field-input" required placeholder="Contoh: X PPLG 1"
+                           x-data="{ name: '{{ old('name') }}', detected: '' }"
+                           x-model="name"
+                           x-effect="
+                               const m = name.match(/^(XII|XI|X)\s+(.*)/i);
+                               detected = m ? 'Tingkat: ' + (m[1].toUpperCase()) + ' = ' + (m[1].toUpperCase() === 'X' ? '10' : (m[1].toUpperCase() === 'XI' ? '11' : '12')) + ' Kelas' : '';
+                           ">
+                    <div x-show="detected" x-text="detected" style="margin-top:4px;font-size:.75rem;color:var(--tertiary);font-weight:600"></div>
+                    <span class="help-text">Gunakan X, XI, atau XII untuk tingkat. Huruf besar X otomatis = kelas 10.</span>
+                </div>
                 <div class="field"><label class="field-label">Tahun Ajaran <span class="text-danger">*</span></label>
                     <select name="academic_year_id" class="field-input" required>
                         <option value="">Pilih tahun ajaran...</option>

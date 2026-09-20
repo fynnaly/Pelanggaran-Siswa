@@ -1,6 +1,5 @@
 <x-app-layout>
     <x-slot name="header">
-
         <div class="page-header">
             <div>
                 <h1>Daftar Siswa</h1>
@@ -20,25 +19,43 @@
         @if($classId)
             <div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-md)">
                 <span class="badge" style="background:var(--bs);color:var(--bt)"><i data-lucide="filter" class="icon-sm"></i> Kelas {{ $students->first()?->schoolClass?->name ?? '#' }}</span>
-                <a href="{{ route('students.index') }}" class="text-sm" style="color:var(--on-surface-muted)"><i data-lucide="x" class="icon-sm"></i> Hapus filter</a>
+                <a href="{{ route('students.index') }}" class="text-sm" style="color:var(--on-surface-muted);white-space:nowrap;flex-shrink:0"><i data-lucide="x" class="icon-sm"></i> Hapus filter</a>
             </div>
         @endif
 
         <div class="toolbar">
-            <form action="{{ route('students.index') }}" method="GET" style="display:flex;gap:var(--sp-sm);flex:1;flex-wrap:wrap">
-                @if($classId)<input type="hidden" name="class_id" value="{{ $classId }}">@endif
-                <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nama / NISN / NIS..." class="input" style="max-width:280px">
-                <button type="submit" class="btn btn-secondary btn-sm"><i data-lucide="search" class="icon-sm"></i> Cari</button>
+            <form action="{{ route('students.index') }}" method="GET" style="display:flex;gap:var(--sp-sm);flex:1;align-items:stretch">
+                <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nama / NISN / NIS..." class="input" style="flex:1;min-width:0">
+                <select name="class_id" class="input" style="width:auto;min-width:140px;flex-shrink:0">
+                    <option value="">Semua Kelas</option>
+                    @foreach($allClasses as $cls)
+                        <option value="{{ $cls->id }}" {{ request('class_id')==$cls->id?'selected':'' }}>{{ $cls->name }}</option>
+                    @endforeach
+                </select>
+                <!-- <button type="submit" class="btn btn-secondary btn-sm" style="flex-shrink:0"><i data-lucide="search" class="icon-sm"></i> Cari</button> -->
             </form>
-            <form action="{{ route('students.import') }}" method="POST" enctype="multipart/form-data" style="display:flex;align-items:center;gap:var(--sp-sm)">
-                @csrf
-                <label class="text-sm text-muted" style="white-space:nowrap">Import CSV:</label>
-                <input type="file" name="file" accept=".csv,.txt" required class="input" style="width:auto;padding:6px 10px">
-                <button type="submit" class="btn btn-primary btn-sm"><i data-lucide="upload" class="icon-sm"></i> Unggah</button>
-            </form>
+            <div style="display:flex;align-items:center;gap:var(--sp-sm);flex-wrap:wrap">
+                <form action="{{ route('students.import') }}" method="POST" enctype="multipart/form-data" style="display:flex;align-items:center;gap:var(--sp-sm);flex:1;min-width:0">
+                    @csrf
+                    <label class="text-sm text-muted" style="white-space:nowrap">Import CSV:</label>
+                    <input type="file" name="file" accept=".csv,.txt" required class="input" style="width:auto;padding:6px 10px;flex:1;min-width:0">
+                    <button type="submit" class="btn btn-primary btn-sm" style="flex-shrink:0"><i data-lucide="upload" class="icon-sm"></i> Unggah</button>
+                </form>
+            </div>
         </div>
 
-        <form action="{{ route('classes.promote') }}" method="POST" id="bulkPromoteForm" style="display:none;margin-bottom:var(--sp-md)">
+        @php
+            $baseParams = array_filter(['q' => request('q'), 'class_id' => request('class_id')]);
+            $sortArrow = function($col) use ($sort, $order) {
+                $active = $sort === $col;
+                $nextOrder = $active && $order === 'asc' ? 'desc' : 'asc';
+                $icon = $active ? ($order === 'asc' ? 'arrow-up' : 'arrow-down') : 'arrow-up-down';
+                $color = $active ? 'var(--primary)' : 'var(--on-surface-muted)';
+                return '<i data-lucide="'.$icon.'" style="width:12px;height:12px;color:'.$color.';margin-left:2px;vertical-align:middle"></i>';
+            };
+        @endphp
+
+        <form action="{{ route('classes.promote') }}" method="POST" id="bulkPromoteForm" style="display:none;margin-bottom:var(--sp-md)" onsubmit="return confirm('Anda yakin ingin memindahkan siswa terpilih ke kelas target? Tindakan ini tidak dapat dibatalkan.')">
             @csrf
             <div class="card" style="display:flex;align-items:center;gap:var(--sp-md);flex-wrap:wrap">
                 <span class="text-sm" style="font-weight:600" id="selectedCount">0</span>
@@ -58,7 +75,16 @@
 
         <div class="table-wrap">
             <table>
-                <thead><tr><th style="width:40px"><input type="checkbox" id="selectAll" class="checkbox"></th><th>NISN</th><th>NIS</th><th>Nama</th><th>Kelas</th><th>Status</th><th>Poin</th><th style="width:80px">Aksi</th></tr></thead>
+                <thead><tr>
+                    <th style="width:40px"><input type="checkbox" id="selectAll" class="checkbox"></th>
+                    <th>NISN</th>
+                    <th><a href="{{ route('students.index', array_merge($baseParams, ['sort'=>'nis','order'=>($sort==='nis'&&$order==='asc')?'desc':'asc'])) }}" style="display:inline-flex;align-items:center;gap:2px;text-decoration:none;color:inherit">NIS {!! $sortArrow('nis') !!}</a></th>
+                    <th><a href="{{ route('students.index', array_merge($baseParams, ['sort'=>'full_name','order'=>($sort==='full_name'&&$order==='asc')?'desc':'asc'])) }}" style="display:inline-flex;align-items:center;gap:2px;text-decoration:none;color:inherit">Nama {!! $sortArrow('full_name') !!}</a></th>
+                    <th>Kelas</th>
+                    <th><a href="{{ route('students.index', array_merge($baseParams, ['sort'=>'status','order'=>($sort==='status'&&$order==='asc')?'desc':'asc'])) }}" style="display:inline-flex;align-items:center;gap:2px;text-decoration:none;color:inherit">Status {!! $sortArrow('status') !!}</a></th>
+                    <th><a href="{{ route('students.index', array_merge($baseParams, ['sort'=>'point','order'=>($sort==='point'&&$order==='asc')?'desc':'asc'])) }}" style="display:inline-flex;align-items:center;gap:2px;text-decoration:none;color:inherit">Poin {!! $sortArrow('point') !!}</a></th>
+                    <th style="width:80px">Aksi</th>
+                </tr></thead>
                 <tbody>
                     @forelse($students as $student)
                         @php $poin = $student->pointLedgers->first()?->balance_after ?? 2000; @endphp
@@ -76,7 +102,7 @@
                             </div></td>
                         </tr>
                     @empty
-                        <tr><td colspan="8" style="padding:40px;text-align:center;color:var(--on-surface-muted)"><i data-lucide="inbox" class="icon-lg" style="display:block;margin:0 auto var(--sp-sm)"></i>@if(request('q'))Tidak ada yang cocok "@{{ request('q') }}".@elseBelum ada siswa.@endif</td></tr>
+                        <tr><td colspan="8" style="padding:40px;text-align:center;color:var(--on-surface-muted)"><i data-lucide="inbox" class="icon-lg" style="display:block;margin:0 auto var(--sp-sm)"></i>@if(request('q') || request('class_id'))Tidak ada siswa yang cocok.@elseBelum ada siswa.@endif</td></tr>
                     @endforelse
                 </tbody>
             </table>

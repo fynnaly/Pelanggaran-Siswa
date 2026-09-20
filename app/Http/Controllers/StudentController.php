@@ -20,6 +20,11 @@ class StudentController extends Controller
     {
         $q = request('q');
         $classId = request('class_id');
+        $sort = request('sort', 'created_at');
+        $order = request('order', 'desc');
+        $allowed = ['nis','full_name','status','point'];
+        $sort = in_array($sort, $allowed) ? $sort : 'created_at';
+        $order = strtolower($order) === 'asc' ? 'asc' : 'desc';
 
         $students = Student::with(['schoolClass.academicYear', 'pointLedgers' => fn ($qq) => $qq->orderByDesc('id')])
             ->when($q, function ($query) use ($q) {
@@ -30,13 +35,23 @@ class StudentController extends Controller
                 });
             })
             ->when($classId, fn ($query) => $query->where('class_id', $classId))
-            ->latest('created_at')
+            ->when($sort !== 'point', fn ($query) => $query->orderBy($sort, $order))
             ->paginate(20)
             ->withQueryString();
 
-        $classesForPromote = SchoolClass::orderBy('name')->pluck('name', 'id');
+        // Point is computed (not a DB column), sort in-memory on the page
+        if ($sort === 'point') {
+            $students->getCollection()->sortBy(
+                fn ($s) => $s->pointLedgers->first()?->balance_after ?? 2000,
+                SORT_REGULAR,
+                $order === 'desc'
+            );
+        }
 
-        return view('students.index', compact('students', 'classesForPromote', 'classId'));
+        $classesForPromote = SchoolClass::orderBy('name')->pluck('name', 'id');
+        $allClasses = SchoolClass::orderBy('name')->get();
+
+        return view('students.index', compact('students', 'classesForPromote', 'classId', 'allClasses', 'sort', 'order'));
     }
 
     /** Form tambah siswa — kirim daftar kelas dari controller (jangan query di Blade). */

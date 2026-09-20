@@ -9,7 +9,7 @@
         </div>
     </x-slot>
     <div class="main-wrap">
-        <div class="card">
+        <div class="card card-form">
             @if($errors->any())<div class="alert alert-error" style="margin-bottom:var(--sp-lg)"><i data-lucide="alert-circle" class="icon-sm"></i> {{ $errors->first() }}</div>@endif
             <form action="{{ route('classes.update', $class) }}" method="POST">
                 @csrf @method('PUT')

@@ -48,7 +48,7 @@ class AcademicYearController extends Controller
 
         // Jika BERHASIL, redirect ke index
         return redirect()
-            ->route('academic-years.index')
+            ->route('tahun-ajaran.index')
             ->with('success', 'Tahun ajaran berhasil ditambahkan.');
     }
 
@@ -86,7 +86,7 @@ class AcademicYearController extends Controller
         });
 
         return redirect()
-            ->route('academic-years.index')
+            ->route('tahun-ajaran.index')
             ->with('success', 'Tahun ajaran berhasil diupdate.');
     }
 
@@ -96,7 +96,7 @@ class AcademicYearController extends Controller
         $academicYear->delete();
 
         return redirect()
-            ->route('academic-years.index')
+            ->route('tahun-ajaran.index')
             ->with('success', 'Tahun ajaran berhasil dihapus.');
     }
 }

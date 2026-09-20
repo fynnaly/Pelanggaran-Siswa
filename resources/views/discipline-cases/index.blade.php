@@ -7,7 +7,7 @@
                 <p class="text-muted text-sm">{{ $cases->total() }} total kasus</p>
             </div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
-                <a href="{{ route('discipline-cases.create') }}" class="btn btn-primary"><i data-lucide="plus" class="icon-sm"></i> Buat Kasus</a>
+                <a href="{{ route('kasus-pelanggaran.create') }}" class="btn btn-primary"><i data-lucide="plus" class="icon-sm"></i> Buat Kasus</a>
             </div>
         </div>
     </x-slot>
@@ -16,16 +16,18 @@
         @if(session('warning'))<div class="alert alert-warning"><i data-lucide="alert-triangle" class="icon-sm"></i> {{ session('warning') }}</div>@endif
         @if(session('error'))<div class="alert alert-error"><i data-lucide="alert-circle" class="icon-sm"></i> {{ session('error') }}</div>@endif
         <div class="toolbar">
-            <input type="text" class="input" placeholder="Cari nomor kasus, nama siswa..." style="max-width:280px">
-            <div class="filter-group">
-                <select class="input" style="width:auto;min-width:150px">
-                    <option>Semua Status</option>
-                    <option value="found" {{ $status==='found'?'selected':'' }}>Diproses</option>
-                    <option value="validated" {{ $status==='validated'?'selected':'' }}>Divalidasi</option>
-                    <option value="done" {{ $status==='done'?'selected':'' }}>Selesai</option>
-                    <option value="dismissed" {{ $status==='dismissed'?'selected':'' }}>Dibuang</option>
-                </select>
-            </div>
+            <form method="GET" action="{{ route('kasus-pelanggaran.index') }}" style="display:flex;gap:var(--sp-sm);flex-wrap:wrap;align-items:center;width:100%">
+                <input type="text" name="search" class="input" placeholder="Cari nomor kasus, nama siswa..." style="max-width:280px" value="{{ request('search') }}">
+                <div class="filter-group">
+                    <select name="status" class="input" style="width:auto;min-width:150px" onchange="this.form.submit()">
+                        <option value="">Semua Status</option>
+                        <option value="found" {{ $status==='found'?'selected':'' }}>Diproses</option>
+                        <option value="validated" {{ $status==='validated'?'selected':'' }}>Divalidasi</option>
+                        <option value="done" {{ $status==='done'?'selected':'' }}>Selesai</option>
+                        <option value="dismissed" {{ $status==='dismissed'?'selected':'' }}>Dibuang</option>
+                    </select>
+                </div>
+            </form>
         </div>
         <div class="table-wrap">
             <table>
@@ -46,12 +48,12 @@
                             </td>
                             <td class="text-sm text-muted">{{ $case->created_at?->format('d M Y') }}</td>
                             <td><div class="action-cell">
-                                <a href="{{ route('discipline-cases.show', $case) }}" class="action-btn" title="Lihat"><i data-lucide="eye" style="width:14px;height:14px"></i></a>
+                                <a href="{{ route('kasus-pelanggaran.show', $case) }}" class="action-btn" title="Lihat"><i data-lucide="eye" style="width:14px;height:14px"></i></a>
                                 @if($case->status==='found')
-                                    <form action="{{ route('discipline-cases.validate', $case) }}" method="POST" class="inline" onsubmit="return confirm('Validasi kasus ini?')">@csrf @method('PATCH')<input type="hidden" name="validation_passed" value="1"><button class="action-btn" title="Validasi" style="color:var(--tertiary)"><i data-lucide="check" style="width:14px;height:14px"></i></button></form>
+                                    <form action="{{ route('kasus-pelanggaran.validate', $case) }}" method="POST" class="inline" onsubmit="return confirm('Validasi kasus ini?')">@csrf @method('PATCH')<input type="hidden" name="validation_passed" value="1"><button class="action-btn" title="Validasi" style="color:var(--tertiary)"><i data-lucide="check" style="width:14px;height:14px"></i></button></form>
                                 @endif
                                 @if($case->status==='validated')
-                                    <form action="{{ route('discipline-cases.done', $case) }}" method="POST" class="inline" onsubmit="return confirm('Tandai selesai?')">@csrf @method('PATCH')<button class="action-btn" title="Selesai"><i data-lucide="check-circle" style="width:14px;height:14px"></i></button></form>
+                                    <form action="{{ route('kasus-pelanggaran.done', $case) }}" method="POST" class="inline" onsubmit="return confirm('Tandai selesai?')">@csrf @method('PATCH')<button class="action-btn" title="Selesai"><i data-lucide="check-circle" style="width:14px;height:14px"></i></button></form>
                                 @endif
                             </div></td>
                         </tr>

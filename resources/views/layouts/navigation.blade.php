@@ -4,8 +4,10 @@
         ['route' => 'students.index', 'label' => 'Siswa', 'pattern' => 'students.*', 'icon' => 'users'],
         ['route' => 'classes.index', 'label' => 'Kelas', 'pattern' => 'classes.*', 'icon' => 'school'],
         ['route' => 'violation-categories.index', 'label' => 'Pelanggaran', 'pattern' => 'violation-categories.*', 'icon' => 'tags'],
-        ['route' => 'discipline-cases.index', 'label' => 'Kasus', 'pattern' => 'discipline-cases.*', 'icon' => 'file-text'],
-        ['route' => 'academic-years.index', 'label' => 'Tahun Ajaran', 'pattern' => 'academic-years.*', 'icon' => 'calendar'],
+        ['route' => 'kasus-pelanggaran.index', 'label' => 'Kasus', 'pattern' => 'kasus-pelanggaran.*', 'icon' => 'file-text'],
+        ['route' => 'tahun-ajaran.index', 'label' => 'Tahun Ajaran', 'pattern' => 'tahun-ajaran.*', 'icon' => 'calendar'],
+        ['route' => 'achievement-categories.index', 'label' => 'Kategori Prestasi', 'pattern' => 'achievement-categories.*', 'icon' => 'trophy'],
+        ['route' => 'achievement-records.index', 'label' => 'Rekam Prestasi', 'pattern' => 'achievement-records.*', 'icon' => 'award'],
     ];
 @endphp
 
@@ -19,7 +21,7 @@
     {{-- Logo --}}
     <div style="padding:var(--sp-lg);border-bottom:1px solid var(--border)">
         <a href="{{ route('dashboard') }}" style="display:flex;align-items:center;gap:var(--sp-sm);text-decoration:none;color:var(--primary);font-size:1.125rem;font-weight:700">
-            <i data-lucide="shield" style="width:24px;height:24px"></i>
+            <img src="{{ asset('image.ico') }}" alt="Logo" style="width:24px;height:24px;border-radius:4px">
             <span>Pelanggaran Kuy</span>
         </a>
     </div>
@@ -76,7 +78,7 @@
 </aside>
 
 {{-- Mobile overlay + hamburger --}}
-<div class="sidebar-overlay" x-data="{ open: false }" @keydown.escape.window="open = false">
+<div class="sidebar-overlay" x-data="{ open: JSON.parse(localStorage.getItem('sidebar-open') || 'false') }" @keydown.escape.window="open = false">
     {{-- Mobile top bar --}}
     <div class="mobile-topbar" style="
         display:none;position:sticky;top:0;z-index:50;
@@ -86,12 +88,9 @@
         align-items:center;justify-content:space-between;
     ">
         <div style="display:flex;align-items:center;gap:var(--sp-sm)">
-            <button @click="open = !open" style="width:40px;height:40px;border:none;background:transparent;color:var(--on-surface);cursor:pointer;display:flex;align-items:center;justify-content:center">
+            <button @click="open = !open; localStorage.setItem('sidebar-open', open)" style="width:40px;height:40px;border:none;background:transparent;color:var(--on-surface);cursor:pointer;display:flex;align-items:center;justify-content:center">
                 <i data-lucide="menu" style="width:22px;height:22px"></i>
             </button>
-            <a href="{{ route('dashboard') }}" style="font-size:1rem;font-weight:700;color:var(--primary);text-decoration:none;display:flex;align-items:center;gap:6px">
-                <i data-lucide="shield" style="width:20px;height:20px"></i> SMK
-            </a>
         </div>
         <div style="display:flex;align-items:center;gap:var(--sp-sm)">
             <button onclick="toggleTheme()" style="width:36px;height:36px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--neutral);color:var(--on-surface);cursor:pointer;display:flex;align-items:center;justify-content:center">
@@ -104,36 +103,36 @@
     </div>
 
     {{-- Backdrop --}}
-    <div x-show="open" x-transition:enter="transition ease-out duration-200"
+    <div x-show="open" x-cloak x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
          x-transition:leave="transition ease-in duration-150"
          x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-         @click="open = false"
-         style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:45">
+         @click="open = false; localStorage.setItem('sidebar-open', 'false')"
+         style="position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:45">
     </div>
 
     {{-- Drawer --}}
-    <div x-show="open" x-transition:enter="transition ease-out duration-200"
+    <div x-show="open" x-cloak x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0"
          x-transition:leave="transition ease-in duration-150"
          x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full"
-         style="display:none;position:fixed;top:0;left:0;bottom:0;width:280px;
+         style="position:fixed;top:0;left:0;bottom:0;width:280px;
                 background:var(--neutral);z-index:50;
                 display:flex;flex-direction:column;overflow-y:auto;
                 box-shadow:var(--sh-md);">
         {{-- Drawer header --}}
         <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp-md);border-bottom:1px solid var(--border)">
             <a href="{{ route('dashboard') }}" style="display:flex;align-items:center;gap:var(--sp-sm);text-decoration:none;color:var(--primary);font-size:1rem;font-weight:700">
-                <i data-lucide="shield" style="width:20px;height:20px"></i> Pelanggaran Kuy
+                <img src="{{ asset('image.ico') }}" alt="Logo" style="width:20px;height:20px;border-radius:4px"> Pelanggaran Kuy
             </a>
-            <button @click="open = false" style="width:32px;height:32px;border:none;background:transparent;color:var(--on-surface-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:var(--r-sm)">
+            <button @click="open = false; localStorage.setItem('sidebar-open', 'false')" style="width:32px;height:32px;border:none;background:transparent;color:var(--on-surface-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:var(--r-sm)">
                 <i data-lucide="x" style="width:18px;height:18px"></i>
             </button>
         </div>
         {{-- Drawer nav --}}
         <nav style="flex:1;padding:var(--sp-sm)">
             @foreach($links as $link)
-                <a href="{{ route($link['route']) }}" @click="open = false" style="
+                <a href="{{ route($link['route']) }}" @click="open = false; localStorage.setItem('sidebar-open', 'false')" style="
                     display:flex;align-items:center;gap:var(--sp-sm);
                     padding:10px var(--sp-md);border-radius:var(--r-sm);
                     font-size:.875rem;font-weight:600;text-decoration:none;
@@ -149,7 +148,7 @@
         </nav>
         {{-- Drawer bottom --}}
         <div style="padding:var(--sp-md);border-top:1px solid var(--border)">
-            <a href="{{ route('profile.edit') }}" @click="open = false" style="display:flex;align-items:center;gap:var(--sp-sm);padding:8px var(--sp-md);font-size:.875rem;color:var(--on-surface-muted);text-decoration:none;border-radius:var(--r-sm)">
+            <a href="{{ route('profile.edit') }}" @click="open = false; localStorage.setItem('sidebar-open', 'false')" style="display:flex;align-items:center;gap:var(--sp-sm);padding:8px var(--sp-md);font-size:.875rem;color:var(--on-surface-muted);text-decoration:none;border-radius:var(--r-sm)">
                 <i data-lucide="settings" style="width:16px;height:16px"></i> Pengaturan
             </a>
             <form method="POST" action="{{ route('logout') }}">

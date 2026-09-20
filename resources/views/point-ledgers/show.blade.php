@@ -25,7 +25,7 @@
                         <tr>
                             <td class="mono">{{ $i + 1 }}</td>
                             <td class="text-sm text-muted">{{ $entry->created_at?->format('d/m/Y H:i') }}</td>
-                            <td><a href="{{ route('discipline-cases.show', $entry->discipline_case_id) }}" style="color:var(--tertiary);font-weight:600;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">{{ $entry->case?->case_number ?? '-' }}</a></td>
+                            <td><a href="{{ route('kasus-pelanggaran.show', $entry->discipline_case_id) }}" style="color:var(--tertiary);font-weight:600;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">{{ $entry->case?->case_number ?? '-' }}</a></td>
                             <td class="text-sm">{{ $entry->description ?? '-' }}</td>
                             <td class="mono" style="font-weight:700;color:var(--danger)">{{ $entry->points > 0 ? '+' : '' }}{{ $entry->points }}</td>
                             <td class="mono" style="font-weight:700">{{ $entry->balance_after }}</td>

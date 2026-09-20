@@ -16,7 +16,8 @@ class DisciplineCaseController extends Controller
     /** Menampilkan daftar semua pelanggaran berdasarkan status */
     public function index()
     {
-        $status = request('status'); // found, validated, dismissed, done
+        $status = request('status');
+        $search = request('search');
 
         $query = DisciplineCase::with(['student.user', 'violationCategory'])
             ->latest('created_at');
@@ -25,7 +26,14 @@ class DisciplineCaseController extends Controller
             $query->where('status', $status);
         }
 
-        $cases = $query->paginate(20);
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('case_number', 'like', "%{$search}%")
+                  ->orWhereHas('student', fn ($sq) => $sq->where('full_name', 'like', "%{$search}%"));
+            });
+        }
+
+        $cases = $query->paginate(20)->withQueryString();
 
         return view('discipline-cases.index', compact('cases', 'status'));
     }
@@ -61,24 +69,21 @@ class DisciplineCaseController extends Controller
         $validated = $request->validate([
             'student_id' => 'required|exists:students,id',
             'violation_category_id' => 'required|exists:violation_categories,id',
-            'report_by' => 'required|exists:users,id',
-            'location' => 'nullable|string|max:100',
-            'description' => 'required|string',
-            'status' => 'required|in:found',
+            'reporter_id' => 'required|exists:users,id',
+            'notes' => 'nullable|string',
         ]);
 
         $case = DisciplineCase::create([
             'case_number' => 'KAS-' . date('Y') . '-' . str_pad((DisciplineCase::max('id') ?? 0) + 1, 4, '0', STR_PAD_LEFT),
             'student_id' => $validated['student_id'],
             'violation_category_id' => $validated['violation_category_id'],
-            'report_by' => $validated['report_by'],
-            'location' => $validated['location'],
-            'description' => $validated['description'],
+            'report_by' => $validated['reporter_id'],
+            'description' => $validated['notes'] ?? '',
             'status' => 'found',
         ]);
 
         return redirect()
-            ->route('discipline-cases.index')
+            ->route('kasus-pelanggaran.index')
             ->with('success', 'Laporan pelanggaran ' . $case->case_number . ' berhasil dicatat (status: found).');
     }
 
@@ -132,7 +137,7 @@ class DisciplineCaseController extends Controller
             });
 
             return redirect()
-                ->route('discipline-cases.index')
+                ->route('kasus-pelanggaran.index')
                 ->with('success', 'Pelanggaran ' . $disciplineCase->case_number . ' diverifikasi, poin ' . $points . ' berhasil dikurang.');
         }
 
@@ -141,7 +146,26 @@ class DisciplineCaseController extends Controller
         $disciplineCase->save();
 
         return redirect()
-            ->route('discipline-cases.index')
+            ->route('kasus-pelanggaran.index')
+            ->with('warning', 'Pelanggaran ' . $disciplineCase->case_number . ' dibuang, poin tidak dikurang.');
+    }
+
+    /** Buang kasus: found -> dismissed (bukti tidak cukup) */
+    public function dismiss(DisciplineCase $disciplineCase)
+    {
+        $this->authorize('dismiss', $disciplineCase);
+
+        if ($disciplineCase->status !== 'found') {
+            return redirect()
+                ->route('kasus-pelanggaran.show', $disciplineCase)
+                ->with('error', 'Hanya kasus dengan status diproses yang bisa dibuang.');
+        }
+
+        $disciplineCase->status = 'dismissed';
+        $disciplineCase->save();
+
+        return redirect()
+            ->route('kasus-pelanggaran.index')
             ->with('warning', 'Pelanggaran ' . $disciplineCase->case_number . ' dibuang, poin tidak dikurang.');
     }
 
@@ -155,12 +179,12 @@ class DisciplineCaseController extends Controller
             $disciplineCase->save();
 
             return redirect()
-                ->route('discipline-cases.index')
+                ->route('kasus-pelanggaran.index')
                 ->with('success', 'Kasus ' . $disciplineCase->case_number . ' selesai (done).');
         }
 
         return redirect()
-            ->route('discipline-cases.index')
+            ->route('kasus-pelanggaran.index')
             ->with('error', 'Kasus hanya bisa diedit dari status validated.');
     }
 }

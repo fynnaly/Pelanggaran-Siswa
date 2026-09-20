@@ -3,14 +3,15 @@
         
         <div class="page-header">
             <div><h1 style="display:flex;align-items:center;gap:var(--sp-sm)"><i data-lucide="file-text" class="icon"></i> {{ $disciplineCase->case_number }}</h1></div>
-            <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
+            <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap;align-items:center">
                 @if($disciplineCase->status==='found')
-                    <form action="{{ route('discipline-cases.validate', $disciplineCase) }}" method="POST" onsubmit="return confirm('Validasi kasus ini?')">@csrf @method('PATCH')<input type="hidden" name="validation_passed" value="1"><button class="btn btn-primary btn-sm"><i data-lucide="check" class="icon-sm"></i> Validasi</button></form>
+                    <form action="{{ route('kasus-pelanggaran.validate', $disciplineCase) }}" method="POST" onsubmit="return confirm('Validasi kasus ini?')" style="margin:0;padding:0;border:none;display:inline"><input type="hidden" name="_token" value="{{ csrf_token() }}"> @method('PATCH')<input type="hidden" name="validation_passed" value="1"><button class="btn btn-primary btn-sm"><i data-lucide="check" class="icon-sm"></i> Validasi</button></form>
+                    <form action="{{ route('kasus-pelanggaran.dismiss', $disciplineCase) }}" method="POST" onsubmit="return confirm('Buang kasus ini? Poin tidak akan dikurangi.')" style="margin:0;padding:0;border:none;display:inline">@csrf @method('PATCH')<button class="btn btn-danger btn-sm"><i data-lucide="x" class="icon-sm"></i> Buang</button></form>
                 @endif
                 @if($disciplineCase->status==='validated')
-                    <form action="{{ route('discipline-cases.done', $disciplineCase) }}" method="POST" onsubmit="return confirm('Tandai selesai?')">@csrf @method('PATCH')<button class="btn btn-primary btn-sm"><i data-lucide="check-circle" class="icon-sm"></i> Selesai</button></form>
+                    <form action="{{ route('kasus-pelanggaran.done', $disciplineCase) }}" method="POST" onsubmit="return confirm('Tandai selesai?')" style="margin:0;padding:0;border:none;display:inline">@csrf @method('PATCH')<button class="btn btn-primary btn-sm"><i data-lucide="check-circle" class="icon-sm"></i> Selesai</button></form>
                 @endif
-                <a href="{{ route('discipline-cases.index') }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" class="icon-sm"></i> Kembali</a>
+                <a href="{{ route('kasus-pelanggaran.index') }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" class="icon-sm"></i> Kembali</a>
             </div>
         </div>
     </x-slot>
