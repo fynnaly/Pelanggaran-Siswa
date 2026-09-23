@@ -26,7 +26,17 @@ class StudentController extends Controller
         $sort = in_array($sort, $allowed) ? $sort : 'created_at';
         $order = strtolower($order) === 'asc' ? 'asc' : 'desc';
 
+        // Tahun ajaran: default aktif, urut dari lama ke baru
+        $academicYears = AcademicYear::orderBy('start_date')->get();
+        $activeYearId = AcademicYear::where('is_active', true)->value('id');
+        $selectedYearId = request('year_id') ?: $activeYearId;
+
+        // Kelas mengikuti tahun yang dipilih
+        $allClasses = SchoolClass::where('academic_year_id', $selectedYearId)->orderBy('name')->get();
+        $classesForPromote = $allClasses->pluck('name', 'id');
+
         $students = Student::with(['schoolClass.academicYear', 'pointLedgers' => fn ($qq) => $qq->orderByDesc('id')])
+            ->whereHas('schoolClass', fn ($qq) => $qq->where('academic_year_id', $selectedYearId))
             ->when($q, function ($query) use ($q) {
                 $query->where(function ($w) use ($q) {
                     $w->where('full_name', 'like', "%{$q}%")
@@ -36,28 +46,34 @@ class StudentController extends Controller
             })
             ->when($classId, fn ($query) => $query->where('class_id', $classId))
             ->when($sort !== 'point', fn ($query) => $query->orderBy($sort, $order))
-            ->paginate(20)
-            ->withQueryString();
+            ->get();
 
-        // Point is computed (not a DB column), sort in-memory on the page
+        // Point computed (not a DB column), sort in-memory
         if ($sort === 'point') {
-            $students->getCollection()->sortBy(
+            $students = $students->sortBy(
                 fn ($s) => $s->pointLedgers->first()?->balance_after ?? 2000,
                 SORT_REGULAR,
                 $order === 'desc'
-            );
+            )->values();
         }
 
-        $classesForPromote = SchoolClass::orderBy('name')->pluck('name', 'id');
-        $allClasses = SchoolClass::orderBy('name')->get();
+        $students = new \Illuminate\Pagination\LengthAwarePaginator(
+            $students->slice((request('page', 1) - 1) * 20, 20)->values(),
+            $students->count(),
+            20,
+            request('page', 1),
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
 
-        return view('students.index', compact('students', 'classesForPromote', 'classId', 'allClasses', 'sort', 'order'));
+        return view('students.index', compact('students', 'classesForPromote', 'classId', 'allClasses', 'sort', 'order', 'academicYears', 'selectedYearId'));
     }
 
     /** Form tambah siswa — kirim daftar kelas dari controller (jangan query di Blade). */
     public function create()
     {
-        $classes = SchoolClass::with('academicYear')->orderBy('name')->get();
+        $classes = SchoolClass::with('academicYear')
+            ->where('academic_year_id', AcademicYear::where('is_active', true)->value('id'))
+            ->orderBy('name')->get();
 
         return view('students.create', compact('classes'));
     }
@@ -103,7 +119,9 @@ class StudentController extends Controller
     /** Form edit siswa */
     public function edit(Student $student)
     {
-        $classes = SchoolClass::with('academicYear')->orderBy('name')->get();
+        $classes = SchoolClass::with('academicYear')
+            ->where('academic_year_id', AcademicYear::where('is_active', true)->value('id'))
+            ->orderBy('name')->get();
 
         return view('students.edit', compact('student', 'classes'));
     }
@@ -371,12 +389,15 @@ class StudentController extends Controller
             return;
         }
 
+        $lastBalance = PointLedger::getLastBalance($student->id);
+        $newBalance = $lastBalance;
+
         PointLedger::create([
             'student_id'       => $student->id,
             'academic_year_id' => $yearId,
             'direction'        => PointLedger::DIR_CREDIT,
             'amount'           => (int) PointLedger::OPENING_AMOUNT,
-            'balance_after'    => (int) PointLedger::OPENING_AMOUNT,
+            'balance_after'    => $newBalance,
             'transaction_type' => PointLedger::TYPE_OPENING,
             'source_type'      => null,
             'source_id'        => null,

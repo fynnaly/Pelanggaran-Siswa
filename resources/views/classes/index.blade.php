@@ -11,13 +11,22 @@
     <div class="main-wrap">
         @if(session('success'))<div class="alert alert-success"><i data-lucide="check-circle" class="icon-sm"></i> {{ session('success') }}</div>@endif
         @if(session('error'))<div class="alert alert-error"><i data-lucide="alert-circle" class="icon-sm"></i> {{ session('error') }}</div>@endif
+        <div class="toolbar" style="margin-bottom:var(--sp-md)">
+            <form action="{{ route('classes.index') }}" method="GET" style="display:flex;gap:var(--sp-sm);flex:1;align-items:stretch">
+                <select name="year_id" class="input" style="width:auto;min-width:130px;flex-shrink:0" onchange="this.form.submit()">
+                    @foreach($academicYears as $yr)
+                        <option value="{{ $yr->id }}" {{ $selectedYearId==$yr->id?'selected':'' }}>{{ $yr->name }}{{ $yr->is_active?' (Aktif)':'' }}</option>
+                    @endforeach
+                </select>
+            </form>
+        </div>
         <div class="table-wrap">
             <table>
                 <thead><tr><th>Nama Kelas</th><th>Tahun Ajaran</th><th>Jumlah Siswa</th><th>Wali Kelas</th><th style="width:100px">Aksi</th></tr></thead>
                 <tbody>
                     @forelse($classes as $class)
                         <tr>
-                            <td><a href="{{ route('students.index', ['class_id' => $class->id]) }}" style="font-weight:600">{{ $class->name }}</a></td>
+                            <td><a href="{{ route('students.index', ['class_id' => $class->id, 'year_id' => $class->academic_year_id]) }}" style="font-weight:600">{{ $class->name }}</a></td>
                             <td class="text-sm text-muted">{{ $class->academicYear?->name ?? '-' }}</td>
                             <td class="mono" style="font-weight:700">{{ $class->students_count }}</td>
                             <td class="text-sm text-muted">{{ $class->homeroomTeacher?->name ?? '-' }}</td>

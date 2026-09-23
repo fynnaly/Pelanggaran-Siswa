@@ -186,10 +186,14 @@
 
         /* ── Pagination ── */
         .pagination { display: flex; align-items: center; gap: var(--sp-xs); margin-top: var(--sp-lg); justify-content: center; flex-wrap: wrap; }
-        .page-btn { min-width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+        .pagination nav { display: flex; align-items: center; gap: var(--sp-xs); flex-wrap: wrap; justify-content: center; }
+        .pagination nav span, .pagination nav a { min-width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
                     border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--neutral);
-                    color: var(--on-surface); font-size: .875rem; cursor: pointer; transition: background .15s; }
-        .page-btn.active { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+                    color: var(--on-surface); font-size: .875rem; cursor: pointer; transition: background .15s; text-decoration: none; padding: 0 10px; }
+        .pagination nav span.active { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+        .pagination nav span.disabled { opacity: .4; pointer-events: none; }
+        .pagination nav a:hover { background: var(--surface); }
+        .pagination nav svg { display: none; }
 
         /* ── Skeleton ── */
         .skeleton { background: #e2e8f0; border-radius: var(--r-sm); animation: pulse 1.5s ease-in-out infinite; }
@@ -241,6 +245,7 @@
         @media(min-width:768px){
             a:hover{color:#047857}
             .card:hover{box-shadow:var(--sh-md)}
+            .no-hover:hover{box-shadow:none!important}
             .btn-primary:hover{background:#047857;color:var(--on-tertiary)}
             .btn-primary:hover svg,.btn-primary:hover i{stroke:var(--on-tertiary)}
             .btn-secondary:hover{background:var(--border)}

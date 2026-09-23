@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\AcademicYear;
+use App\Services\ClassPromotionService;
 use DB;
 
 class AcademicYearController extends Controller
@@ -26,15 +27,13 @@ class AcademicYearController extends Controller
     /** Store a newly created resource in storage. */
     public function store(Request $request)
     {
-
-        // Vaidasi
+        // Validasi
         $validated = $request->validate([
             'name' => 'required|string|max:20|unique:academic_years,name',
             'start_date' => 'required|date',
             'is_active' => 'nullable|boolean',
         ]);
 
-        // dd($validated->all);
         // Handle Checkbox
         $validated['is_active'] = $request->has('is_active');
 
@@ -45,6 +44,15 @@ class AcademicYearController extends Controller
 
         // Simpan ke Database
         $newRecord = AcademicYear::create($validated);
+
+        // Jika langsung diaktifkan, jalankan promosi
+        if ($validated['is_active']) {
+            $result = app(ClassPromotionService::class)->promote($newRecord);
+
+            return redirect()
+                ->route('tahun-ajaran.index')
+                ->with('success', "Tahun ajaran {$newRecord->name} diaktifkan. {$result['classes_renamed']} kelas dipromosikan, {$result['students_graduated']} siswa lulus.");
+        }
 
         // Jika BERHASIL, redirect ke index
         return redirect()
@@ -61,8 +69,7 @@ class AcademicYearController extends Controller
     /** Update the specified resource in storage. */
     public function update(Request $request, AcademicYear $academicYear)
     {
-
-        // Vaidasi
+        // Validasi
         $validated = $request->validate([
             'name' => 'required|string|max:20|unique:academic_years,name,' . $academicYear->id,
             'start_date' => 'required|date',
@@ -71,6 +78,10 @@ class AcademicYearController extends Controller
 
         // Handle Checkbox
         $validated['is_active'] = $request->has('is_active');
+
+        // Cek apakah status aktif berubah
+        $wasInactive = !$academicYear->is_active;
+        $willBeActive = $validated['is_active'];
 
         // Gunakan transaksi untuk logika aktif tahun ajaran
         DB::transaction(function () use ($validated, $academicYear) {
@@ -84,6 +95,15 @@ class AcademicYearController extends Controller
             // Update data tahun ajaran
             $academicYear->update($validated);
         });
+
+        // Jika baru diaktifkan, jalankan promosi
+        if ($wasInactive && $willBeActive) {
+            $result = app(ClassPromotionService::class)->promote($academicYear);
+
+            return redirect()
+                ->route('tahun-ajaran.index')
+                ->with('success', "Tahun ajaran {$academicYear->name} diaktifkan. {$result['classes_renamed']} kelas dipromosikan, {$result['students_graduated']} siswa lulus.");
+        }
 
         return redirect()
             ->route('tahun-ajaran.index')

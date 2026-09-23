@@ -64,6 +64,16 @@ class PointLedger extends Model
         return $this->belongsTo(User::class, 'verified_by');
     }
 
+    /** Ambil saldo terakhir siswa dari tahun ajaran manapun (terbaru). */
+    public static function getLastBalance(int $studentId): int
+    {
+        $last = static::where('student_id', $studentId)
+            ->latest('id')
+            ->value('balance_after');
+
+        return $last !== null ? (int) $last : (int) static::OPENING_AMOUNT;
+    }
+
     /** Label human-readable untuk sumber transaksi (ganti 'App\Models\X #1') */
     public function sourceLabel(): string
     {

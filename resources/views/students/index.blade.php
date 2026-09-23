@@ -25,14 +25,18 @@
 
         <div class="toolbar">
             <form action="{{ route('students.index') }}" method="GET" style="display:flex;gap:var(--sp-sm);flex:1;align-items:stretch">
-                <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nama / NISN / NIS..." class="input" style="flex:1;min-width:0">
-                <select name="class_id" class="input" style="width:auto;min-width:140px;flex-shrink:0">
+                <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nama / NISN / NIS..." class="input" style="flex:1;min-width:0" id="searchInput">
+                <select name="year_id" class="input" style="width:auto;min-width:130px;flex-shrink:0" onchange="this.form.submit()">
+                    @foreach($academicYears as $yr)
+                        <option value="{{ $yr->id }}" {{ $selectedYearId==$yr->id?'selected':'' }}>{{ $yr->name }}{{ $yr->is_active?' (Aktif)':'' }}</option>
+                    @endforeach
+                </select>
+                <select name="class_id" class="input" style="width:auto;min-width:140px;flex-shrink:0" onchange="this.form.submit()">
                     <option value="">Semua Kelas</option>
                     @foreach($allClasses as $cls)
                         <option value="{{ $cls->id }}" {{ request('class_id')==$cls->id?'selected':'' }}>{{ $cls->name }}</option>
                     @endforeach
                 </select>
-                <!-- <button type="submit" class="btn btn-secondary btn-sm" style="flex-shrink:0"><i data-lucide="search" class="icon-sm"></i> Cari</button> -->
             </form>
             <div style="display:flex;align-items:center;gap:var(--sp-sm);flex-wrap:wrap">
                 <form action="{{ route('students.import') }}" method="POST" enctype="multipart/form-data" style="display:flex;align-items:center;gap:var(--sp-sm);flex:1;min-width:0">
@@ -45,13 +49,18 @@
         </div>
 
         @php
-            $baseParams = array_filter(['q' => request('q'), 'class_id' => request('class_id')]);
+            $baseParams = array_filter(['q' => request('q'), 'class_id' => request('class_id'), 'year_id' => request('year_id')]);
             $sortArrow = function($col) use ($sort, $order) {
                 $active = $sort === $col;
-                $nextOrder = $active && $order === 'asc' ? 'desc' : 'asc';
-                $icon = $active ? ($order === 'asc' ? 'arrow-up' : 'arrow-down') : 'arrow-up-down';
-                $color = $active ? 'var(--primary)' : 'var(--on-surface-muted)';
+                if (!$active) { $icon = 'arrow-up-down'; $color = 'var(--on-surface-muted)'; }
+                elseif ($order === 'asc') { $icon = 'arrow-up'; $color = 'var(--primary)'; }
+                else { $icon = 'arrow-down'; $color = 'var(--primary)'; }
                 return '<i data-lucide="'.$icon.'" style="width:12px;height:12px;color:'.$color.';margin-left:2px;vertical-align:middle"></i>';
+            };
+            $sortLink = function($col) use ($baseParams, $sort, $order) {
+                if ($sort === $col && $order === 'asc') return array_merge($baseParams, ['sort' => $col, 'order' => 'desc']);
+                if ($sort === $col && $order === 'desc') return $baseParams; // back to default
+                return array_merge($baseParams, ['sort' => $col, 'order' => 'asc']);
             };
         @endphp
 
@@ -69,7 +78,7 @@
                         <option value="{{ $id }}">{{ $name }}</option>
                     @endforeach
                 </select>
-                <button type="submit" class="btn btn-primary btn-sm"><i data-lucide="arrow-up" class="icon-sm"></i> Naik Kelas</button>
+                <button type="submit" class="btn btn-primary btn-sm"><i data-lucide="arrow-right" class="icon-sm"></i> Pindahkan</button>
             </div>
         </form>
 
@@ -78,11 +87,11 @@
                 <thead><tr>
                     <th style="width:40px"><input type="checkbox" id="selectAll" class="checkbox"></th>
                     <th>NISN</th>
-                    <th><a href="{{ route('students.index', array_merge($baseParams, ['sort'=>'nis','order'=>($sort==='nis'&&$order==='asc')?'desc':'asc'])) }}" style="display:inline-flex;align-items:center;gap:2px;text-decoration:none;color:inherit">NIS {!! $sortArrow('nis') !!}</a></th>
-                    <th><a href="{{ route('students.index', array_merge($baseParams, ['sort'=>'full_name','order'=>($sort==='full_name'&&$order==='asc')?'desc':'asc'])) }}" style="display:inline-flex;align-items:center;gap:2px;text-decoration:none;color:inherit">Nama {!! $sortArrow('full_name') !!}</a></th>
+                    <th><a href="{{ route('students.index', $sortLink('nis')) }}" style="display:inline-flex;align-items:center;gap:2px;text-decoration:none;color:inherit">NIS {!! $sortArrow('nis') !!}</a></th>
+                    <th><a href="{{ route('students.index', $sortLink('full_name')) }}" style="display:inline-flex;align-items:center;gap:2px;text-decoration:none;color:inherit">Nama {!! $sortArrow('full_name') !!}</a></th>
                     <th>Kelas</th>
-                    <th><a href="{{ route('students.index', array_merge($baseParams, ['sort'=>'status','order'=>($sort==='status'&&$order==='asc')?'desc':'asc'])) }}" style="display:inline-flex;align-items:center;gap:2px;text-decoration:none;color:inherit">Status {!! $sortArrow('status') !!}</a></th>
-                    <th><a href="{{ route('students.index', array_merge($baseParams, ['sort'=>'point','order'=>($sort==='point'&&$order==='asc')?'desc':'asc'])) }}" style="display:inline-flex;align-items:center;gap:2px;text-decoration:none;color:inherit">Poin {!! $sortArrow('point') !!}</a></th>
+                    <th><a href="{{ route('students.index', $sortLink('status')) }}" style="display:inline-flex;align-items:center;gap:2px;text-decoration:none;color:inherit">Status {!! $sortArrow('status') !!}</a></th>
+                    <th><a href="{{ route('students.index', $sortLink('point')) }}" style="display:inline-flex;align-items:center;gap:2px;text-decoration:none;color:inherit">Poin {!! $sortArrow('point') !!}</a></th>
                     <th style="width:80px">Aksi</th>
                 </tr></thead>
                 <tbody>
@@ -115,6 +124,14 @@
     <script>document.addEventListener('DOMContentLoaded',()=>{lucide.createIcons()})</script>
     <script>
         document.addEventListener('DOMContentLoaded',()=>{
+            // Auto-submit search (debounce 400ms)
+            const searchInput=document.getElementById('searchInput');
+            let timer;
+            searchInput?.addEventListener('input',()=>{
+                clearTimeout(timer);
+                timer=setTimeout(()=>{searchInput.closest('form').submit();},400);
+            });
+            // Bulk select
             const s=document.getElementById('selectAll'),c=document.querySelectorAll('.student-cb'),f=document.getElementById('bulkPromoteForm'),n=document.getElementById('selectedCount');
             function u(){const x=document.querySelectorAll('.student-cb:checked').length;n.textContent=x;f.style.display=x===0?'none':'';}
             s?.addEventListener('change',()=>{c.forEach(cb=>{cb.checked=s.checked});u();});

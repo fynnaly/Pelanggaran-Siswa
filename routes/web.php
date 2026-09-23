@@ -38,11 +38,11 @@ Route::middleware('auth')->group(function () {
 
     // Siswa — export/import/template CSV native (tanpa library, PHP 8.5.5 ext-gd kosong)
     // Letak SEBELUM resource agar /students/export tidak kecapture sebagai {student}
-    Route::get('students/template', [StudentController::class, 'downloadTemplate'])->name('students.template');
-    Route::get('students/export', [StudentController::class, 'export'])->name('students.export');
-    Route::post('students/import', [StudentController::class, 'import'])->name('students.import');
-    Route::get('students/search', [StudentController::class, 'search'])->name('students.search');
-    Route::resource('students', StudentController::class);
+      Route::get('students/template', [StudentController::class, 'downloadTemplate'])->name('students.template');
+      Route::get('students/export', [StudentController::class, 'export'])->name('students.export');
+      Route::post('students/import', [StudentController::class, 'import'])->name('students.import');
+      Route::get('students/search', [StudentController::class, 'search'])->name('students.search');
+      Route::resource('students', StudentController::class);
 
     // Kelas — promote HARUS sebelum resource agar tidak tertelan sebagai {class}
     Route::post('classes/promote', [SchoolClassController::class, 'promote'])->name('classes.promote');

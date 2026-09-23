@@ -40,7 +40,7 @@
         </div>
 
         @if($totalCases > 0)
-        <div class="card" style="margin-bottom:var(--sp-md)">
+        <div class="card no-hover" style="margin-bottom:14px; margin-top:14px">
             <h3 style="font-size:0.875rem;font-weight:600;margin-bottom:var(--sp-sm)">Progres Penanganan Kasus</h3>
             @php
                 $foundPct = ($totalCasesFound / $totalCases) * 100;

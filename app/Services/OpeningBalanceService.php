@@ -10,18 +10,20 @@ use Illuminate\Database\QueryException;
 
 class OpeningBalanceService
 {
+    public function __construct()
+    {
+    }
 
     /**
-     * * NOTE: Membuat/Generate saldo awal buat 1 siswa
-     * * Lalu, mengembalikan kondisi 'true' jika berhasil dibuat
-     * * kondisi 'false' jika sudah ada (idempotent)
+     * Generate saldo awal buat 1 siswa.
+     * Saldo awal = saldo terakhir dari tahun sebelumnya + 2000.
+     * Return true jika berhasil dibuat, false jika sudah ada (idempotent).
      */
-
-    public function generateForStudent(Student $student, AcademicYear $academicYear, int $createdBy) {
+    public function generateForStudent(Student $student, AcademicYear $academicYear, int $createdBy): bool
+    {
         try {
             return DB::transaction(function () use ($student, $academicYear, $createdBy) {
-
-            $exists = PointLedger::where('student_id', $student->id)
+                $exists = PointLedger::where('student_id', $student->id)
                     ->where('academic_year_id', $academicYear->id)
                     ->where('transaction_type', PointLedger::TYPE_OPENING)
                     ->exists();
@@ -30,39 +32,30 @@ class OpeningBalanceService
                     return false;
                 }
 
-                // Memasuki Ledger
+                $lastBalance = static::getLastBalance($student->id);
+                                $newBalance = $lastBalance;
+
                 PointLedger::create([
-                    'student_id' => $student->id,
+                    'student_id'       => $student->id,
                     'academic_year_id' => $academicYear->id,
-                    'direction' => PointLedger::DIR_CREDIT,
-                    'amount' => PointLedger::OPENING_AMOUNT,
-                    'balance_after' => PointLedger::OPENING_AMOUNT,
+                    'direction'        => PointLedger::DIR_CREDIT,
+                    'amount'           => PointLedger::OPENING_AMOUNT,
+                    'balance_after'    => $newBalance,
                     'transaction_type' => PointLedger::TYPE_OPENING,
-                    'source_type' => null,
-                    'source_id' => null,
-                    'reason' => "Saldo awal tahun ajaran {$academicYear->name}",
-                    'created_by' => $createdBy,
-                    'verified_by' => $createdBy,
+                    'source_type'      => null,
+                    'source_id'        => null,
+                    'reason'           => "Saldo awal tahun ajaran {$academicYear->name}",
+                    'created_by'       => $createdBy,
+                    'verified_by'      => $createdBy,
                 ]);
 
                 return true;
             });
         } catch (QueryException $error) {
-            // Nanganin race condition (Concurrent requests)
-            // postgreSql error code 23505 adalah unique_violation
             if ($error->getCode() === '23505' || str_contains($error->getMessage(), 'unique_opening_balance')) {
-                // Gagal karna dublikat di DB, jadi basicly anggap aja sudah ada (idempotent)
                 return false;
             }
             throw $error;
         }
-    }
-
-    /**
-     * Create a new class instance.
-     */
-    public function __construct()
-    {
-        //
     }
 }

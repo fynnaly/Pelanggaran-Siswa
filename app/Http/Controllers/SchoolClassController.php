@@ -14,11 +14,16 @@ class SchoolClassController extends Controller
     /** Menampilkan daftar semua kelas */
     public function index()
     {
+        $academicYears = AcademicYear::orderBy('start_date')->get();
+        $activeYearId = AcademicYear::where('is_active', true)->value('id');
+        $selectedYearId = request('year_id') ?: $activeYearId;
+
         $classes = SchoolClass::with(['academicYear', 'homeroomTeacher'])->withCount('students')
+            ->where('academic_year_id', $selectedYearId)
             ->latest('name')
             ->paginate(20);
 
-        return view('classes.index', compact('classes'));
+        return view('classes.index', compact('classes', 'academicYears', 'selectedYearId'));
     }
 
     /** Menampilkan form pembuatan kelas baru */

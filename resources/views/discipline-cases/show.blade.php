@@ -35,7 +35,7 @@
                 </div>
                 <div class="card">
                     <h2 style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)"><i data-lucide="file-text" class="icon"></i> Kronologi / Catatan</h2>
-                    @if($disciplineCase->notes)<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--sp-md);line-height:1.7">{{ nl2br(e($disciplineCase->notes)) }}</div>@else<p class="text-muted text-sm">Tidak ada catatan.</p>@endif
+                    @if($disciplineCase->description)<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--sp-md);line-height:1.7">{{ nl2br(e($disciplineCase->description)) }}</div>@else<p class="text-muted text-sm">Tidak ada catatan.</p>@endif
                 </div>
             </div>
             <div>

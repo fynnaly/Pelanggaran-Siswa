@@ -6,6 +6,7 @@
         ['route' => 'violation-categories.index', 'label' => 'Pelanggaran', 'pattern' => 'violation-categories.*', 'icon' => 'tags'],
         ['route' => 'kasus-pelanggaran.index', 'label' => 'Kasus', 'pattern' => 'kasus-pelanggaran.*', 'icon' => 'file-text'],
         ['route' => 'tahun-ajaran.index', 'label' => 'Tahun Ajaran', 'pattern' => 'tahun-ajaran.*', 'icon' => 'calendar'],
+        ['route' => 'point-ledgers.index', 'label' => 'Poin', 'pattern' => 'point-ledgers.*', 'icon' => 'wallet'],
         ['route' => 'achievement-categories.index', 'label' => 'Kategori Prestasi', 'pattern' => 'achievement-categories.*', 'icon' => 'trophy'],
         ['route' => 'achievement-records.index', 'label' => 'Rekam Prestasi', 'pattern' => 'achievement-records.*', 'icon' => 'award'],
     ];
