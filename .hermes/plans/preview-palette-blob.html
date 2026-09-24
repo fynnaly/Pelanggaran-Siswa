@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  *{box-sizing:border-box;margin:0}
+  body{font-family:system-ui,Inter,sans-serif;padding:20px;color:#0f172a;background:#fff}
+  h3{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin:18px 0 10px;color:#475569}
+  h3:first-child{margin-top:0}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .sw{flex:1;min-width:140px;border-radius:16px;padding:14px;border:1px solid #e2e8f0}
+  .dot{width:32px;height:32px;border-radius:10px;border:1px solid rgba(0,0,0,.08);margin-bottom:10px}
+  .sw b{font-size:13px;display:block}
+  .sw p{font-size:12px;color:#64748b;margin-top:4px;line-height:1.5}
+  .sw small{font-size:11px;font-family:monospace;color:#94a3b8}
+  .blob-demo{height:120px;border-radius:16px;border:1px solid #e2e8f0;position:relative;overflow:hidden;background:#f1f5f9}
+  .blob{position:absolute;border-radius:50%;filter:blur(28px);opacity:.6}
+  .card{border:1px solid #e2e8f0;border-radius:16px;padding:12px;background:rgba(255,255,255,.72);backdrop-filter:blur(12px)}
+  .pill{display:inline-block;font-size:11px;font-weight:800;padding:4px 10px;border-radius:999px}
+</style>
+</head>
+<body>
+  <h3>1 — Violet vs Navy</h3>
+  <div class="row">
+    <div class="sw">
+      <div class="dot" style="background:#7c3aed"></div>
+      <b>Violet #7c3aed (sekarang)</b><small>--accent saat ini</small>
+      <p>Ungu neon. Startup/playful/AI candy. Gradient sunset-pink. cocok demo, tapi keliatan buatan AI.</p>
+      <div style="margin-top:10px;display:flex;gap:6px"><span class="pill" style="background:rgba(124,58,237,.14);color:#7c3aed">Chip</span><span class="pill" style="background:#7c3aed;color:#fff">Tombol</span></div>
+    </div>
+    <div class="sw" style="background:#f8fafc">
+      <div class="dot" style="background:#1e3a5f"></div>
+      <b>Navy #1e3a5f (rekomendasi)</b><small>--accent baru</small>
+      <p>Biru tua dinas/sekolah. Resmi, tenang, tidak AI. Pemerintah/bank/sekolah pakai ini. Background solid.</p>
+      <div style="margin-top:10px;display:flex;gap:6px"><span class="pill" style="background:rgba(30,58,95,.1);color:#1e3a5f">Chip</span><span class="pill" style="background:#1e3a5f;color:#fff">Tombol</span></div>
+    </div>
+  </div>
+
+  <h3>2 — Blob yang mana</h3>
+  <div class="row">
+    <div style="flex:1;min-width:200px">
+      <div class="blob-demo">
+        <div class="blob" style="width:140px;height:140px;background:#c084fc;top:-20px;left:-20px"></div>
+        <div class="blob" style="width:160px;height:160px;background:#60a5fa;bottom:-30px;right:-20px"></div>
+        <div class="blob" style="width:110px;height:110px;background:#fb923c;top:40%;left:45%"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><span class="card" style="font-size:11px;font-weight:700">Card di atas 3 blobs</span></div>
+      </div>
+      <p style="font-size:12px;color:#64748b;margin-top:8px;line-height:1.6"><b>Sekarang</b>: 3 bulatan gradient warna di belakang, blur 90px, animasi drift 22 detik. INI yang bikin lag di HP.</p>
+    </div>
+    <div style="flex:1;min-width:200px">
+      <div class="blob-demo" style="background-image:radial-gradient(rgba(15,23,42,.04) 1px,transparent 1px);background-size:22px 22px">
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><span class="card" style="font-size:11px;font-weight:700">Card — 0 blob, dot grid</span></div>
+      </div>
+      <p style="font-size:12px;color:#64748b;margin-top:8px;line-height:1.6"><b>Opsi kentang</b>: 0 blob + dot grid tipis. Paling ringan, kayak halaman statis Astro/Svelte. Zero GPU.</p>
+    </div>
+  </div>
+
+  <h3>3 — Scope: hanya /test vs global</h3>
+  <div class="row">
+    <div class="sw">
+      <b>Hanya /test</b>
+      <p>Token warna/radius/blur cuma di <code>test-glass-theme.blade.php</code>. Sisanya app tetap Breeze default. Aman isolasi.</p>
+    </div>
+    <div class="sw" style="opacity:.7">
+      <b>Sync ke layouts/app.blade.php</b>
+      <p>Semua halaman (dashboard, index siswa, dll) ikut pakai navy + blur hemat. Butuh ubah 2 file. Rencana masa depan.</p>
+    </div>
+  </div>
+
+  <h3>4 — Target HP kentang 3GB</h3>
+  <p style="font-size:13px;color:#334155;line-height:1.7">Blur 10px, animasi mati, 0 blob, saturate rendah. Seperti framework Astro/Svelte — static first, interaktif minimal.</p>
+</body>
+</html>

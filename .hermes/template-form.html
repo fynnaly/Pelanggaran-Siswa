@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="id" class="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buat Kasus Baru — Pelanggaran Siswa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Root Tokens (Light — TIDAK DIUBAH) ── */
+:root{
+  --primary:#1e3a5f; --secondary:#64748b; --tertiary:#059669; --accent:#f59e0b;
+  --neutral:#ffffff; --surface:#f8fafc; --border:#e2e8f0; --danger:#dc2626;
+  --on-primary:#fff; --on-tertiary:#fff; --on-surface:#1e293b; --on-surface-muted:#64748b;
+  --glass-bg:rgba(255,255,255,.72); --glass-border:rgba(255,255,255,.55); --glass-shadow:rgba(15,23,42,.06);
+  --bs:#dcfce7; --bt:#166534; --ws:#fef3c7; --wt:#92400e; --ds:#fee2e2; --dt:#991b1b;
+  --sh-sm:0 1px 2px rgba(15,23,42,.06); --sh-md:0 4px 12px rgba(15,23,42,.08);
+  --r-sm:8px; --r-md:12px; --r-lg:20px; --r-full:9999px; --sp-xs:4px; --sp-sm:8px;
+  --sp-md:16px; --sp-lg:24px; --sp-xl:40px;
+}
+
+/* ── Dark Mode Tokens (DIUBAH — lebih hangat, nyaman segala usia) ── */
+.dark{
+  --neutral:#1c1c1f;      /* sedikit hangat, tidak hitam murni */
+  --surface:#111114;      /* background dark lebih lembut */
+  --border:#252830;       /* border subtle, tidak aggressive */
+  --on-surface:#e8eaed;   /* teks putih tidak menyilaukan */
+  --on-surface-muted:#8b919a; /* muted text lebih terang */
+  --primary:#5b8abf;      /* logo/nav lebih terang di dark mode */
+  --glass-bg:rgba(30,32,40,.78); /* glass warm gray */
+  --glass-border:rgba(255,255,255,.08); /* border glass sangat subtle */
+  --sh-g:0 4px 16px rgba(0,0,0,.4);
+  --bs:#064e3b; --bt:#6ee7b7; /* badge success dark adapt */
+  --ws:#78350f; --wt:#fcd34d; /* badge warning dark adapt */
+  --ds:#7f1d1d; --dt:#fca5a5; /* badge danger dark adapt */
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Figtree',sans-serif;font-size:1rem;line-height:1.6;color:var(--on-surface);background:var(--surface);transition:background .2s,color .2s}h1{font-size:2.25rem;font-weight:700;line-height:1.15;letter-spacing:-.01em}
+
+form{max-width:600px;margin:0 auto;padding:var(--sp-xl) var(--sp-md)}
+.field{margin-bottom:var(--sp-lg)}
+.field-label{display:block;font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:var(--sp-xs)}
+.field-input{width:100%;padding:10px 14px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--neutral);color:var(--on-surface);font-family:inherit;font-size:.875rem;transition:border-color .15s,box-shadow .15s}.field-input:focus{outline:none;border-color:var(--tertiary);box-shadow:0 0 0 3px rgba(5,150,105,.15)}.field-input::placeholder{color:var(--on-surface-muted)}
+select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+.textarea{width:100%;padding:10px 14px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--neutral);color:var(--on-surface);font-family:inherit;font-size:.875rem;line-height:1.5;min-height:120px;resize:vertical}.textarea:focus{outline:none;border-color:var(--tertiary);box-shadow:0 0 0 3px rgba(5,150,105,.15)}
+.checkbox-row{display:flex;align-items:center;gap:var(--sp-sm)}
+.checkbox-input{width:18px;height:18px;border-radius:4px;border:1px solid var(--border);cursor:pointer;accent-color:var(--tertiary)}
+.btn-submit{width:100%;padding:12px 20px;border-radius:var(--r-sm);border:none;font-family:inherit;font-size:.875rem;font-weight:600;cursor:pointer;transition:background .15s}
+.btn-submit-primary{background:var(--tertiary);color:var(--on-tertiary)}.btn-submit-primary:hover{background:#047857}
+.btn-cancel{width:100%;padding:12px 20px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--neutral);color:var(--on-surface);font-family:inherit;font-size:.875rem;font-weight:600;cursor:pointer;margin-top:var(--sp-sm);transition:background .15s}.btn-cancel:hover{background:var(--border)}
+.help-text{font-size:.8125rem;color:var(--on-surface-muted);margin-top:var(--sp-xs);display:block}
+.alert{background:var(--ds);border:1px solid var(--dt);border-radius:var(--r-sm);padding:var(--sp-md);color:var(--dt);display:none;margin-top:var(--sp-lg)}
+
+/* ── Header & Layout (cuma di template-form) ── */
+.header{position:sticky;top:0;z-index:50;background:var(--glass-bg);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--glass-border);box-shadow:var(--sh-g)}
+.header-inner{max-width:1280px;margin:0 auto;padding:0 var(--sp-md);display:flex;align-items:center;justify-content:space-between;height:64px;gap:var(--sp-md)}
+.logo{font-size:1.125rem;font-weight:700;color:var(--primary);white-space:nowrap}
+.nav{display:none;gap:var(--sp-lg)}.nav a{text-decoration:none;color:var(--on-surface-muted);font-size:.875rem;font-weight:600;transition:color .15s}.nav a.active,.nav a:hover{color:var(--on-surface)}
+.header-actions{display:flex;align-items:center;gap:var(--sp-sm)}
+.theme-toggle{width:40px;height:40px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--neutral);color:var(--on-surface);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.125rem;transition:background .15s}.theme-toggle:hover{background:var(--border)}
+.avatar{width:36px;height:36px;border-radius:var(--r-full);background:var(--primary);color:var(--on-primary);display:flex;align-items:center;justify-content:center;font-size:.875rem;font-weight:700}
+@media(min-width:640px){.nav{display:flex}}
+
+.main{max-width:1280px;margin:0 auto;padding:var(--sp-xl) var(--sp-md)}
+.page-header{margin-bottom:var(--sp-xl)}
+.page-header h1{margin-bottom:var(--sp-xs)}
+.breadcrumb{font-size:.875rem;color:var(--on-surface-muted);margin-bottom:var(--sp-sm)}
+
+/* ── Text utility ── */
+.text-danger{color:var(--danger)}
+/* ── Alert variant ── */
+.alert.success{background:var(--bs);border-color:var(--bt);color:var(--bt)}
+.alert.error{background:var(--ds);border-color:var(--dt);color:var(--dt)}
+/* ── Focus ring tambahan untuk accessibility ── */
+.field-input:focus-visible{border-color:var(--tertiary);box-shadow:0 0 0 3px rgba(5,150,105,.15)}
+</style>
+</head>
+<body>
+<header class="header"><div class="header-inner"><div class="logo">SMK Pelanggaran</div><nav class="nav"><a href="#" class="active">Dashboard</a><a href="#">Siswa</a><a href="#">Kasus</a><a href="#">Kategori</a><a href="#">Laporan</a></nav><div class="header-actions"><button class="theme-toggle" onclick="toggleTheme()">O</button><div class="avatar">AD</div></div></div></header>
+<main class="main"><div class="breadcrumb">Beranda / Buat Kasus</div>
+<div class="page-header"><h1>Buat Kasus Baru</h1></div>
+<div class="section">
+<form id="crud-form">
+  <div class="field">
+    <label class="field-label" for="siswa">Siswa <span class="text-danger">*</span></label>
+    <select class="field-input" id="siswa" required>
+      <option value="">Pilih siswa</option>
+      <option value="001">Ahmad Fauzi - X RPL 2</option>
+      <option value="002">Siti Nurhaliza - XI AKL 1</option>
+      <option value="003">Budi Santoso - X BD 1</option>
+      <option value="004">Dewi Lestari - XII MM 2</option>
+      <option value="005">Rizki Pratama - X RPL 1</option>
+    </select>
+    <div class="help-text">Pilih nama siswa yang melakukan pelanggaran</div>
+  </div>
+  <div class="field">
+    <label class="field-label" for="kategori">Kategori <span class="text-danger">*</span></label>
+    <select class="field-input" id="kategori" required>
+      <option value="">Pilih kategori</option>
+      <option value="terlambat">Terlambat Masuk</option>
+      <option value="titipabsen">Titip Absen</option>
+      <option value="bolos">Bolos</option>
+      <option value="rambut">Rambut Tidak Rapi</option>
+      <option value="seragam">Seragam Tidak Lengkap</option>
+      <option value="lain">Lainnya</option>
+    </select>
+    <div class="help-text">Kategori pelanggaran</div>
+  </div>
+  <div class="field">
+    <label class="field-label" for="poin">Poin Dikurangi</label>
+    <select class="field-input" id="poin">
+      <option value="">Pilih poin</option>
+      <option value="-5">-5</option>
+      <option value="-10">-10</option>
+      <option value="-25">-25</option>
+      <option value="-50">-50</option>
+      <option value="0">0 (Catatan)</option>
+    </select>
+    <div class="help-text">Jumlah poin yang dikurangi dari total siswa</div>
+  </div>
+  <div class="field">
+    <label class="field-label" for="pelapor">Dilaporkan Oleh</label>
+    <select class="field-input" id="pelapor">
+      <option value="">Pilih pelapor</option>
+      <option value="guru-budi">Pak Budi (Guru BK)</option>
+      <option value="guru-andi">Pak Andi (Wali)</option>
+      <option value="guru-sari">Bu Sari (Admin)</option>
+      <option value="self">Siswa Sendiri</option>
+    </select>
+  </div>
+  <div class="field">
+    <label class="field-label" for="keterangan">Keterangan</label>
+    <textarea class="field-textarea" id="keterangan" rows="3" placeholder="Masukkan deskripsi pelanggaran..."></textarea>
+    <div class="help-text">Deskripsi singkat mengenai kejadian (opsional)</div>
+  </div>
+  <div class="checkbox-row">
+    <input type="checkbox" class="checkbox-input" id="konfirmasi">
+    <span style="font-size:.875rem;color:var(--on-surface);">Saya yakin data sudah benar</span>
+  </div>
+  <div style="margin-top:var(--sp-lg)">
+    <button type="submit" class="btn-submit btn-submit-primary">Simpan Kasus</button>
+    <button type="button" class="btn-cancel btn-cancel-secondary" onclick="window.history.back()">Batal</button>
+  </div>
+  <div class="alert" role="alert" id="alert-msg"></div>
+</form>
+</div>
+</main>
+<script>
+function toggleTheme(){const html=document.documentElement,d=html.classList.toggle('dark');h.classList.toggle('light',!d);localStorage.setItem('theme',d?'dark':'light')}
+(function(){const s=localStorage.getItem('theme'),p=window.matchMedia('(prefers-color-scheme: dark)').matches;if(s==='dark'||(!s&&p)){document.documentElement.classList.remove('light');document.documentElement.classList.add('dark')}})();
+</script>
+</body>
+</html>

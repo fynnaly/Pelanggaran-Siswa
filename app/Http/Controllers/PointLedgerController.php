@@ -4,66 +4,49 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\PointLedger;
+use App\Models\Student;
 
 class PointLedgerController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $ledgers = PointLedger::with(['student', 'academicYear'])
-            ->latest()->paginate(20);
+        $search = $request->string('search')->trim();
+        $direction = $request->string('direction')->toString();
+        $type = $request->string('type')->toString();
 
-        return view('point-ledgers.index', compact('ledgers'));
+        $query = PointLedger::with(['student.schoolClass', 'academicYear'])
+            ->when($search, fn($q, $s) => $q->whereHas('student', fn($sq) =>
+                $sq->where('full_name', 'like', "%{$s}%")
+                    ->orWhere('nisn', 'like', "%{$s}%")
+            ))
+            ->when($direction, fn($q, $d) => $q->where('direction', $d))
+            ->when($type, fn($q, $t) => $q->where('transaction_type', $t));
+
+        $ledgers = $query->latest()->paginate(20)->withQueryString();
+
+        return view('point-ledgers.index', compact(
+            'ledgers', 'search', 'direction', 'type'
+        ));
     }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    // public function create()
-    // {
-    //     //
-    // }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-
-    // public function store(Request $request)
-    // {
-    //     //
-    // }
 
     /**
      * Display the specified resource.
      */
     public function show(PointLedger $pointLedger)
     {
-        return view('point-ledgers.show', compact('pointLedger'));
+        $pointLedger->load(['student.schoolClass', 'academicYear', 'creator', 'verifier']);
+
+        $student = $pointLedger->student;
+
+        // Ambil semua transaksi siswa di tahun ajaran yang sama
+        $ledger = PointLedger::where('student_id', $student->id)
+            ->where('academic_year_id', $pointLedger->academic_year_id)
+            ->latest()
+            ->get();
+
+        return view('point-ledgers.show', compact('pointLedger', 'student', 'ledger'));
     }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    // public function edit(string $id)
-    // {
-    //     //
-    // }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    // public function update(Request $request, string $id)
-    // {
-    //     //
-    // }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    // public function destroy(string $id)
-    // {
-    //     //
-    // }
 }

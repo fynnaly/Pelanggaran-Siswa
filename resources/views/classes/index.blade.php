@@ -1,53 +1,47 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Daftar Kelas</h2>
-            <a href="{{ route('classes.create') }}" class="px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700">+ Tambah Kelas</a>
-        </div>
-    </x-slot>
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            @if(session('success'))
-                <div class="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm">{{ session('success') }}</div>
-            @endif
-            @if(session('error'))
-                <div class="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">{{ session('error') }}</div>
-            @endif
-            <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full text-sm">
-                        <thead class="bg-gray-50 text-gray-600">
-                            <tr>
-                                <th class="px-4 py-3 text-left font-semibold">Nama Kelas</th>
-                                <th class="px-4 py-3 text-left font-semibold">Tahun Ajaran</th>
-                                <th class="px-4 py-3 text-center font-semibold">Jumlah Siswa</th>
-                                <th class="px-4 py-3 text-left font-semibold">Wali Kelas</th>
-                                <th class="px-4 py-3 text-right font-semibold">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            @forelse($classes as $class)
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-4 py-3 font-semibold">{{ $class->name }}</td>
-                                    <td class="px-4 py-3 text-xs text-gray-600">{{ $class->academicYear?->name ?? '-' }}</td>
-                                    <td class="px-4 py-3 text-center font-semibold">{{ $class->students()->count() }}</td>
-                                    <td class="px-4 py-3 text-xs text-gray-600">{{ $class->homeroomTeacher?->name ?? '-' }}</td>
-                                    <td class="px-4 py-3 text-right space-x-2">
-                                        <a href="{{ route('classes.edit', $class) }}" class="text-blue-600 hover:underline text-xs">Edit</a>
-                                        <form action="{{ route('classes.destroy', $class) }}" method="POST" class="inline" onsubmit="return confirm('Hapus kelas ini?')">
-                                            @csrf @method('DELETE')
-                                            <button class="text-red-600 hover:underline text-xs">Hapus</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr><td colspan="5" class="px-4 py-10 text-center text-gray-500">Belum ada kelas. Tambah dulu.</td></tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-                <div class="px-4 py-3">{{ $classes->links() }}</div>
+
+        <div class="page-header">
+            <div><h1>Daftar Kelas</h1></div>
+            <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
+                <a href="{{ route('classes.create') }}" class="btn btn-primary"><i data-lucide="plus" class="icon-sm"></i> Tambah</a>
             </div>
         </div>
+    </x-slot>
+    <div class="main-wrap">
+        @if(session('success'))<div class="alert alert-success"><i data-lucide="check-circle" class="icon-sm"></i> {{ session('success') }}</div>@endif
+        @if(session('error'))<div class="alert alert-error"><i data-lucide="alert-circle" class="icon-sm"></i> {{ session('error') }}</div>@endif
+        <div class="toolbar" style="margin-bottom:var(--sp-md)">
+            <form action="{{ route('classes.index') }}" method="GET" style="display:flex;gap:var(--sp-sm);flex:1;align-items:stretch">
+                <select name="year_id" class="input" style="width:auto;min-width:130px;flex-shrink:0" onchange="this.form.submit()">
+                    @foreach($academicYears as $yr)
+                        <option value="{{ $yr->id }}" {{ $selectedYearId==$yr->id?'selected':'' }}>{{ $yr->name }}{{ $yr->is_active?' (Aktif)':'' }}</option>
+                    @endforeach
+                </select>
+            </form>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Nama Kelas</th><th>Tahun Ajaran</th><th>Jumlah Siswa</th><th>Wali Kelas</th><th style="width:100px">Aksi</th></tr></thead>
+                <tbody>
+                    @forelse($classes as $class)
+                        <tr>
+                            <td><a href="{{ route('students.index', ['class_id' => $class->id, 'year_id' => $class->academic_year_id]) }}" style="font-weight:600">{{ $class->name }}</a></td>
+                            <td class="text-sm text-muted">{{ $class->academicYear?->name ?? '-' }}</td>
+                            <td class="mono" style="font-weight:700">{{ $class->students_count }}</td>
+                            <td class="text-sm text-muted">{{ $class->homeroomTeacher?->name ?? '-' }}</td>
+                            <td><div class="action-cell">
+                                <a href="{{ route('classes.edit', $class) }}" class="action-btn" title="Edit"><i data-lucide="pencil" style="width:14px;height:14px"></i></a>
+                                <form action="{{ route('classes.destroy', $class) }}" method="POST" class="inline" onsubmit="return confirm('Hapus kelas {{ $class->name }}?')">@csrf @method('DELETE')<button class="action-btn" title="Hapus" style="color:var(--danger)"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button></form>
+                            </div></td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="5" style="padding:40px;text-align:center;color:var(--on-surface-muted)"><i data-lucide="inbox" class="icon-lg" style="display:block;margin:0 auto var(--sp-sm)"></i>Belum ada kelas. Tambah dulu.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:var(--sp-lg)"><div class="pagination" style="margin-top:0">{{ $classes->links() }}</div></div>
     </div>
+    <script>document.addEventListener('DOMContentLoaded',()=>{lucide.createIcons()})</script>
 </x-app-layout>

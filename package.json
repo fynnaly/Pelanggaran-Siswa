@@ -19,8 +19,5 @@
     },
     "optionalDependencies": {
         "@laravel/multiplex": "^0.4.1"
-    },
-    "dependencies": {
-        "@supabase/server": "^1.5.1"
     }
 }

@@ -1,51 +1,34 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Edit Kelas: {{ $class->name }}</h2>
-    </x-slot>
-    <div class="py-6">
-        <div class="max-w-xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                @if($errors->any())
-                    <div class="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
-                        @foreach($errors->all() as $e) <div>{{ $e }}</div> @endforeach
-                    </div>
-                @endif
-                <form action="{{ route('classes.update', $class) }}" method="POST" class="space-y-4">
-                    @csrf @method('PUT')
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Tahun Ajaran</label>
-                        <select name="academic_year_id" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500">
-                            <option value="">-- Pilih tahun --</option>
-                            @foreach($academicYears as $id => $name)
-                                <option value="{{ $id }}" {{ old('academic_year_id', $class->academic_year_id)==$id?'selected':'' }}>{{ $name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Kelas</label>
-                        <input type="text" name="name" value="{{ old('name', $class->name) }}" required maxlength="20"
-                               class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Wali Kelas</label>
-                        <select name="homeroom_teacher_id" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500">
-                            <option value="">-- Pilih wali --</option>
-                            @foreach(\App\Models\User::whereHas('roles', fn($q) => $q->where('name','admin'))->get() as $user)
-                                <option value="{{ $user->id }}" {{ old('homeroom_teacher_id', $class->homeroom_teacher_id)==$user->id?'selected':'' }}>{{ $user->name }}</option>
-                            @endforeach
-                            @if(\App\Models\User::whereHas('roles', fn($q) => $q->where('name','admin'))->count() === 0)
-                                @foreach(\App\Models\User::limit(20)->get() as $user)
-                                    <option value="{{ $user->id }}" {{ old('homeroom_teacher_id', $class->homeroom_teacher_id)==$user->id?'selected':'' }}>{{ $user->name }}</option>
-                                @endforeach
-                            @endif
-                        </select>
-                    </div>
-                    <div class="flex justify-end space-x-3 pt-2">
-                        <a href="{{ route('classes.index') }}" class="px-4 py-2 text-sm text-gray-600 hover:underline">Batal</a>
-                        <button class="px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700">Update</button>
-                    </div>
-                </form>
+
+        <div class="page-header">
+            <div><h1>Edit: {{ $class->name }}</h1></div>
+            <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
+                <a href="{{ route('classes.index') }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" class="icon-sm"></i> Kembali</a>
             </div>
         </div>
+    </x-slot>
+    <div class="main-wrap">
+        <div class="card card-form">
+            @if($errors->any())<div class="alert alert-error" style="margin-bottom:var(--sp-lg)"><i data-lucide="alert-circle" class="icon-sm"></i> {{ $errors->first() }}</div>@endif
+            <form action="{{ route('classes.update', $class) }}" method="POST">
+                @csrf @method('PUT')
+                <div class="field"><label class="field-label">Nama Kelas <span class="text-danger">*</span></label><input type="text" name="name" value="{{ old('name', $class->name) }}" class="field-input" required></div>
+                <div class="field"><label class="field-label">Tahun Ajaran <span class="text-danger">*</span></label>
+                    <select name="academic_year_id" class="field-input" required>
+                        <option value="">Pilih tahun ajaran...</option>
+                        @foreach($academicYears as $year)
+                            <option value="{{ $year->id }}" {{ old('academic_year_id', $class->academic_year_id)==$year->id?'selected':'' }}>{{ $year->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="field"><label class="field-label">Wali Kelas</label><input type="text" name="homeroom_teacher" value="{{ old('homeroom_teacher', $class->homeroom_teacher) }}" class="field-input"></div>
+                <div style="display:flex;gap:var(--sp-sm);margin-top:var(--sp-lg)">
+                    <a href="{{ route('classes.index') }}" class="btn btn-secondary" style="flex:1;justify-content:center">Batal</a>
+                    <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center"><i data-lucide="save" class="icon-sm"></i> Simpan</button>
+                </div>
+            </form>
+        </div>
     </div>
+    <script>document.addEventListener('DOMContentLoaded',()=>{lucide.createIcons()})</script>
 </x-app-layout>

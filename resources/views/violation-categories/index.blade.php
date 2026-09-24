@@ -1,53 +1,39 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Kategori Pelanggaran</h2>
-            <a href="{{ route('violation-categories.create') }}" class="px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700">+ Tambah Kategori</a>
-        </div>
-    </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            @if(session('success'))
-                <div class="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm">{{ session('success') }}</div>
-            @endif
-            <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full text-sm">
-                        <thead class="bg-gray-50 text-gray-600">
-                            <tr>
-                                <th class="px-4 py-3 text-left font-semibold">Kode</th>
-                                <th class="px-4 py-3 text-left font-semibold">Nama</th>
-                                <th class="px-4 py-3 text-left font-semibold">Tingkat</th>
-                                <th class="px-4 py-3 text-center font-semibold">Poin</th>
-                                <th class="px-4 py-3 text-center font-semibold">Status</th>
-                                <th class="px-4 py-3 text-right font-semibold">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            @forelse($categories as $cat)
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-4 py-3 font-mono text-xs">{{ $cat->code }}</td>
-                                    <td class="px-4 py-3">{{ $cat->name }}</td>
-                                    <td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-semibold {{ $cat->severity==='berat'?'bg-red-100 text-red-700':($cat->severity==='sedang'?'bg-amber-100 text-amber-700':'bg-emerald-100 text-emerald-700') }}">{{ $cat->severity }}</span></td>
-                                    <td class="px-4 py-3 text-center font-semibold">{{ $cat->points }}</td>
-                                    <td class="px-4 py-3 text-center"><span class="px-2 py-1 rounded-full text-xs {{ $cat->status==='active'?'bg-emerald-100 text-emerald-700':'bg-gray-100 text-gray-600' }}">{{ $cat->status }}</span></td>
-                                    <td class="px-4 py-3 text-right space-x-2">
-                                        <a href="{{ route('violation-categories.edit', $cat) }}" class="text-blue-600 hover:underline text-xs">Edit</a>
-                                        <form action="{{ route('violation-categories.destroy', $cat) }}" method="POST" class="inline" onsubmit="return confirm('Hapus kategori ini?')">
-                                            @csrf @method('DELETE')
-                                            <button class="text-red-600 hover:underline text-xs">Hapus</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr><td colspan="6" class="px-4 py-10 text-center text-gray-500">Belum ada kategori. Tambah dulu.</td></tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-                <div class="px-4 py-3">{{ $categories->links() }}</div>
+        <div class="page-header">
+            <div><h1>Kategori Pelanggaran</h1></div>
+            <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
+                <a href="{{ route('violation-categories.create') }}" class="btn btn-primary"><i data-lucide="plus" class="icon-sm"></i> Tambah</a>
             </div>
         </div>
+    </x-slot>
+    <div class="main-wrap">
+        @if(session('success'))<div class="alert alert-success"><i data-lucide="check-circle" class="icon-sm"></i> {{ session('success') }}</div>@endif
+        @if(session('error'))<div class="alert alert-error"><i data-lucide="alert-circle" class="icon-sm"></i> {{ session('error') }}</div>@endif
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Kode</th><th>Nama</th><th>Tingkat</th><th>Poin</th><th>Status</th><th style="width:100px">Aksi</th></tr></thead>
+                <tbody>
+                    @forelse($categories as $cat)
+                        <tr>
+                            <td class="mono">{{ $cat->code }}</td>
+                            <td><strong>{{ $cat->name }}</strong></td>
+                            <td><span class="badge badge-warning">{{ $cat->severity }}</span></td>
+                            <td class="mono">{{ $cat->points }}</td>
+                            <td><span class="badge {{ $cat->status==='active'?'badge-success':'' }}" style="{{ $cat->status!=='active'?'background:var(--surface);color:var(--on-surface-muted)':'' }}">{{ ucfirst($cat->status) }}</span></td>
+                            <td><div class="action-cell">
+                                <a href="{{ route('violation-categories.edit', $cat) }}" class="action-btn" title="Edit"><i data-lucide="pencil" style="width:14px;height:14px"></i></a>
+                                <form action="{{ route('violation-categories.destroy', $cat) }}" method="POST" class="inline" onsubmit="return confirm('Hapus kategori ini?')">@csrf @method('DELETE')<button class="action-btn" title="Hapus" style="color:var(--danger)"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button></form>
+                            </div></td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="6" style="padding:40px;text-align:center;color:var(--on-surface-muted)"><i data-lucide="inbox" class="icon-lg" style="display:block;margin:0 auto var(--sp-sm)"></i>Belum ada kategori.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:var(--sp-lg)"><div class="pagination" style="margin-top:0">{{ $categories->links() }}</div></div>
     </div>
+    <script>document.addEventListener('DOMContentLoaded',()=>{lucide.createIcons()})</script>
 </x-app-layout>

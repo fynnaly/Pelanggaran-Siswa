@@ -1,57 +1,114 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Lapor Pelanggaran Baru</h2>
+        <div class="page-header">
+            <div><h1>Buat Kasus Baru</h1></div>
+            <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
+                <a href="{{ route('kasus-pelanggaran.index') }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" class="icon-sm"></i> Kembali</a>
+            </div>
+        </div>
     </x-slot>
-    <div class="py-6">
-        <div class="max-w-xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                @if($errors->any())
-                    <div class="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
-                        @foreach($errors->all() as $e) <div>{{ $e }}</div> @endforeach
+    <div class="main-wrap">
+        <div class="card card-form" x-data="caseForm()">
+            @if(session('success'))<div class="alert alert-success"><i data-lucide="check-circle" class="icon-sm"></i> {{ session('success') }}</div>@endif
+            @if(session('error'))<div class="alert alert-error"><i data-lucide="alert-circle" class="icon-sm"></i> {{ session('error') }}</div>@endif
+            <form action="{{ route('kasus-pelanggaran.store') }}" method="POST">
+                @csrf
+                <div class="field"><label class="field-label">Siswa <span class="text-danger">*</span></label>
+                    <input type="text" name="student_search" class="field-input" placeholder="Ketik nama atau NISN siswa..." @input="searchStudent($event.target.value)" autocomplete="off" x-show="!selectedStudentId">
+                    <input type="hidden" name="student_id" :value="selectedStudentId">
+                    <div x-show="results.length > 0 && !selectedStudentId" style="background:var(--neutral);border:1px solid var(--border);border-radius:var(--r-sm);margin-top:4px;max-height:180px;overflow-y:auto;position:relative;z-index:10">
+                        <template x-for="s in results" :key="s.id">
+                            <div @click="selectStudent(s)" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:.875rem">
+                                <strong x-text="s.full_name"></strong>
+                                <span class="text-muted" x-text="' - ' + (s.school_class?.name || s.kelas || '')"></span>
+                            </div>
+                        </template>
+                    </div>
+                    <div x-show="selectedStudentId" style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-md)">
+                        <span class="badge" style="background:var(--bs);color:var(--bt)"><i data-lucide="user" class="icon-sm"></i> <span x-text="selectedStudentName"></span></span>
+                        <a href="javascript:void(0)" class="text-sm" style="color:var(--on-surface-muted);white-space:nowrap;flex-shrink:0" @click="clearStudent()"><i data-lucide="x" class="icon-sm"></i></a>
+                    </div>
+                    <span class="help-text">Pilih nama siswa yang melakukan pelanggaran</span>
+                </div>
+                <div class="field"><label class="field-label">Kategori Pelanggaran <span class="text-danger">*</span></label>
+                    <select name="violation_category_id" class="field-input" required @change="$dispatch('violation-changed', { points: $event.target.selectedOptions[0]?.dataset.points || 0 })">
+                        <option value="">Pilih kategori...</option>
+                        @foreach($categories as $cat)
+                            <option value="{{ $cat->id }}" data-points="{{ $cat->points }}" {{ old('violation_category_id')==$cat->id?'selected':'' }}>{{ $cat->name }} ({{ $cat->points }} poin)</option>
+                        @endforeach
+                    </select>
+                    <span class="help-text">Pilih jenis pelanggaran yang dilakukan siswa</span>
+                </div>
+                @php $isAdmin = auth()->user()->role === 'admin'; @endphp
+                @if($isAdmin)
+                <div class="field"><label class="field-label">Pelapor <span class="text-danger">*</span></label>
+                    <select name="reporter_id" class="field-input" required>
+                        <option value="">Pilih pelapor...</option>
+                        @foreach($reporters as $rep)
+                            <option value="{{ $rep->id }}" {{ old('reporter_id')==$rep->id?'selected':'' }}>{{ $rep->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                @else
+                <input type="hidden" name="reporter_id" value="{{ auth()->id() }}">
+                @endif
+                <div class="field"><label class="field-label">Keterangan / Kronologi</label><textarea name="notes" class="field-input" rows="4" placeholder="Ceritakan kronologi kejadian (waktu, tempat, keadaan)...">{{ old('notes') }}</textarea></div>
+                <div style="display:flex;gap:var(--sp-sm);margin-top:var(--sp-lg)">
+                    <a href="{{ route('kasus-pelanggaran.index') }}" class="btn btn-secondary" style="flex:1;justify-content:center">Batal</a>
+                    <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center"><i data-lucide="file-plus" class="icon-sm"></i> Simpan Kasus</button>
+                </div>
+            </form>
+        </div>
+
+        {{-- Rekomendasi Pemulihan Poin --}}
+        @php
+            $achievements = \App\Models\AchievementCategory::where('status', 'active')->orderByDesc('points')->get();
+        @endphp
+        <div class="card" style="margin-top:var(--sp-lg)">
+            <h2 style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)"><i data-lucide="rotate-ccw" class="icon"></i> Rekomendasi Pemulihan Poin</h2>
+            <p class="text-sm text-muted" style="margin-bottom:var(--sp-md)">Setiap pelanggaran mengurangi poin siswa. Pilih level kesulitan untuk melihat pencapaian yang sesuai:</p>
+            <div x-data="recoveryTabs()">
+                <div class="recovery-tabs">
+                    <label class="recovery-tab" :class="level==='ringan' && 'active-ringan'">
+                        <input type="radio" name="recovery_level" value="ringan" x-model="level" style="display:none"> Ringan
+                    </label>
+                    <label class="recovery-tab" :class="level==='sedang' && 'active-sedang'">
+                        <input type="radio" name="recovery_level" value="sedang" x-model="level" style="display:none"> Sedang
+                    </label>
+                    <label class="recovery-tab" :class="level==='besar' && 'active-besar'">
+                        <input type="radio" name="recovery_level" value="besar" x-model="level" style="display:none"> Besar
+                    </label>
+                </div>
+                @if($achievements->count())
+                    <div class="recovery-cards">
+                        @foreach($achievements as $ach)
+                            @php
+                                $achLevel = $ach->points <= 5 ? 'ringan' : ($ach->points <= 15 ? 'sedang' : 'besar');
+                            @endphp
+                            <div x-show="level === '{{ $achLevel }}'"
+                                 x-transition:enter="transition ease-out duration-150"
+                                 x-transition:enter-start="opacity-0 transform -translate-y-1"
+                                 x-transition:enter-end="opacity-100 transform translate-y-0"
+                                 class="recovery-card">
+                                <div class="recovery-card-icon"><i data-lucide="trophy" style="width:18px;height:18px"></i></div>
+                                <div class="recovery-card-body">
+                                    <div class="recovery-card-title">{{ $ach->name }}</div>
+                                    <div class="text-sm text-muted">{{ $ach->code }} &middot; +{{ $ach->points }} poin per pencapaian</div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="recovery-empty">
+                        <p class="text-sm text-muted">Belum ada kategori pencapaian aktif.</p>
                     </div>
                 @endif
-                <form action="{{ route('discipline-cases.store') }}" method="POST" class="space-y-4">
-                    @csrf
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Siswa</label>
-                        <select name="student_id" required class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500">
-                            <option value="">-- Pilih siswa --</option>
-                            @foreach($students as $id => $name)
-                                <option value="{{ $id }}" {{ old('student_id')==$id?'selected':'' }}>{{ $name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Kategori Pelanggaran</label>
-                        <select name="violation_category_id" required class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500">
-                            <option value="">-- Pilih kategori --</option>
-                            @foreach($categories as $id => $name)
-                                <option value="{{ $id }}" {{ old('violation_category_id')==$id?'selected':'' }}>{{ $name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Dilaporkan oleh (user_id)</label>
-                        <input type="number" name="report_by" value="{{ auth()->id() }}" required
-                               class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Lokasi (opsional)</label>
-                        <input type="text" name="location" value="{{ old('location') }}" maxlength="100" placeholder="Contoh: Kantin, Kelas X-1"
-                               class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Deskripsi</label>
-                        <textarea name="description" required rows="3" placeholder="Jelaskan kronologi pelanggaran..."
-                                  class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500">{{ old('description') }}</textarea>
-                    </div>
-                    <input type="hidden" name="status" value="found">
-                    <div class="flex justify-end space-x-3 pt-2">
-                        <a href="{{ route('discipline-cases.index') }}" class="px-4 py-2 text-sm text-gray-600 hover:underline">Batal</a>
-                        <button class="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700">Catat Kasus (status: found)</button>
-                    </div>
-                </form>
             </div>
         </div>
     </div>
+    <script>document.addEventListener('DOMContentLoaded',()=>{lucide.createIcons()})</script>
+    <script>
+        function caseForm(){return{results:[],selectedStudentId:null,selectedStudentName:'',searchTimeout:null,searchStudent(q){clearTimeout(this.searchTimeout);if(q.length<2){this.results=[];return}this.searchTimeout=setTimeout(async()=>{try{const r=await fetch('/students/search?q='+encodeURIComponent(q));this.results=Array.isArray(r.data)?r.data:await r.json()||[]}catch(e){this.results=[]}},250)},selectStudent(s){this.selectedStudentId=s.id;this.selectedStudentName=s.full_name;this.results=[];document.querySelector('input[name=student_search]').value='';},clearStudent(){this.selectedStudentId=null;this.selectedStudentName='';}}}
+        function recoveryTabs(){return{level:'ringan',init(){this.$el.parentElement.addEventListener('violation-changed',(e)=>{const pts=parseInt(e.detail.points)||0;if(pts>=20)this.level='besar';else if(pts>=8)this.level='sedang';else this.level='ringan'})}}}
+    </script>
 </x-app-layout>

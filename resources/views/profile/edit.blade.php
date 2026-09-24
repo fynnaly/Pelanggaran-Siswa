@@ -1,29 +1,24 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Profile') }}
-        </h2>
+        <div class="page-header">
+            <div><h1>Pengaturan Profil</h1></div>
+        </div>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-profile-information-form')
-                </div>
-            </div>
+    <div class="main-wrap">
+        <div class="card" style="max-width:640px;margin-bottom:var(--sp-lg)">
+            <h2 style="margin-bottom:var(--sp-lg)">Informasi Profil</h2>
+            @include('profile.partials.update-profile-information-form')
+        </div>
 
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-password-form')
-                </div>
-            </div>
+        <div class="card" style="max-width:640px;margin-bottom:var(--sp-lg)">
+            <h2 style="margin-bottom:var(--sp-lg)">Ubah Kata Sandi</h2>
+            @include('profile.partials.update-password-form')
+        </div>
 
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.delete-user-form')
-                </div>
-            </div>
+        <div class="card" style="max-width:640px">
+            <h2 style="margin-bottom:var(--sp-lg);color:var(--danger)">Hapus Akun</h2>
+            @include('profile.partials.delete-user-form')
         </div>
     </div>
 </x-app-layout>

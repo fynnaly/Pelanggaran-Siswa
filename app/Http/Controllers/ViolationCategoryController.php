@@ -68,7 +68,7 @@ class ViolationCategoryController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Violationcategory $violationCategory)
+    public function update(Request $request, ViolationCategory $violationCategory)
     {
         $validated = $request->validate([
             'code' => ['sometimes','required', 'string', 'max:20', 'unique:violation_categories,code,' . $violationCategory->id],

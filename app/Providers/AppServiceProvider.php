@@ -3,6 +3,10 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Pagination\Paginator;
+use App\Models\DisciplineCase;
+use App\Policies\DisciplineCasePolicy;
+use Illuminate\Support\Facades\Gate;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +23,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Paginator::defaultView('vendor.pagination.custom');
+        Gate::policy(DisciplineCase::class, DisciplineCasePolicy::class);
     }
 }
