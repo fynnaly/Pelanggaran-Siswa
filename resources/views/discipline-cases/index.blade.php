@@ -21,9 +21,12 @@
                 <div class="filter-group">
                     <select name="status" class="input" style="width:auto;min-width:150px" onchange="this.form.submit()">
                         <option value="">Semua Status</option>
-                        <option value="found" {{ $status==='found'?'selected':'' }}>Diproses</option>
-                        <option value="validated" {{ $status==='validated'?'selected':'' }}>Divalidasi</option>
-                        <option value="done" {{ $status==='done'?'selected':'' }}>Selesai</option>
+                        <option value="found" {{ $status==='found'?'selected':'' }}>Temuan</option>
+                        <option value="clarifying" {{ $status==='clarifying'?'selected':'' }}>Klarifikasi</option>
+                        <option value="classifying" {{ $status==='classifying'?'selected':'' }}>Klasifikasi</option>
+                        <option value="handling" {{ $status==='handling'?'selected':'' }}>Penanganan</option>
+                        <option value="monitoring" {{ $status==='monitoring'?'selected':'' }}>Monitoring</option>
+                        <option value="closed" {{ $status==='closed'?'selected':'' }}>Selesai</option>
                         <option value="dismissed" {{ $status==='dismissed'?'selected':'' }}>Dibuang</option>
                     </select>
                 </div>
@@ -31,40 +34,47 @@
         </div>
         <div class="table-wrap">
             <table>
-                <thead><tr><th>No. Kasus</th><th>Siswa</th><th>Pelanggaran</th><th>Poin</th><th>Pelapor</th><th>Status</th><th>Tanggal</th><th style="width:100px">Aksi</th></tr></thead>
+                <thead><tr><th style="width:40px">No</th><th>No. Kasus</th><th>Siswa</th><th>Pelanggaran</th><th>Poin</th><th>Status</th><th>Tanggal</th><th style="width:100px">Aksi</th></tr></thead>
                 <tbody>
-                    @forelse($cases as $case)
+                    @forelse($cases as $idx => $case)
+                        @php
+                            $cat = $case->violationCategory;
+                            $points = $case->getEffectivePoints();
+                            $code = $cat ? ($cat->code ?? '-') : '-';
+                            $catName = $cat ? ($cat->name ?? '-') : '-';
+                            $incDate = $case->incident_date ?? $case->created_at;
+                        @endphp
                         <tr>
+                            <td class="mono" style="text-align:center;color:var(--on-surface-muted);font-size:.75rem">{{ $cases->firstItem() + $idx }}</td>
                             <td class="mono">{{ $case->case_number }}</td>
-                            <td><strong>{{ $case->student?->full_name ?? '-' }}</strong><br><span class="text-muted text-sm">{{ $case->student?->schoolClass?->name ?? '' }}</span></td>
-                            <td>{{ $case->violationCategory?->name ?? '-' }}</td>
-                            <td class="mono">-{{ $case->violationCategory?->points ?? '-' }}</td>
-                            <td class="text-sm">{{ $case->reporter?->name ?? '-' }}</td>
+                            <td><strong>{{ $case->student?->full_name ?? '-' }}</strong><br><span class="text-muted text-sm">{{ $case->schoolClass?->name ?? $case->student?->currentEnrollment?->schoolClass?->name ?? '' }}</span></td>
                             <td>
-                                @if($case->status==='found')<span class="badge badge-warning"><i data-lucide="clock" style="width:12px;height:12px"></i> Diproses</span>
-                                @elseif($case->status==='validated')<span class="badge" style="background:var(--ws);color:var(--wt)"><i data-lucide="check" style="width:12px;height:12px"></i> Divalidasi</span>
-                                @elseif($case->status==='done')<span class="badge badge-success"><i data-lucide="check-circle" style="width:12px;height:12px"></i> Selesai</span>
-                                @else<span class="badge badge-danger"><i data-lucide="x-circle" style="width:12px;height:12px"></i> {{ ucfirst($case->status) }}</span>@endif
+                                @if($cat)<span class="mono" style="font-size:.75rem;color:var(--on-surface-muted)">{{ $code }}</span> {{ $catName }}
+                                @else<span class="text-muted text-sm">-</span>@endif
                             </td>
-                            <td class="text-sm text-muted">{{ $case->created_at?->format('d M Y') }}</td>
+                            <td class="mono" style="color:var(--danger);font-weight:600">-{{ $points }}</td>
+                            <td>
+                                @if($case->status==='found')<span class="badge badge-warning"><i data-lucide="clock" style="width:12px;height:12px"></i> Temuan</span>
+                                @elseif($case->status==='clarifying')<span class="badge badge-warning"><i data-lucide="message-circle" style="width:12px;height:12px"></i> Klarifikasi</span>
+                                @elseif($case->status==='classifying')<span class="badge" style="background:var(--ws);color:var(--wt)"><i data-lucide="tag" style="width:12px;height:12px"></i> Klasifikasi</span>
+                                @elseif($case->status==='handling')<span class="badge" style="background:var(--ws);color:var(--wt)"><i data-lucide="gavel" style="width:12px;height:12px"></i> Penanganan</span>
+                                @elseif($case->status==='monitoring')<span class="badge badge-warning"><i data-lucide="eye" style="width:12px;height:12px"></i> Monitoring</span>
+                                @elseif($case->status==='closed')<span class="badge badge-success"><i data-lucide="check-circle" style="width:12px;height:12px"></i> Selesai</span>
+                                @else<span class="badge badge-danger"><i data-lucide="x-circle" style="width:12px;height:12px"></i> Dibuang</span>@endif
+                            </td>
+                            <td class="text-sm text-muted">{{ $incDate?->format('d M Y') }}</td>
                             <td><div class="action-cell">
                                 <a href="{{ route('kasus-pelanggaran.show', $case) }}" class="action-btn" title="Lihat"><i data-lucide="eye" style="width:14px;height:14px"></i></a>
-                                @if($case->status==='found')
-                                    <form action="{{ route('kasus-pelanggaran.validate', $case) }}" method="POST" class="inline" onsubmit="return confirm('Validasi kasus ini?')">@csrf @method('PATCH')<input type="hidden" name="validation_passed" value="1"><button class="action-btn" title="Validasi" style="color:var(--tertiary)"><i data-lucide="check" style="width:14px;height:14px"></i></button></form>
-                                @endif
-                                @if($case->status==='validated')
-                                    <form action="{{ route('kasus-pelanggaran.done', $case) }}" method="POST" class="inline" onsubmit="return confirm('Tandai selesai?')">@csrf @method('PATCH')<button class="action-btn" title="Selesai"><i data-lucide="check-circle" style="width:14px;height:14px"></i></button></form>
-                                @endif
                             </div></td>
                         </tr>
                     @empty
-                        <tr><td colspan="8" style="padding:40px;text-align:center;color:var(--on-surface-muted)"><i data-lucide="inbox" class="icon-lg" style="display:block;margin:0 auto var(--sp-sm)"></i>Belum ada kasus.</td></tr>
+                        <tr><td colspan="7" style="padding:40px;text-align:center;color:var(--on-surface-muted)"><i data-lucide="inbox" class="icon-lg" style="display:block;margin:0 auto var(--sp-sm)"></i>Belum ada kasus.</td></tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--sp-sm);margin-top:var(--sp-lg)">
-            <span class="text-sm text-muted">Menampilkan {{ $cases->firstItem() ?? 0 }}-{{ $cases->lastItem() ?? 0 }} dari {{ $cases->total() }}</span>
+            <span class="text-sm text-muted">Menampilkan {{ $cases->firstItem() ?? 0 }}-{{ $cases->lastItem() ?? 0 }} dari {{ $cases->total() }} kasus</span>
             <div class="pagination" style="margin-top:0">{{ $cases->links() }}</div>
         </div>
     </div>

@@ -12,6 +12,10 @@
 
     <script>
         (function() {
+            // Pertahankan scroll window + biarkan browser handle restore.
+            // 'manual' + save/restore via sessionStorage dilakukan di script bawah.
+            if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
             const s = localStorage.getItem('theme');
             if (s === 'dark') {
                 document.documentElement.classList.add('dark');
@@ -33,7 +37,7 @@
             --sh-sm: 0 1px 2px rgba(15,23,42,.06); --sh-md: 0 4px 12px rgba(15,23,42,.08);
             --sh-g: 0 4px 16px rgba(15,23,42,.06);
             --r-sm: 8px; --r-md: 12px; --r-lg: 20px; --r-full: 9999px;
-            --sp-xs: 4px; --sp-sm: 8px; --sp-md: 16px; --sp-lg: 24px; --sp-xl: 40px;
+            --sp-xs: 4px; --sp-sm: 8px; --sp-md: 16px; --sp-lg: 24px; --sp-xl: 40px; --sp-2xl: 64px;
         }
         .dark {
             --neutral: #1c1c1f; --surface: #111114; --border: #252830;
@@ -154,7 +158,7 @@
         select.input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
                        background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; cursor: pointer; }
         .field { margin-bottom: var(--sp-lg); }
-        .field-label { display: block; font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; margin-bottom: var(--sp-xs); color: var(--on-surface); }
+        .field-label { display: block; font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; margin-bottom: var(--sp-xs); color: var(--on-surface-muted); }
         .field-input { width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: var(--r-sm); border: 1px solid var(--border);
                        background: var(--neutral); color: var(--on-surface); font-family: inherit; font-size: .875rem;
                        transition: border-color .15s, box-shadow .15s; }
@@ -171,6 +175,9 @@
         .badge-success { background: var(--bs); color: var(--bt); }
         .badge-warning { background: var(--ws); color: var(--wt); }
         .badge-danger { background: var(--ds); color: var(--dt); }
+        .badge-info { background: #dbeafe; color: #1e40af; }
+        .dark .badge-info { background: rgba(59,130,246,.2); color: #93c5fd; }
+        .badge-neutral { background: var(--surface); color: var(--on-surface-muted); }
 
         /* ── List (dashboard) ── */
         .list-item { display: flex; align-items: center; gap: var(--sp-md); padding: var(--sp-md) 0; }
@@ -199,6 +206,12 @@
         .skeleton { background: #e2e8f0; border-radius: var(--r-sm); animation: pulse 1.5s ease-in-out infinite; }
         .dark .skeleton { background: #1e293b; }
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+
+        /* ── Page transition: fade-in halus saat pindah halaman ── */
+        @media (prefers-reduced-motion: no-preference) {
+            .app-shell > main { animation: page-in .18s ease-out both; }
+        }
+        @keyframes page-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
         /* ── Action buttons in table ── */
         .action-cell { display: flex; gap: var(--sp-xs); }

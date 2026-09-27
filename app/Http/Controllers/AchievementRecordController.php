@@ -17,7 +17,7 @@ class AchievementRecordController extends Controller
         $status = request('status');
         $search = request('search');
 
-        $query = AchievementRecord::with(['student.schoolClass', 'achievementCategory', 'recorder'])
+        $query = AchievementRecord::with(['student.currentEnrollment.schoolClass', 'schoolClass', 'achievementCategory', 'recorder'])
             ->latest('created_at');
 
         if ($status) {
@@ -39,7 +39,7 @@ class AchievementRecordController extends Controller
 
         $selectedStudent = null;
         if (old('student_id')) {
-            $record = Student::with('schoolClass')
+            $record = Student::with('currentEnrollment.schoolClass')
                 ->where('status', 'active')
                 ->find(old('student_id'));
             if ($record) {
@@ -47,7 +47,7 @@ class AchievementRecordController extends Controller
                     'id' => $record->id,
                     'full_name' => $record->full_name,
                     'nis' => $record->nis,
-                    'kelas' => $record->schoolClass?->name ?? '-',
+                    'kelas' => $record->currentEnrollment?->schoolClass?->name ?? '-',
                 ];
             }
         }
@@ -60,16 +60,39 @@ class AchievementRecordController extends Controller
         $validated = $request->validate([
             'student_id' => 'required|exists:students,id',
             'achievement_category_id' => 'required|exists:achievement_categories,id',
+            'event_name' => 'required|string|max:255',
+            'event_date' => 'nullable|date',
+            'event_period' => 'nullable|string|max:100',
+            'achievement_level' => 'nullable|string|max:100',
+            'points_awarded' => 'required|integer|min:1',
             'description' => 'nullable|string',
         ]);
 
-        $record = DB::transaction(function () use ($validated) {
+        // Snapshot konteks saat kejadian: ambil dari enrollment siswa pada tahun berjalan.
+        $activeYear = AcademicYear::where('is_active', true)->first();
+        $student = Student::with(['enrollments.schoolClass'])->findOrFail($validated['student_id']);
+        $enrollment = $student->enrollments
+            ->firstWhere('academic_year_id', $activeYear?->id)
+            ?? $student->enrollments->firstWhere('status', 'active')
+            ?? $student->enrollments->sortByDesc('id')->first();
+
+        $academicYearId = $enrollment?->academic_year_id ?? $activeYear?->id;
+
+        $record = DB::transaction(function () use ($validated, $academicYearId, $enrollment) {
             return AchievementRecord::create([
                 'student_id' => $validated['student_id'],
+                'enrollment_id' => $enrollment?->id,
+                'class_id' => $enrollment?->class_id,
                 'achievement_category_id' => $validated['achievement_category_id'],
+                'academic_year_id' => $academicYearId,
                 'recorded_by' => auth()->id(),
                 'status' => 'pending',
-                'description' => $validated['description'],
+                'event_name' => $validated['event_name'],
+                'event_date' => $validated['event_date'] ?? null,
+                'event_period' => $validated['event_period'] ?? null,
+                'achievement_level' => $validated['achievement_level'] ?? null,
+                'points_awarded' => $validated['points_awarded'],
+                'description' => $validated['description'] ?? null,
             ]);
         });
 
@@ -80,7 +103,7 @@ class AchievementRecordController extends Controller
 
     public function show(AchievementRecord $achievementRecord)
     {
-        $achievementRecord->load(['student.schoolClass', 'achievementCategory', 'recorder', 'verifier', 'pointLedger']);
+        $achievementRecord->load(['student.currentEnrollment.schoolClass', 'enrollment.schoolClass', 'schoolClass', 'achievementCategory', 'recorder', 'verifier', 'pointLedger']);
 
         return view('achievement-records.show', compact('achievementRecord'));
     }
@@ -93,35 +116,33 @@ class AchievementRecordController extends Controller
                 ->with('error', 'Hanya rekam prestasi dengan status pending yang bisa divalidasi.');
         }
 
-        $category = $achievementRecord->achievementCategory;
-        $points = $category->points;
+        $points = $achievementRecord->points_awarded;
 
-        DB::transaction(function () use ($achievementRecord, $points, $category) {
-            $academicYearId = $achievementRecord->student?->schoolClass?->academic_year_id
+        DB::transaction(function () use ($achievementRecord, $points) {
+            $academicYearId = $achievementRecord->academic_year_id
+                ?? $achievementRecord->student?->academic_year_id
                 ?? AcademicYear::where('is_active', true)->first()?->id;
 
-            $lastBalance = $achievementRecord->student->pointLedgers()
-                ->lockForUpdate()
-                ->latest('id')
-                ->value('balance_after') ?? 2000;
+            $lastBalance = PointLedger::getLastBalance($achievementRecord->student_id, $academicYearId);
 
             $balanceAfter = $lastBalance + $points;
 
-            $achievementRecord->status = 'verified';
-            $achievementRecord->verified_by = auth()->id();
-            $achievementRecord->verified_at = now();
-            $achievementRecord->save();
+            $achievementRecord->update([
+                'status' => 'verified',
+                'verified_by' => auth()->id(),
+                'verified_at' => now(),
+            ]);
 
-            $achievementRecord->student->pointLedgers()->create([
+            PointLedger::create([
                 'student_id' => $achievementRecord->student_id,
                 'academic_year_id' => $academicYearId,
-                'direction' => 'credit',
+                'direction' => PointLedger::DIR_CREDIT,
                 'amount' => $points,
                 'balance_after' => $balanceAfter,
                 'transaction_type' => PointLedger::TYPE_ACHIEVEMENT,
                 'source_type' => AchievementRecord::class,
                 'source_id' => $achievementRecord->id,
-                'reason' => 'Prestasi: ' . $category->code,
+                'reason' => 'Prestasi: ' . ($achievementRecord->event_name ?? $achievementRecord->achievementCategory->code),
                 'created_by' => auth()->id(),
                 'verified_by' => auth()->id(),
                 'verified_at' => now(),
@@ -133,7 +154,7 @@ class AchievementRecordController extends Controller
             ->with('success', 'Rekam prestasi diverifikasi, poin +' . $points . ' berhasil ditambahkan.');
     }
 
-    public function dismiss(AchievementRecord $achievementRecord)
+    public function dismiss(Request $request, AchievementRecord $achievementRecord)
     {
         if ($achievementRecord->status !== 'pending') {
             return redirect()
@@ -141,8 +162,16 @@ class AchievementRecordController extends Controller
                 ->with('error', 'Hanya rekam prestasi dengan status pending yang bisa ditolak.');
         }
 
-        $achievementRecord->status = 'rejected';
-        $achievementRecord->save();
+        $validated = $request->validate([
+            'rejection_reason' => 'required|string',
+        ]);
+
+        $achievementRecord->update([
+            'status' => 'rejected',
+            'verified_by' => auth()->id(),
+            'verified_at' => now(),
+            'rejection_reason' => $validated['rejection_reason'],
+        ]);
 
         return redirect()
             ->route('achievement-records.index')

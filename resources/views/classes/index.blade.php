@@ -1,6 +1,5 @@
 <x-app-layout>
     <x-slot name="header">
-
         <div class="page-header">
             <div><h1>Daftar Kelas</h1></div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
@@ -18,25 +17,38 @@
                         <option value="{{ $yr->id }}" {{ $selectedYearId==$yr->id?'selected':'' }}>{{ $yr->name }}{{ $yr->is_active?' (Aktif)':'' }}</option>
                     @endforeach
                 </select>
+                <a href="{{ route('tahun-ajaran.index') }}" class="btn btn-secondary btn-sm"><i data-lucide="calendar" class="icon-sm"></i> Kelola Tahun Ajaran</a>
             </form>
         </div>
         <div class="table-wrap">
             <table>
-                <thead><tr><th>Nama Kelas</th><th>Tahun Ajaran</th><th>Jumlah Siswa</th><th>Wali Kelas</th><th style="width:100px">Aksi</th></tr></thead>
+                <thead><tr><th>Nama Kelas</th><th>Tingkat</th><th>Jurusan</th><th>Guru</th><th>Guru 2</th><th style="width:100px">Aksi</th></tr></thead>
                 <tbody>
                     @forelse($classes as $class)
                         <tr>
-                            <td><a href="{{ route('students.index', ['class_id' => $class->id, 'year_id' => $class->academic_year_id]) }}" style="font-weight:600">{{ $class->name }}</a></td>
-                            <td class="text-sm text-muted">{{ $class->academicYear?->name ?? '-' }}</td>
-                            <td class="mono" style="font-weight:700">{{ $class->students_count }}</td>
+                            <td><a href="{{ route('classes.show', $class) }}" style="font-weight:600">{{ $class->name }}</a></td>
+                            <td class="mono" style="font-weight:600">{{ $class->grade_level ?? '-' }}</td>
+                            <td class="text-sm text-muted">{{ $class->major ?? '-' }}</td>
                             <td class="text-sm text-muted">{{ $class->homeroomTeacher?->name ?? '-' }}</td>
+                            <td>
+                                <form action="{{ route('classes.update', $class) }}" method="POST" class="inline" style="display:inline">
+                                    @csrf @method('PUT')
+                                    <select name="assistant_teacher_id" class="input" style="width:auto;padding:8px 32px 8px 10px;font-size:.8125rem" onchange="this.form.submit()"
+                                    >
+                                        <option value="">-</option>
+                                        @foreach($teachers as $t)
+                                            <option value="{{ $t->id }}" {{ old('assistant_teacher_id', $class->assistant_teacher_id)==$t->id?'selected':'' }}>{{ $t->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </form>
+                            </td>
                             <td><div class="action-cell">
                                 <a href="{{ route('classes.edit', $class) }}" class="action-btn" title="Edit"><i data-lucide="pencil" style="width:14px;height:14px"></i></a>
                                 <form action="{{ route('classes.destroy', $class) }}" method="POST" class="inline" onsubmit="return confirm('Hapus kelas {{ $class->name }}?')">@csrf @method('DELETE')<button class="action-btn" title="Hapus" style="color:var(--danger)"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button></form>
                             </div></td>
                         </tr>
                     @empty
-                        <tr><td colspan="5" style="padding:40px;text-align:center;color:var(--on-surface-muted)"><i data-lucide="inbox" class="icon-lg" style="display:block;margin:0 auto var(--sp-sm)"></i>Belum ada kelas. Tambah dulu.</td></tr>
+                        <tr><td colspan="6" style="padding:40px;text-align:center;color:var(--on-surface-muted)"><i data-lucide="inbox" class="icon-lg" style="display:block;margin:0 auto var(--sp-sm)"></i>Belum ada kelas. Tambah dulu.</td></tr>
                     @endforelse
                 </tbody>
             </table>

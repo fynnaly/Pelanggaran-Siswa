@@ -33,7 +33,7 @@
                 <tbody>
                     @forelse($records as $rec)
                         <tr>
-                            <td><strong>{{ $rec->student?->full_name ?? '-' }}</strong><br><span class="text-muted text-sm">{{ $rec->student?->schoolClass?->name ?? '' }}</span></td>
+                            <td><strong>{{ $rec->student?->full_name ?? '-' }}</strong><br><span class="text-muted text-sm">{{ $rec->schoolClass?->name ?? $rec->student?->currentEnrollment?->schoolClass?->name ?? '' }}</span></td>
                             <td>{{ $rec->achievementCategory?->name ?? '-' }}</td>
                             <td class="mono" style="color:var(--tertiary)">+{{ $rec->achievementCategory?->points ?? '-' }}</td>
                             <td class="text-sm">{{ $rec->recorder?->name ?? '-' }}</td>

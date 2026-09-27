@@ -17,7 +17,7 @@ class PointLedgerController extends Controller
         $direction = $request->string('direction')->toString();
         $type = $request->string('type')->toString();
 
-        $query = PointLedger::with(['student.schoolClass', 'academicYear'])
+        $query = PointLedger::with(['student.currentEnrollment.schoolClass', 'academicYear'])
             ->when($search, fn($q, $s) => $q->whereHas('student', fn($sq) =>
                 $sq->where('full_name', 'like', "%{$s}%")
                     ->orWhere('nisn', 'like', "%{$s}%")
@@ -37,7 +37,7 @@ class PointLedgerController extends Controller
      */
     public function show(PointLedger $pointLedger)
     {
-        $pointLedger->load(['student.schoolClass', 'academicYear', 'creator', 'verifier']);
+        $pointLedger->load(['student.currentEnrollment.schoolClass', 'academicYear', 'creator', 'verifier']);
 
         $student = $pointLedger->student;
 

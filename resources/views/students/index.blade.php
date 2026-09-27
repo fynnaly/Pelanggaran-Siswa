@@ -27,6 +27,7 @@
             <form action="{{ route('students.index') }}" method="GET" style="display:flex;gap:var(--sp-sm);flex:1;align-items:stretch">
                 <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nama / NISN / NIS..." class="input" style="flex:1;min-width:0" id="searchInput">
                 <select name="year_id" class="input" style="width:auto;min-width:130px;flex-shrink:0" onchange="this.form.submit()">
+                    <option value="">Semua Tahun</option>
                     @foreach($academicYears as $yr)
                         <option value="{{ $yr->id }}" {{ $selectedYearId==$yr->id?'selected':'' }}>{{ $yr->name }}{{ $yr->is_active?' (Aktif)':'' }}</option>
                     @endforeach
@@ -86,28 +87,32 @@
             <table>
                 <thead><tr>
                     <th style="width:40px"><input type="checkbox" id="selectAll" class="checkbox"></th>
-                    <th>NISN</th>
                     <th><a href="{{ route('students.index', $sortLink('nis')) }}" style="display:inline-flex;align-items:center;gap:2px;text-decoration:none;color:inherit">NIS {!! $sortArrow('nis') !!}</a></th>
                     <th><a href="{{ route('students.index', $sortLink('full_name')) }}" style="display:inline-flex;align-items:center;gap:2px;text-decoration:none;color:inherit">Nama {!! $sortArrow('full_name') !!}</a></th>
-                    <th>Kelas</th>
+                    <th>Jenis Kelamin</th>
+                    <th>Telepon</th>
+                    <th>Alamat</th>
                     <th><a href="{{ route('students.index', $sortLink('status')) }}" style="display:inline-flex;align-items:center;gap:2px;text-decoration:none;color:inherit">Status {!! $sortArrow('status') !!}</a></th>
-                    <th><a href="{{ route('students.index', $sortLink('point')) }}" style="display:inline-flex;align-items:center;gap:2px;text-decoration:none;color:inherit">Poin {!! $sortArrow('point') !!}</a></th>
-                    <th style="width:80px">Aksi</th>
+                    <th style="width:100px">Aksi</th>
                 </tr></thead>
                 <tbody>
                     @forelse($students as $student)
-                        @php $poin = $student->pointLedgers->first()?->balance_after ?? 2000; @endphp
+                        @php
+                            $enr = $selectedYearId
+                                ? $student->enrollments->firstWhere('academic_year_id', $selectedYearId)
+                                : $student->currentEnrollment;
+                        @endphp
                         <tr>
                             <td><input type="checkbox" name="student_ids[]" value="{{ $student->id }}" class="student-cb checkbox"></td>
-                            <td class="mono">{{ $student->nisn }}</td>
                             <td class="mono">{{ $student->nis }}</td>
                             <td><strong>{{ $student->full_name }}</strong></td>
-                            <td class="text-sm">{{ $student->schoolClass?->name ?? '-' }}</td>
+                            <td class="text-sm">{{ $student->gender==='L'?'Laki-laki':'Perempuan' }}</td>
+                            <td class="text-sm">{{ $student->phone ?? '-' }}</td>
+                            <td class="text-sm" style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="{{ $student->address ?? '' }}">{{ $student->address ?? '-' }}</td>
                             <td><span class="badge {{ $student->status==='active'?'badge-success':'' }}" style="{{ $student->status!=='active'?'background:var(--surface);color:var(--on-surface-muted)':'' }}">{{ ucfirst($student->status) }}</span></td>
-                            <td><span class="mono" style="font-weight:700;{{ $poin<=500?'color:var(--danger)':($poin<=1000?'color:var(--accent)':'color:var(--tertiary)') }}">{{ $poin }}</span></td>
                             <td><div class="action-cell">
+                                <a href="{{ route('students.show', $student) }}" class="action-btn" title="Detail"><i data-lucide="eye" style="width:14px;height:14px"></i></a>
                                 <a href="{{ route('students.edit', $student) }}" class="action-btn" title="Edit"><i data-lucide="pencil" style="width:14px;height:14px"></i></a>
-                                <form action="{{ route('students.destroy', $student) }}" method="POST" class="inline" onsubmit="return confirm('Hapus {{ $student->full_name }}?')">@csrf @method('DELETE')<button class="action-btn" title="Hapus" style="color:var(--danger)"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button></form>
                             </div></td>
                         </tr>
                     @empty

@@ -72,7 +72,7 @@
                                     </div>
                                     <div>
                                         <div style="font-weight:600;font-size:.875rem">{{ $l->student?->full_name ?? '-' }}</div>
-                                        <div class="text-sm text-muted">{{ $l->student?->schoolClass?->name ?? '' }}</div>
+                                        <div class="text-sm text-muted">{{ $l->student?->currentEnrollment?->schoolClass?->name ?? '' }}</div>
                                     </div>
                                 </div>
                             </td>

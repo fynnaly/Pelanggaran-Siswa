@@ -37,7 +37,7 @@
                     <table style="width:100%;border-collapse:collapse">
                         <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted);width:140px">Nama</td><td style="padding:8px 0;font-weight:600">{{ $achievementRecord->student?->full_name }}</td></tr>
                         <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">NIS</td><td class="mono" style="padding:8px 0">{{ $achievementRecord->student?->nis }}</td></tr>
-                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Kelas</td><td style="padding:8px 0">{{ $achievementRecord->student?->schoolClass?->name ?? '-' }}</td></tr>
+                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Kelas</td><td style="padding:8px 0">{{ $achievementRecord->schoolClass?->name ?? $achievementRecord->student?->currentEnrollment?->schoolClass?->name ?? '-' }}</td></tr>
                     </table>
                 </div>
                 <div class="card" style="margin-bottom:var(--sp-lg)">

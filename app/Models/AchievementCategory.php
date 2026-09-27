@@ -10,13 +10,21 @@ class AchievementCategory extends Model
     protected $fillable = [
         'code',
         'name',
+        'description',
         'points',
+        'group_type',
+        'max_points_per_event',
         'status',
+        'effective_date',
+        'expiry_date',
     ];
 
     protected function casts(): array
     {
-        return [];
+        return [
+            'effective_date' => 'date',
+            'expiry_date' => 'date',
+        ];
     }
 
     public function achievementRecords(): HasMany

@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\AcademicYear;
-use App\Services\ClassPromotionService;
+use App\Services\Academic\PromotionService;
 use DB;
 
 class AcademicYearController extends Controller
@@ -47,11 +47,11 @@ class AcademicYearController extends Controller
 
         // Jika langsung diaktifkan, jalankan promosi
         if ($validated['is_active']) {
-            $result = app(ClassPromotionService::class)->promote($newRecord);
+            $result = app(PromotionService::class)->promote($newRecord);
 
             return redirect()
                 ->route('tahun-ajaran.index')
-                ->with('success', "Tahun ajaran {$newRecord->name} diaktifkan. {$result['classes_renamed']} kelas dipromosikan, {$result['students_graduated']} siswa lulus.");
+                ->with('success', "Tahun ajaran {$newRecord->name} diaktifkan. {$result['classes_created']} kelas baru, {$result['students_promoted']} siswa naik kelas, {$result['students_graduated']} siswa lulus.");
         }
 
         // Jika BERHASIL, redirect ke index
@@ -98,11 +98,11 @@ class AcademicYearController extends Controller
 
         // Jika baru diaktifkan, jalankan promosi
         if ($wasInactive && $willBeActive) {
-            $result = app(ClassPromotionService::class)->promote($academicYear);
+            $result = app(PromotionService::class)->promote($academicYear);
 
             return redirect()
                 ->route('tahun-ajaran.index')
-                ->with('success', "Tahun ajaran {$academicYear->name} diaktifkan. {$result['classes_renamed']} kelas dipromosikan, {$result['students_graduated']} siswa lulus.");
+                ->with('success', "Tahun ajaran {$academicYear->name} diaktifkan. {$result['classes_created']} kelas baru, {$result['students_promoted']} siswa naik kelas, {$result['students_graduated']} siswa lulus.");
         }
 
         return redirect()

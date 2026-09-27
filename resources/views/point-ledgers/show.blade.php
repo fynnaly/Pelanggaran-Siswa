@@ -3,7 +3,7 @@
         <div class="page-header">
             <div>
                 <h1><i data-lucide="book-open" class="icon"></i> Riwayat Poin Siswa</h1>
-                <p class="text-sm text-muted" style="margin:0">{{ $student?->full_name ?? '-' }} ({{ $student?->schoolClass?->name ?? '-' }})</p>
+                <p class="text-sm text-muted" style="margin:0">{{ $student?->full_name ?? '-' }} ({{ $student?->currentEnrollment?->schoolClass?->name ?? '-' }})</p>
             </div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
                 <a href="{{ url()->previous() }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" class="icon-sm"></i> Kembali</a>
@@ -19,7 +19,7 @@
                 </div>
                 <div style="flex:1;min-width:200px">
                     <div style="font-weight:700;font-size:1.125rem">{{ $student?->full_name ?? '-' }}</div>
-                    <div class="text-sm text-muted">NISN: {{ $student?->nisn ?? '-' }} &middot; Kelas: {{ $student?->schoolClass?->name ?? '-' }}</div>
+                    <div class="text-sm text-muted">NISN: {{ $student?->nisn ?? '-' }} &middot; Kelas: {{ $student?->currentEnrollment?->schoolClass?->name ?? '-' }}</div>
                 </div>
                 <div style="text-align:right">
                     <div class="stat-label">Saldo Saat Ini</div>
