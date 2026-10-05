@@ -25,3 +25,9 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Local workspace artifacts — excluded from version control
+/.hermes/
+/docs/
+/.worktrees/
+/check_mp*.php
