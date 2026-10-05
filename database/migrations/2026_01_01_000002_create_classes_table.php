@@ -15,6 +15,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('academic_year_id')->constrained()->cascadeOnDelete();
             $table->string('name', 20); // XII-PPLG-1, XI-AKT-1
+            $table->enum('grade_level', ['X', 'XI', 'XII'])->nullable();
+            $table->string('major', 50)->nullable();
+            $table->integer('capacity')->unsigned()->default(40);
             $table->foreignId('homeroom_teacher_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 

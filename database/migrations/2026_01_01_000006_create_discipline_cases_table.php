@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('case_number', 30)->unique(); //KAS-2026-0001, CASE-2026-0001, KASUS-2026-0001
             $table->foreignId('student_id')->constrained()->cascadeOnDelete();
             $table->foreignId('violation_category_id')->constrained()->restrictOnDelete();
-            $table->foreignId('report_by')->constrained('users')->restrictOnDelete();
+            $table->foreignId('report_by')->nullable()->constrained('users')->nullOnDelete();
             $table->enum('status', ['found', 'validated', 'dismissed', 'done'])->default('found');
             $table->string('location', 100)->nullable();
             $table->text('description');

@@ -3,7 +3,7 @@
         <div class="page-header">
             <div>
                 <h1>Daftar Siswa</h1>
-                <p class="text-muted text-sm">{{ $students->total() }} siswa terdaftar</p>
+                <p class="text-muted text-sm" id="studentsTotal" data-live-count>{{ $students->total() }} siswa terdaftar</p>
             </div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
                 <a href="{{ route('students.template') }}" class="btn btn-secondary btn-sm"><i data-lucide="file-down" class="icon-sm"></i> Template</a>
@@ -24,9 +24,10 @@
         @endif
 
         <div class="toolbar">
-            <form action="{{ route('students.index') }}" method="GET" style="display:flex;gap:var(--sp-sm);flex:1;align-items:stretch">
+            <form id="studentFilter" action="{{ route('students.index') }}" method="GET" data-live="#studentRegion" style="display:flex;gap:var(--sp-sm);flex:1;align-items:stretch">
                 <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nama / NISN / NIS..." class="input" style="flex:1;min-width:0" id="searchInput">
                 <select name="year_id" class="input" style="width:auto;min-width:130px;flex-shrink:0" onchange="this.form.submit()">
+                    <option value="">Semua Tahun</option>
                     @foreach($academicYears as $yr)
                         <option value="{{ $yr->id }}" {{ $selectedYearId==$yr->id?'selected':'' }}>{{ $yr->name }}{{ $yr->is_active?' (Aktif)':'' }}</option>
                     @endforeach
@@ -48,94 +49,8 @@
             </div>
         </div>
 
-        @php
-            $baseParams = array_filter(['q' => request('q'), 'class_id' => request('class_id'), 'year_id' => request('year_id')]);
-            $sortArrow = function($col) use ($sort, $order) {
-                $active = $sort === $col;
-                if (!$active) { $icon = 'arrow-up-down'; $color = 'var(--on-surface-muted)'; }
-                elseif ($order === 'asc') { $icon = 'arrow-up'; $color = 'var(--primary)'; }
-                else { $icon = 'arrow-down'; $color = 'var(--primary)'; }
-                return '<i data-lucide="'.$icon.'" style="width:12px;height:12px;color:'.$color.';margin-left:2px;vertical-align:middle"></i>';
-            };
-            $sortLink = function($col) use ($baseParams, $sort, $order) {
-                if ($sort === $col && $order === 'asc') return array_merge($baseParams, ['sort' => $col, 'order' => 'desc']);
-                if ($sort === $col && $order === 'desc') return $baseParams; // back to default
-                return array_merge($baseParams, ['sort' => $col, 'order' => 'asc']);
-            };
-        @endphp
+        <div id="studentRegion">@include('students._table')</div>
 
-        <form action="{{ route('classes.promote') }}" method="POST" id="bulkPromoteForm" style="display:none;margin-bottom:var(--sp-md)" onsubmit="return confirm('Anda yakin ingin memindahkan siswa terpilih ke kelas target? Tindakan ini tidak dapat dibatalkan.')">
-            @csrf
-            <div class="card" style="display:flex;align-items:center;gap:var(--sp-md);flex-wrap:wrap">
-                <span class="text-sm" style="font-weight:600" id="selectedCount">0</span>
-                <span class="text-sm text-muted">siswa dipilih</span>
-                <span style="color:var(--border)">|</span>
-                <label class="text-sm" style="font-weight:600">Pindah ke:</label>
-                <select name="class_id" required class="input" style="width:auto;min-width:150px">
-                    <option value="">Pilih kelas...</option>
-                    @foreach($classesForPromote as $id => $name)
-                        @if($classId && $id == $classId) @continue @endif
-                        <option value="{{ $id }}">{{ $name }}</option>
-                    @endforeach
-                </select>
-                <button type="submit" class="btn btn-primary btn-sm"><i data-lucide="arrow-right" class="icon-sm"></i> Pindahkan</button>
-            </div>
-        </form>
-
-        <div class="table-wrap">
-            <table>
-                <thead><tr>
-                    <th style="width:40px"><input type="checkbox" id="selectAll" class="checkbox"></th>
-                    <th>NISN</th>
-                    <th><a href="{{ route('students.index', $sortLink('nis')) }}" style="display:inline-flex;align-items:center;gap:2px;text-decoration:none;color:inherit">NIS {!! $sortArrow('nis') !!}</a></th>
-                    <th><a href="{{ route('students.index', $sortLink('full_name')) }}" style="display:inline-flex;align-items:center;gap:2px;text-decoration:none;color:inherit">Nama {!! $sortArrow('full_name') !!}</a></th>
-                    <th>Kelas</th>
-                    <th><a href="{{ route('students.index', $sortLink('status')) }}" style="display:inline-flex;align-items:center;gap:2px;text-decoration:none;color:inherit">Status {!! $sortArrow('status') !!}</a></th>
-                    <th><a href="{{ route('students.index', $sortLink('point')) }}" style="display:inline-flex;align-items:center;gap:2px;text-decoration:none;color:inherit">Poin {!! $sortArrow('point') !!}</a></th>
-                    <th style="width:80px">Aksi</th>
-                </tr></thead>
-                <tbody>
-                    @forelse($students as $student)
-                        @php $poin = $student->pointLedgers->first()?->balance_after ?? 2000; @endphp
-                        <tr>
-                            <td><input type="checkbox" name="student_ids[]" value="{{ $student->id }}" class="student-cb checkbox"></td>
-                            <td class="mono">{{ $student->nisn }}</td>
-                            <td class="mono">{{ $student->nis }}</td>
-                            <td><strong>{{ $student->full_name }}</strong></td>
-                            <td class="text-sm">{{ $student->schoolClass?->name ?? '-' }}</td>
-                            <td><span class="badge {{ $student->status==='active'?'badge-success':'' }}" style="{{ $student->status!=='active'?'background:var(--surface);color:var(--on-surface-muted)':'' }}">{{ ucfirst($student->status) }}</span></td>
-                            <td><span class="mono" style="font-weight:700;{{ $poin<=500?'color:var(--danger)':($poin<=1000?'color:var(--accent)':'color:var(--tertiary)') }}">{{ $poin }}</span></td>
-                            <td><div class="action-cell">
-                                <a href="{{ route('students.edit', $student) }}" class="action-btn" title="Edit"><i data-lucide="pencil" style="width:14px;height:14px"></i></a>
-                                <form action="{{ route('students.destroy', $student) }}" method="POST" class="inline" onsubmit="return confirm('Hapus {{ $student->full_name }}?')">@csrf @method('DELETE')<button class="action-btn" title="Hapus" style="color:var(--danger)"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button></form>
-                            </div></td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="8" style="padding:40px;text-align:center;color:var(--on-surface-muted)"><i data-lucide="inbox" class="icon-lg" style="display:block;margin:0 auto var(--sp-sm)"></i>@if(request('q') || request('class_id'))Tidak ada siswa yang cocok.@elseBelum ada siswa.@endif</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--sp-sm);margin-top:var(--sp-lg)">
-            <span class="text-sm text-muted">Menampilkan {{ $students->firstItem() ?? 0 }}-{{ $students->lastItem() ?? 0 }} dari {{ $students->total() }}</span>
-            <div class="pagination" style="margin-top:0">{{ $students->links() }}</div>
-        </div>
     </div>
     <script>document.addEventListener('DOMContentLoaded',()=>{lucide.createIcons()})</script>
-    <script>
-        document.addEventListener('DOMContentLoaded',()=>{
-            // Auto-submit search (debounce 400ms)
-            const searchInput=document.getElementById('searchInput');
-            let timer;
-            searchInput?.addEventListener('input',()=>{
-                clearTimeout(timer);
-                timer=setTimeout(()=>{searchInput.closest('form').submit();},400);
-            });
-            // Bulk select
-            const s=document.getElementById('selectAll'),c=document.querySelectorAll('.student-cb'),f=document.getElementById('bulkPromoteForm'),n=document.getElementById('selectedCount');
-            function u(){const x=document.querySelectorAll('.student-cb:checked').length;n.textContent=x;f.style.display=x===0?'none':'';}
-            s?.addEventListener('change',()=>{c.forEach(cb=>{cb.checked=s.checked});u();});
-            c.forEach(cb=>{cb.addEventListener('change',u);});
-        });
-    </script>
 </x-app-layout>

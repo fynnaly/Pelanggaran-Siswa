@@ -3,69 +3,73 @@
 namespace App\Http\Controllers;
 
 use App\Models\AcademicYear;
+use App\Models\Enrollment;
 use App\Models\PointLedger;
 use App\Models\SchoolClass;
 use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class StudentController extends Controller
 {
-    /**
-     * Daftar siswa + saldo poin terkini.
-     * - Saldo diambil dari ledger terbaru (balance_after), fallback 2000 = saldo awal.
-     * - Support pencarian ?q= (nama / NISN / NIS).
-     */
+    /** Daftar siswa, terpisah dari data poin. */
     public function index()
     {
         $q = request('q');
         $classId = request('class_id');
         $sort = request('sort', 'created_at');
         $order = request('order', 'desc');
-        $allowed = ['nis','full_name','status','point'];
-        $sort = in_array($sort, $allowed) ? $sort : 'created_at';
+        $allowed = ['id', 'nis', 'nisn', 'full_name', 'gender', 'grade_level', 'class_name', 'status'];
+        $sort = in_array($sort, $allowed, true) ? $sort : 'created_at';
         $order = strtolower($order) === 'asc' ? 'asc' : 'desc';
 
-        // Tahun ajaran: default aktif, urut dari lama ke baru
         $academicYears = AcademicYear::orderBy('start_date')->get();
         $activeYearId = AcademicYear::where('is_active', true)->value('id');
-        $selectedYearId = request('year_id') ?: $activeYearId;
+        $selectedYearId = request('year_id') ?: null;
+        $filterYearId = $selectedYearId ?: $activeYearId;
 
-        // Kelas mengikuti tahun yang dipilih
-        $allClasses = SchoolClass::where('academic_year_id', $selectedYearId)->orderBy('name')->get();
-        $classesForPromote = $allClasses->pluck('name', 'id');
+        $allClasses = SchoolClass::where('academic_year_id', $filterYearId)->orderBy('name')->get();
 
-        $students = Student::with(['schoolClass.academicYear', 'pointLedgers' => fn ($qq) => $qq->orderByDesc('id')])
-            ->whereHas('schoolClass', fn ($qq) => $qq->where('academic_year_id', $selectedYearId))
+        $students = Student::with([
+                'currentEnrollment.schoolClass',
+                'currentEnrollment.academicYear',
+                'enrollments.schoolClass',
+                'enrollments.academicYear',
+            ])
+            ->whereHas('enrollments', fn ($q) => $q
+                ->when($selectedYearId, fn ($sub) => $sub->where('academic_year_id', $selectedYearId))
+                ->when($classId, fn ($sub) => $sub->where('class_id', $classId)))
             ->when($q, function ($query) use ($q) {
-                $query->where(function ($w) use ($q) {
-                    $w->where('full_name', 'like', "%{$q}%")
+                $query->where(function ($where) use ($q) {
+                    $where->where('full_name', 'like', "%{$q}%")
                         ->orWhere('nisn', 'like', "%{$q}%")
                         ->orWhere('nis', 'like', "%{$q}%");
                 });
             })
-            ->when($classId, fn ($query) => $query->where('class_id', $classId))
-            ->when($sort !== 'point', fn ($query) => $query->orderBy($sort, $order))
-            ->get();
+            ->when($sort === 'grade_level', fn ($query) => $query
+                ->join('enrollments as e_sort', 'e_sort.student_id', '=', 'students.id')
+                ->join('classes as c_sort', 'c_sort.id', '=', 'e_sort.class_id')
+                ->select('students.*')
+                ->orderBy('c_sort.grade_level', $order))
+            ->when($sort === 'class_name', fn ($query) => $query
+                ->join('enrollments as e_sort', 'e_sort.student_id', '=', 'students.id')
+                ->join('classes as c_sort', 'c_sort.id', '=', 'e_sort.class_id')
+                ->select('students.*')
+                ->orderBy('c_sort.name', $order))
+            ->when(! in_array($sort, ['grade_level', 'class_name'], true), fn ($query) => $query->orderBy($sort, $order))
+            ->paginate(20)
+            ->withQueryString();
 
-        // Point computed (not a DB column), sort in-memory
-        if ($sort === 'point') {
-            $students = $students->sortBy(
-                fn ($s) => $s->pointLedgers->first()?->balance_after ?? 2000,
-                SORT_REGULAR,
-                $order === 'desc'
-            )->values();
-        }
-
-        $students = new \Illuminate\Pagination\LengthAwarePaginator(
-            $students->slice((request('page', 1) - 1) * 20, 20)->values(),
-            $students->count(),
-            20,
-            request('page', 1),
-            ['path' => request()->url(), 'query' => request()->query()]
-        );
-
-        return view('students.index', compact('students', 'classesForPromote', 'classId', 'allClasses', 'sort', 'order', 'academicYears', 'selectedYearId'));
+        return view('students.index', compact(
+            'students',
+            'classId',
+            'allClasses',
+            'sort',
+            'order',
+            'academicYears',
+            'selectedYearId',
+        ));
     }
 
     /** Form tambah siswa — kirim daftar kelas dari controller (jangan query di Blade). */
@@ -74,41 +78,60 @@ class StudentController extends Controller
         $classes = SchoolClass::with('academicYear')
             ->where('academic_year_id', AcademicYear::where('is_active', true)->value('id'))
             ->orderBy('name')->get();
+        $academicYears = AcademicYear::orderByDesc('start_date')->get();
 
-        return view('students.create', compact('classes'));
+        return view('students.create', compact('classes', 'academicYears'));
     }
 
     /** Simpan siswa baru + buat saldo awal 2000 (OPENING_BALANCE) sekali per tahun ajaran. */
     public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'nisn'      => 'required|string|max:20|unique:students',
-            'nis'       => 'required|string|max:20|unique:students',
-            'full_name' => 'required|string|max:100',
-            'class_id'  => 'required|exists:classes,id',
-            'status'    => 'required|in:active,inactive,graduated,transferred',
-        ]);
+        {
+            $validated = $request->validate([
+                'nisn'      => 'required|string|max:20|unique:students',
+                'nis'       => 'required|string|max:20|unique:students',
+                'full_name' => 'required|string|max:100',
+                'gender'    => 'required|in:L,P',
+                'birth_date'=> 'nullable|date',
+                'class_id'  => 'required|exists:classes,id',
+                'academic_year_id' => 'required|exists:academic_years,id',
+                'phone'     => 'nullable|string|max:20',
+                'address'   => 'nullable|string',
+                'parent_name' => 'nullable|string|max:100',
+                'parent_phone' => 'nullable|string|max:20',
+                'status'    => 'required|in:active,inactive,graduated,transferred',
+            ]);
 
         return DB::transaction(function () use ($validated, $request) {
-            // Opsional: buat user login jika email diisi (untuk role siswa)
+            // Opsional: buat user login jika email diisi (untuk role siswa). Jika tidak diisi, siswa tetap master tanpa akun.
             $user = null;
             if ($request->filled('email')) {
                 $user = \App\Models\User::firstOrCreate(
                     ['email' => $request->email],
-                    ['name' => $validated['full_name'], 'password' => bcrypt('password')]
+                    ['name' => $validated['full_name'], 'password' => Hash::make(\Illuminate\Support\Str::random(16))]
                 );
+                if (! $user->hasRole('siswa')) {
+                    $user->assignRole('siswa');
+                }
             }
 
             $student = Student::create([
                 'user_id'   => $user?->id,
-                'class_id'  => $validated['class_id'],
                 'nisn'      => $validated['nisn'],
                 'nis'       => $validated['nis'],
                 'full_name' => $validated['full_name'],
+                'gender'    => $validated['gender'],
+                'birth_date'=> $validated['birth_date'],
+                'phone'     => $validated['phone'] ?? null,
+                'address'   => $validated['address'] ?? null,
+                'parent_name' => $validated['parent_name'] ?? null,
+                'parent_phone' => $validated['parent_phone'] ?? null,
                 'status'    => $validated['status'],
             ]);
 
-            // Saldo awal 2000 — hanya sekali per siswa per tahun ajaran (idempotent)
+            // Buat enrollment: siswa terdaftar di kelas/tahun ajaran
+            $this->syncEnrollment($student, $validated['class_id'], $validated['academic_year_id']);
+
+            // Saldo awal 2000 — idempotent per siswa per tahun ajaran
             $this->ensureOpeningBalance($student);
 
             return redirect()->route('students.index')
@@ -122,39 +145,66 @@ class StudentController extends Controller
         $classes = SchoolClass::with('academicYear')
             ->where('academic_year_id', AcademicYear::where('is_active', true)->value('id'))
             ->orderBy('name')->get();
+        $academicYears = AcademicYear::orderByDesc('start_date')->get();
 
-        return view('students.edit', compact('student', 'classes'));
+        return view('students.edit', compact('student', 'classes', 'academicYears'));
+    }
+
+    /** Detail siswa (master only) */
+    public function show(Student $student)
+    {
+        $student->load([
+            'currentEnrollment.schoolClass',
+            'currentEnrollment.academicYear',
+            'enrollments.schoolClass',
+            'enrollments.academicYear',
+        ]);
+        return view('students.show', compact('student'));
     }
 
     /** Update data siswa */
     public function update(Request $request, Student $student)
     {
         $validated = $request->validate([
-            'nisn'      => 'sometimes|required|string|max:20|unique:students,nisn,' . $student->id,
-            'nis'       => 'sometimes|required|string|max:20|unique:students,nis,' . $student->id,
-            'full_name' => 'sometimes|required|string|max:100',
+            'nisn'      => 'sometimes|string|max:20|unique:students,nisn,' . $student->id,
+            'nis'       => 'sometimes|string|max:20|unique:students,nis,' . $student->id,
+            'full_name' => 'sometimes|string|max:100',
+            'gender'    => 'sometimes|in:L,P',
+            'birth_date'=> 'nullable|date',
             'class_id'  => 'sometimes|exists:classes,id',
+            'academic_year_id' => 'sometimes|exists:academic_years,id',
+            'phone'     => 'nullable|string|max:20',
+            'address'   => 'nullable|string',
+            'parent_name' => 'nullable|string|max:100',
+            'parent_phone' => 'nullable|string|max:20',
             'status'    => 'sometimes|in:active,inactive,graduated,transferred',
         ]);
 
         $student->update($validated);
 
+        // Sinkronisasi enrollment jika pindah kelas/tahun ajaran
+        $enroll  = $student->latestEnrollment();
+        $resolvedClassId = $validated['class_id'] ?? $enroll?->class_id;
+        $resolvedYearId  = $validated['academic_year_id'] ?? $enroll?->academic_year_id;
+        if ((isset($validated['class_id']) || isset($validated['academic_year_id'])) && $resolvedClassId && $resolvedYearId) {
+            $this->syncEnrollment($student, $resolvedClassId, $resolvedYearId);
+        }
+
         // Jika pindah kelas / tahun ajaran baru, pastikan opening balance ada
-        if (isset($validated['class_id'])) {
-            $this->ensureOpeningBalance($student->fresh(['schoolClass']));
+        if (isset($validated['class_id']) || isset($validated['academic_year_id'])) {
+            $this->ensureOpeningBalance($student->fresh(['enrollments.schoolClass', 'enrollments.academicYear']));
         }
 
         return redirect()->route('students.index')
             ->with('success', 'Data siswa ' . $student->full_name . ' berhasil diupdate.');
     }
 
-    /** Hapus siswa */
+    /** Hapus siswa (tidak diaktifkan — siswa tetap bisa diedit/ditampilkan) */
     public function destroy(Student $student)
     {
-        $student->delete();
-
+        // Delete disabled per rencana: siswa bisa show/edit tanpa hapus
         return redirect()->route('students.index')
-            ->with('success', 'Siswa ' . $student->full_name . ' berhasil dihapus.');
+            ->with('error', 'Penghapusan siswa dinonaktifkan.');
     }
 
     /**
@@ -169,8 +219,9 @@ class StudentController extends Controller
             return response()->json([]);
         }
 
-        $students = Student::with('schoolClass')
-            ->where('status', 'active')
+        // Tanpa filter status: daftar siswa (students.index) menampilkan seluruh siswa
+        // apa pun statusnya, jadi autocomplete harus konsisten dengan tabel itu.
+        $students = Student::with(['currentEnrollment.schoolClass'])
             ->where(function ($query) use ($q) {
                 $query->where('full_name', 'like', "%{$q}%")
                     ->orWhere('nisn', 'like', "%{$q}%")
@@ -182,7 +233,7 @@ class StudentController extends Controller
                 'id' => $s->id,
                 'full_name' => $s->full_name,
                 'nis' => $s->nis,
-                'kelas' => $s->schoolClass?->name ?? '-',
+                'kelas' => $s->currentEnrollment?->schoolClass?->name ?? '-',
             ]);
 
         return response()->json($students);
@@ -196,8 +247,8 @@ class StudentController extends Controller
     /** Download template CSV kosong untuk import siswa */
     public function downloadTemplate()
     {
-        $headers = ['NISN', 'NIS', 'Nama Lengkap', 'Kelas (nama)', 'Tahun Ajaran (nama)', 'Status'];
-        $example = ['0012345678', '12345', 'Budi Santoso', 'X PPLG 1', '2025/2026', 'active'];
+        $headers = ['NISN', 'NIS', 'Nama Lengkap', 'Jenis Kelamin', 'Telepon', 'Alamat', 'Nama Orang Tua', 'No. HP Orang Tua', 'Kelas (nama)', 'Tahun Ajaran (nama)', 'Status'];
+        $example = ['0012345678', '12345', 'Budi Santoso', 'Laki-laki', '08123456789', 'Jl. Merdeka No. 1', 'Bapak Santoso', '08987654321', 'X PPLG 1', '2025/2026', 'active'];
 
         return response()->streamDownload(function () use ($headers, $example) {
             $out = fopen('php://output', 'w');
@@ -212,7 +263,7 @@ class StudentController extends Controller
     /** Export daftar siswa ke CSV (paginate 5000, include poin terkini) */
     public function export()
     {
-        $students = Student::with(['schoolClass.academicYear', 'pointLedgers' => fn ($q) => $q->orderByDesc('id')])
+        $students = Student::with(['currentEnrollment.schoolClass', 'currentEnrollment.academicYear', 'pointLedgers' => fn ($q) => $q->orderByDesc('id')])
             ->latest('nisn')
             ->limit(5000)
             ->get();
@@ -222,7 +273,7 @@ class StudentController extends Controller
         return response()->streamDownload(function () use ($students) {
             $out = fopen('php://output', 'w');
             fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
-            fputcsv($out, ['NISN', 'NIS', 'Nama Lengkap', 'Kelas', 'Tahun Ajaran', 'Status', 'Poin Saat Ini']);
+            fputcsv($out, ['NISN', 'NIS', 'Nama Lengkap', 'Jenis Kelamin', 'Telepon', 'Alamat', 'Nama Orang Tua', 'No. HP Orang Tua', 'Kelas', 'Tahun Ajaran', 'Status', 'Poin Saat Ini']);
 
             foreach ($students as $s) {
                 $poin = $s->pointLedgers->first()?->balance_after ?? 2000;
@@ -230,8 +281,13 @@ class StudentController extends Controller
                     $s->nisn,
                     $s->nis,
                     $s->full_name,
-                    $s->schoolClass?->name ?? '-',
-                    $s->schoolClass?->academicYear?->name ?? '-',
+                    $s->gender === 'L' ? 'Laki-laki' : 'Perempuan',
+                    $s->phone ?? '',
+                    $s->address ?? '',
+                    $s->parent_name ?? '',
+                    $s->parent_phone ?? '',
+                    $s->currentEnrollment?->schoolClass?->name ?? '-',
+                    $s->currentEnrollment?->academicYear?->name ?? '-',
                     $s->status,
                     $poin,
                 ]);
@@ -270,6 +326,11 @@ class StudentController extends Controller
         $iNisn   = $idx('nisn');
         $iNis    = $idx('nis');
         $iNama   = $idx('nama lengkap') !== false ? $idx('nama lengkap') : $idx('nama');
+        $iGender = $idx('jenis kelamin');
+        $iPhone  = $idx('telepon');
+        $iAddr   = $idx('alamat');
+        $iParent = $idx('nama orang tua');
+        $iParentHp = $idx('no. hp orang tua');
         $iKelas  = $idx('kelas (nama)') !== false ? $idx('kelas (nama)') : $idx('kelas');
         $iTahun  = $idx('tahun ajaran (nama)') !== false ? $idx('tahun ajaran (nama)') : $idx('tahun ajaran');
         $iStatus = $idx('status');
@@ -298,6 +359,14 @@ class StudentController extends Controller
                 $nisn = trim($row[$iNisn] ?? '');
                 $nis  = trim($row[$iNis] ?? '');
                 $nama = trim($row[$iNama] ?? '');
+                $gender = $iGender !== false ? strtoupper(trim($row[$iGender] ?? '')) : '';
+                if (! in_array($gender, ['L', 'P'], true)) {
+                    $gender = str_starts_with(strtolower($gender), 'l') ? 'L' : (str_starts_with(strtolower($gender), 'p') ? 'P' : 'L');
+                }
+                $phone = $iPhone !== false ? trim($row[$iPhone] ?? '') : '';
+                $address = $iAddr !== false ? trim($row[$iAddr] ?? '') : '';
+                $parentName = $iParent !== false ? trim($row[$iParent] ?? '') : '';
+                $parentHp = $iParentHp !== false ? trim($row[$iParentHp] ?? '') : '';
                 $kelasNama = $iKelas !== false ? trim($row[$iKelas] ?? '') : '';
                 $tahunNama = $iTahun !== false ? trim($row[$iTahun] ?? '') : '';
                 $status = $iStatus !== false ? trim(strtolower($row[$iStatus] ?? 'active')) : 'active';
@@ -315,36 +384,47 @@ class StudentController extends Controller
                     continue;
                 }
 
-                // Resolve kelas — buat jika belum ada
+                // Resolve kelas + tahun ajaran — buat otomatis bila belum ada
                 $classId = null;
+                $yearId  = $activeYear?->id;
                 if ($kelasNama !== '') {
-                    $year = $tahunNama !== '' ? AcademicYear::firstOrCreate(['name' => $tahunNama], ['start_date' => now(), 'is_active' => false]) : $activeYear;
+                    $year = $tahunNama !== ''
+                        ? AcademicYear::firstOrCreate(['name' => $tahunNama], ['start_date' => now(), 'is_active' => false])
+                        : $activeYear;
                     if ($year) {
                         $kelas = SchoolClass::firstOrCreate(
                             ['name' => $kelasNama, 'academic_year_id' => $year->id],
                             ['homeroom_teacher_id' => null]
                         );
                         $classId = $kelas->id;
+                        $yearId  = $year->id;
                     }
                 }
-                // Fallback: pakai kelas pertama jika CSV tidak sebut kelas
+                // Fallback: pakai kelas pertama + tahun ajarannya
                 if (! $classId) {
-                    $classId = SchoolClass::orderBy('name')->value('id');
+                    $fallback = SchoolClass::with('academicYear')->orderBy('name')->first();
+                    $classId  = $fallback?->id;
+                    $yearId   = $fallback?->academic_year_id ?? $yearId;
                 }
-                if (! $classId) {
-                    $errors[] = "Baris {$rowNum} ({$nama}): tidak ada kelas — buat kelas dulu di menu Kelas.";
+                if (! $classId || ! $yearId) {
+                    $errors[] = "Baris {$rowNum} ({$nama}): tidak ada kelas/tahun ajaran — buat kelas dulu di menu Kelas.";
                     $skipped++;
                     continue;
                 }
 
                 $student = Student::create([
-                    'nisn'      => $nisn,
-                    'nis'       => $nis,
-                    'full_name' => $nama,
-                    'class_id'  => $classId,
-                    'status'    => $status,
+                    'nisn'        => $nisn,
+                    'nis'         => $nis,
+                    'full_name'   => $nama,
+                    'gender'      => $gender,
+                    'phone'       => $phone ?: null,
+                    'address'     => $address ?: null,
+                    'parent_name' => $parentName ?: null,
+                    'parent_phone'=> $parentHp ?: null,
+                    'status'      => $status,
                 ]);
 
+                $this->syncEnrollment($student, $classId, $yearId);
                 $this->ensureOpeningBalance($student);
                 $imported++;
             }
@@ -371,8 +451,8 @@ class StudentController extends Controller
      */
     private function ensureOpeningBalance(Student $student): void
     {
-        $student->loadMissing('schoolClass');
-        $yearId = $student->schoolClass?->academic_year_id
+        $enroll  = $student->latestEnrollment();
+        $yearId  = $enroll?->academic_year_id
             ?? AcademicYear::where('is_active', true)->value('id')
             ?? AcademicYear::orderByDesc('id')->value('id');
 
@@ -406,5 +486,32 @@ class StudentController extends Controller
             'verified_by'      => auth()->id(),
             'verified_at'      => now(),
         ]);
+    }
+
+    /**
+     * Sinkronisasi enrollment: upsert baris enrollment untuk (student, tahun ajaran) saat ini.
+     * Idempotent — dipanggil dari store, update, dan import.
+     */
+    private function syncEnrollment(Student $student, int $classId, int $academicYearId): void
+    {
+        Enrollment::updateOrCreate(
+            [
+                'student_id' => $student->id,
+                'academic_year_id' => $academicYearId,
+            ],
+            [
+                'class_id' => $classId,
+                'status' => $this->mapEnrollmentStatus($student->status),
+                'enrolled_at' => $student->created_at ?? now(),
+            ]
+        );
+    }
+
+    private function mapEnrollmentStatus(string $studentStatus): string
+    {
+        return match ($studentStatus) {
+            'inactive' => 'withdrawn',
+            default => $studentStatus,
+        };
     }
 }

@@ -10,13 +10,16 @@ class ViolationCategoryController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $categories = ViolationCategory::latest('code')
-            ->paginate(20);
+        $sort = $request->string('sort')->toString();
+        $order = strtolower($request->string('order')->toString()) === 'asc' ? 'asc' : 'desc';
+        $allowed = ['id', 'code', 'name', 'severity', 'points', 'status', 'created_at'];
+        $sort = in_array($sort, $allowed, true) ? $sort : 'id';
 
-            // Mengambalikan atau mendorong ke halaman
-            return view('violation-categories.index', compact('categories'));
+        $categories = ViolationCategory::orderBy($sort, $order)->paginate(20)->withQueryString();
+
+        return view('violation-categories.index', compact('categories', 'sort', 'order'));
     }
 
     /**

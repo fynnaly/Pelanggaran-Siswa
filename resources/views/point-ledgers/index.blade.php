@@ -3,7 +3,7 @@
         <div class="page-header">
             <div>
                 <h1><i data-lucide="wallet" class="icon"></i> Riwayat Poin</h1>
-                <p class="text-sm text-muted" style="margin:0">Riwayat transaksi poin seluruh siswa</p>
+                <p class="text-sm text-muted" style="margin:0" data-live-count>Riwayat transaksi poin seluruh siswa</p>
             </div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
                 <span class="text-sm text-muted" style="display:flex;align-items:center;gap:4px">
@@ -18,7 +18,7 @@
 
         {{-- Toolbar: Search + Filters --}}
         <div class="toolbar">
-            <form method="GET" action="{{ route('point-ledgers.index') }}" style="display:flex;gap:var(--sp-sm);flex-wrap:wrap;align-items:center;width:100%">
+            <form method="GET" action="{{ route('point-ledgers.index') }}" data-live="#ledgerRegion" id="ledgerFilter" style="display:flex;gap:var(--sp-sm);flex-wrap:wrap;align-items:center;width:100%">
                 <div style="position:relative;flex:1;min-width:200px;max-width:320px">
                     <i data-lucide="search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--on-surface-muted);pointer-events:none"></i>
                     <input type="text" name="search" class="input" placeholder="Cari nama siswa atau NISN..." value="{{ $search }}" style="padding-left:36px">
@@ -47,16 +47,18 @@
         </div>
 
         {{-- Table --}}
+        <div id="ledgerRegion">
         <div class="table-wrap">
             <table>
                 <thead>
                     <tr>
-                        <th>Waktu</th>
-                        <th>Siswa</th>
-                        <th>Arah</th>
-                        <th>Jumlah</th>
-                        <th>Saldo</th>
-                        <th>Tipe</th>
+                        <th style="width:48px"><x-sortable-header column="id" label="No" :sort="$sort" :order="$order" route="point-ledgers.index" :params="request()->except('sort','order','page')" /></th>
+                        <th><x-sortable-header column="created_at" label="Waktu" :sort="$sort" :order="$order" route="point-ledgers.index" :params="request()->except('sort','order','page')" /></th>
+                        <th><x-sortable-header column="student_id" label="Siswa" :sort="$sort" :order="$order" route="point-ledgers.index" :params="request()->except('sort','order','page')" /></th>
+                        <th><x-sortable-header column="direction" label="Arah" :sort="$sort" :order="$order" route="point-ledgers.index" :params="request()->except('sort','order','page')" /></th>
+                        <th><x-sortable-header column="amount" label="Jumlah" :sort="$sort" :order="$order" route="point-ledgers.index" :params="request()->except('sort','order','page')" /></th>
+                        <th><x-sortable-header column="balance_after" label="Saldo" :sort="$sort" :order="$order" route="point-ledgers.index" :params="request()->except('sort','order','page')" /></th>
+                        <th><x-sortable-header column="transaction_type" label="Tipe" :sort="$sort" :order="$order" route="point-ledgers.index" :params="request()->except('sort','order','page')" /></th>
                         <th>Alasan</th>
                         <th style="width:70px">Aksi</th>
                     </tr>
@@ -64,6 +66,7 @@
                 <tbody>
                     @forelse($ledgers as $l)
                         <tr>
+                            <td class="text-sm text-muted">{{ $l->id }}</td>
                             <td class="text-sm text-muted" style="white-space:nowrap">{{ $l->created_at?->format('d/m/Y H:i') }}</td>
                             <td>
                                 <div style="display:flex;align-items:center;gap:var(--sp-sm)">
@@ -72,7 +75,7 @@
                                     </div>
                                     <div>
                                         <div style="font-weight:600;font-size:.875rem">{{ $l->student?->full_name ?? '-' }}</div>
-                                        <div class="text-sm text-muted">{{ $l->student?->schoolClass?->name ?? '' }}</div>
+                                        <div class="text-sm text-muted">{{ $l->student?->currentEnrollment?->schoolClass?->name ?? '' }}</div>
                                     </div>
                                 </div>
                             </td>
@@ -128,6 +131,7 @@
                 Menampilkan {{ $ledgers->firstItem() ?? 0 }}-{{ $ledgers->lastItem() ?? 0 }} dari {{ $ledgers->total() }}
             </span>
             <div class="pagination" style="margin-top:0">{{ $ledgers->links() }}</div>
+        </div>
         </div>
     </div>
 

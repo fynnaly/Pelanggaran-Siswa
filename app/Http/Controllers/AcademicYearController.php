@@ -4,18 +4,22 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\AcademicYear;
-use App\Services\ClassPromotionService;
+use App\Services\Academic\PromotionService;
 use DB;
 
 class AcademicYearController extends Controller
 {
     /** Display a listing of the resource. */
-    public function index()
+    public function index(Request $request)
     {
-        $academicYears = AcademicYear::orderBy('name')
-            ->paginate(20);
+        $sort = $request->string('sort')->toString();
+        $order = strtolower($request->string('order')->toString()) === 'asc' ? 'asc' : 'desc';
+        $allowed = ['id', 'name', 'start_date', 'end_date', 'created_at'];
+        $sort = in_array($sort, $allowed, true) ? $sort : 'id';
 
-        return view('academic-years.index', compact('academicYears'));
+        $academicYears = AcademicYear::orderBy($sort, $order)->paginate(20)->withQueryString();
+
+        return view('academic-years.index', compact('academicYears', 'sort', 'order'));
     }
 
     /** Show the form for creating a new resource. */
@@ -47,11 +51,11 @@ class AcademicYearController extends Controller
 
         // Jika langsung diaktifkan, jalankan promosi
         if ($validated['is_active']) {
-            $result = app(ClassPromotionService::class)->promote($newRecord);
+            $result = app(PromotionService::class)->promote($newRecord);
 
             return redirect()
                 ->route('tahun-ajaran.index')
-                ->with('success', "Tahun ajaran {$newRecord->name} diaktifkan. {$result['classes_renamed']} kelas dipromosikan, {$result['students_graduated']} siswa lulus.");
+                ->with('success', "Tahun ajaran {$newRecord->name} diaktifkan. {$result['classes_created']} kelas baru, {$result['students_promoted']} siswa naik kelas, {$result['students_graduated']} siswa lulus.");
         }
 
         // Jika BERHASIL, redirect ke index
@@ -98,11 +102,11 @@ class AcademicYearController extends Controller
 
         // Jika baru diaktifkan, jalankan promosi
         if ($wasInactive && $willBeActive) {
-            $result = app(ClassPromotionService::class)->promote($academicYear);
+            $result = app(PromotionService::class)->promote($academicYear);
 
             return redirect()
                 ->route('tahun-ajaran.index')
-                ->with('success', "Tahun ajaran {$academicYear->name} diaktifkan. {$result['classes_renamed']} kelas dipromosikan, {$result['students_graduated']} siswa lulus.");
+                ->with('success', "Tahun ajaran {$academicYear->name} diaktifkan. {$result['classes_created']} kelas baru, {$result['students_promoted']} siswa naik kelas, {$result['students_graduated']} siswa lulus.");
         }
 
         return redirect()

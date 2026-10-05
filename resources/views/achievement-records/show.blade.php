@@ -12,6 +12,8 @@
         </div>
     </x-slot>
     <div class="main-wrap">
+        @if(session('success'))<div class="alert alert-success"><i data-lucide="check-circle" class="icon-sm"></i> {{ session('success') }}</div>@endif
+        @if(session('error'))<div class="alert alert-error"><i data-lucide="alert-circle" class="icon-sm"></i> {{ session('error') }}</div>@endif
         <div class="layout-2col" style="align-items:start">
             <div>
                 <div class="card" style="margin-bottom:var(--sp-lg)">
@@ -37,7 +39,7 @@
                     <table style="width:100%;border-collapse:collapse">
                         <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted);width:140px">Nama</td><td style="padding:8px 0;font-weight:600">{{ $achievementRecord->student?->full_name }}</td></tr>
                         <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">NIS</td><td class="mono" style="padding:8px 0">{{ $achievementRecord->student?->nis }}</td></tr>
-                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Kelas</td><td style="padding:8px 0">{{ $achievementRecord->student?->schoolClass?->name ?? '-' }}</td></tr>
+                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Kelas</td><td style="padding:8px 0">{{ $achievementRecord->schoolClass?->name ?? $achievementRecord->student?->currentEnrollment?->schoolClass?->name ?? '-' }}</td></tr>
                     </table>
                 </div>
                 <div class="card" style="margin-bottom:var(--sp-lg)">

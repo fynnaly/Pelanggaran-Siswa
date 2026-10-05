@@ -30,29 +30,45 @@
                     </div>
                     <span class="help-text">Pilih nama siswa yang melakukan pelanggaran</span>
                 </div>
-                <div class="field"><label class="field-label">Kategori Pelanggaran <span class="text-danger">*</span></label>
-                    <select name="violation_category_id" class="field-input" required @change="$dispatch('violation-changed', { points: $event.target.selectedOptions[0]?.dataset.points || 0 })">
-                        <option value="">Pilih kategori...</option>
-                        @foreach($categories as $cat)
-                            <option value="{{ $cat->id }}" data-points="{{ $cat->points }}" {{ old('violation_category_id')==$cat->id?'selected':'' }}>{{ $cat->name }} ({{ $cat->points }} poin)</option>
-                        @endforeach
-                    </select>
-                    <span class="help-text">Pilih jenis pelanggaran yang dilakukan siswa</span>
-                </div>
-                @php $isAdmin = auth()->user()->role === 'admin'; @endphp
-                @if($isAdmin)
-                <div class="field"><label class="field-label">Pelapor <span class="text-danger">*</span></label>
-                    <select name="reporter_id" class="field-input" required>
-                        <option value="">Pilih pelapor...</option>
-                        @foreach($reporters as $rep)
-                            <option value="{{ $rep->id }}" {{ old('reporter_id')==$rep->id?'selected':'' }}>{{ $rep->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                @else
-                <input type="hidden" name="reporter_id" value="{{ auth()->id() }}">
-                @endif
-                <div class="field"><label class="field-label">Keterangan / Kronologi</label><textarea name="notes" class="field-input" rows="4" placeholder="Ceritakan kronologi kejadian (waktu, tempat, keadaan)...">{{ old('notes') }}</textarea></div>
+                <div class="field"><label class="field-label">Tanggal Kejadian</label>
+                                    <input type="date" name="incident_date" class="field-input" value="{{ old('incident_date') }}">
+                                    <span class="help-text">Kosongkan untuk hari ini</span>
+                                </div>
+                                @error('incident_date')<span class="text-danger text-sm">{{ $message }}</span>@enderror
+                                <div class="field"><label class="field-label">Kelas Saat Kejadian</label>
+                                    <select name="class_id" class="field-input">
+                                        <option value="">Otomatis dari enrollment siswa</option>
+                                        @foreach($classes as $class)
+                                            <option value="{{ $class->id }}" {{ old('class_id')==$class->id?'selected':'' }}>{{ $class->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <span class="help-text">Kosongkan untuk mengambil kelas dari enrollment siswa saat kejadian. Pilih manual hanya bila siswa belum terdaftar di kelas manapun.</span>
+                                </div>
+                                <div class="field"><label class="field-label">Kategori Pelanggaran <span class="text-danger">*</span></label>
+                                    <select name="violation_category_id" class="field-input" required @change="$dispatch('violation-changed', { points: $event.target.selectedOptions[0]?.dataset.points || 0 })">
+                                        <option value="">Pilih kategori...</option>
+                                        @foreach($categories as $cat)
+                                            <option value="{{ $cat->id }}" data-points="{{ $cat->points }}" {{ old('violation_category_id')==$cat->id?'selected':'' }}>{{ $cat->name }} ({{ $cat->points }} poin)</option>
+                                        @endforeach
+                                    </select>
+                                    <span class="help-text">Pilih jenis pelanggaran yang dilakukan siswa</span>
+                                </div>
+                                @error('violation_category_id')<span class="text-danger text-sm">{{ $message }}</span>@enderror
+                                @php $isAdmin = auth()->user()->role === 'admin'; @endphp
+                                @if($isAdmin)
+                                <div class="field"><label class="field-label">Pelapor <span class="text-danger">*</span></label>
+                                    <select name="reporter_id" class="field-input" required>
+                                        <option value="">Pilih pelapor...</option>
+                                        @foreach($reporters as $rep)
+                                            <option value="{{ $rep->id }}" {{ old('reporter_id')==$rep->id?'selected':'' }}>{{ $rep->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                @else
+                                <input type="hidden" name="reporter_id" value="{{ auth()->id() }}">
+                                @endif
+                                <div class="field"><label class="field-label">Keterangan / Kronologi <span class="text-danger">*</span></label><textarea name="notes" class="field-input" rows="4" placeholder="Ceritakan kronologi kejadian (waktu, tempat, keadaan)...">{{ old('notes') }}</textarea></div>
+                @error('notes')<span class="text-danger text-sm">{{ $message }}</span>@enderror
                 <div style="display:flex;gap:var(--sp-sm);margin-top:var(--sp-lg)">
                     <a href="{{ route('kasus-pelanggaran.index') }}" class="btn btn-secondary" style="flex:1;justify-content:center">Batal</a>
                     <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center"><i data-lucide="file-plus" class="icon-sm"></i> Simpan Kasus</button>

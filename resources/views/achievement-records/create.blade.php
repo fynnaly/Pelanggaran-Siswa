@@ -8,9 +8,10 @@
         </div>
     </x-slot>
     <div class="main-wrap">
-        <div class="card card-form" x-data="recordForm()">
+        <div class="card card-form" x-data="recordForm(@js($selectedStudent))">
             @if(session('success'))<div class="alert alert-success"><i data-lucide="check-circle" class="icon-sm"></i> {{ session('success') }}</div>@endif
             @if(session('error'))<div class="alert alert-error"><i data-lucide="alert-circle" class="icon-sm"></i> {{ session('error') }}</div>@endif
+            @if($errors->any())<div class="alert alert-error" style="margin-bottom:var(--sp-lg)"><i data-lucide="alert-circle" class="icon-sm"></i> {{ $errors->first() }}</div>@endif
             <form action="{{ route('achievement-records.store') }}" method="POST">
                 @csrf
                 <div class="field"><label class="field-label">Siswa <span class="text-danger">*</span></label>
@@ -39,6 +40,31 @@
                     </select>
                     <span class="help-text">Pilih jenis prestasi yang diraih siswa</span>
                 </div>
+                <div class="field"><label class="field-label">Nama Event / Pencapaian <span class="text-danger">*</span></label>
+                    <input type="text" name="event_name" class="field-input" maxlength="150" required value="{{ old('event_name') }}" placeholder="Contoh: Lomba Cerdas Cermat Tingkat Provinsi">
+                    <span class="help-text">Nama event atau pencapaian yang diraih siswa</span>
+                </div>
+                @error('event_name')<span class="text-danger text-sm">{{ $message }}</span>@enderror
+                <div class="field"><label class="field-label">Tanggal Event</label>
+                    <input type="date" name="event_date" class="field-input" value="{{ old('event_date') }}">
+                    <span class="help-text">Kosongkan untuk hari ini</span>
+                </div>
+                @error('event_date')<span class="text-danger text-sm">{{ $message }}</span>@enderror
+                <div class="field"><label class="field-label">Periode</label>
+                    <input type="text" name="event_period" class="field-input" maxlength="20" value="{{ old('event_period') }}" placeholder="Contoh: 2025/2026">
+                    <span class="help-text">Periode pelaksanaan event</span>
+                </div>
+                @error('event_period')<span class="text-danger text-sm">{{ $message }}</span>@enderror
+                <div class="field"><label class="field-label">Tingkat / Level</label>
+                    <input type="text" name="achievement_level" class="field-input" maxlength="50" value="{{ old('achievement_level') }}" placeholder="Contoh: Provinsi, Nasional">
+                    <span class="help-text">Tingkat pencapaian (opsional)</span>
+                </div>
+                @error('achievement_level')<span class="text-danger text-sm">{{ $message }}</span>@enderror
+                <div class="field"><label class="field-label">Poin yang Diberikan <span class="text-danger">*</span></label>
+                    <input type="number" name="points_awarded" class="field-input" min="1" required value="{{ old('points_awarded') }}" placeholder="Contoh: 10">
+                    <span class="help-text">Poin yang akan ditambahkan ke saldo siswa saat diverifikasi</span>
+                </div>
+                @error('points_awarded')<span class="text-danger text-sm">{{ $message }}</span>@enderror
                 <div class="field"><label class="field-label">Keterangan</label><textarea name="description" class="field-input" rows="4" placeholder="Ceritakan kronologi prestasi (waktu, event, pencapaian)...">{{ old('description') }}</textarea></div>
                 <div style="display:flex;gap:var(--sp-sm);margin-top:var(--sp-lg)">
                     <a href="{{ route('achievement-records.index') }}" class="btn btn-secondary" style="flex:1;justify-content:center">Batal</a>
@@ -49,6 +75,6 @@
     </div>
     <script>document.addEventListener('DOMContentLoaded',()=>{lucide.createIcons()})</script>
     <script>
-        function recordForm(){return{results:[],selectedStudentId:null,selectedStudentName:'',searchTimeout:null,searchStudent(q){clearTimeout(this.searchTimeout);if(q.length<2){this.results=[];return}this.searchTimeout=setTimeout(async()=>{try{const r=await fetch('/students/search?q='+encodeURIComponent(q));this.results=Array.isArray(r.data)?r.data:await r.json()||[]}catch(e){this.results=[]}},250)},selectStudent(s){this.selectedStudentId=s.id;this.selectedStudentName=s.full_name;this.results=[];document.querySelector('input[name=student_search]').value='';},clearStudent(){this.selectedStudentId=null;this.selectedStudentName='';}}}
+        function recordForm(preset){return{results:[],selectedStudentId:preset?.id||null,selectedStudentName:preset?.full_name||'',searchTimeout:null,searchStudent(q){clearTimeout(this.searchTimeout);if(q.length<2){this.results=[];return}this.searchTimeout=setTimeout(async()=>{try{const r=await fetch('/students/search?q='+encodeURIComponent(q));this.results=Array.isArray(r.data)?r.data:await r.json()||[]}catch(e){this.results=[]}},250)},selectStudent(s){this.selectedStudentId=s.id;this.selectedStudentName=s.full_name;this.results=[];document.querySelector('input[name=student_search]').value='';},clearStudent(){this.selectedStudentId=null;this.selectedStudentName='';}}}
     </script>
 </x-app-layout>

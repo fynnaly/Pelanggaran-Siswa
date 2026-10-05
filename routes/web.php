@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\ViolationCategoryController;
 use App\Http\Controllers\StudentController;
@@ -11,8 +12,11 @@ use App\Http\Controllers\PointLedgerController;
 use App\Http\Controllers\DisciplineCaseController;
 use App\Http\Controllers\AchievementCategoryController;
 use App\Http\Controllers\AchievementRecordController;
+use App\Http\Controllers\StudentPointController;
 
 // Admin/Auth routes
+Route::redirect('/', '/dashboard');
+
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
@@ -42,7 +46,7 @@ Route::middleware('auth')->group(function () {
       Route::get('students/export', [StudentController::class, 'export'])->name('students.export');
       Route::post('students/import', [StudentController::class, 'import'])->name('students.import');
       Route::get('students/search', [StudentController::class, 'search'])->name('students.search');
-      Route::resource('students', StudentController::class);
+      Route::resource('students', StudentController::class)->except(['destroy']);
 
     // Kelas — promote HARUS sebelum resource agar tidak tertelan sebagai {class}
     Route::post('classes/promote', [SchoolClassController::class, 'promote'])->name('classes.promote');
@@ -51,13 +55,19 @@ Route::middleware('auth')->group(function () {
     // PointLedger
     Route::resource('point-ledgers', PointLedgerController::class)->only(['index', 'show']);
 
+    // Monitor Poin — rekap saldo/zona + sertifikat (zona Istimewa / Luar Biasa)
+    Route::get('/monitor-poin', [StudentPointController::class, 'index'])->name('monitor-poin.index');
+    Route::get('/monitor-poin/export', [StudentPointController::class, 'export'])->name('monitor-poin.export');
+    Route::get('/monitor-poin/{student}/sertifikat', [StudentPointController::class, 'certificate'])->name('monitor-poin.certificate');
+
     // Achievement Category
     Route::resource('achievement-categories', AchievementCategoryController::class);
 
     // Achievement Record
-    Route::resource('achievement-records', AchievementRecordController::class)->only(['index', 'create', 'store', 'show']);
+    Route::resource('achievement-records', AchievementRecordController::class)
+        ->parameters(['achievement-records' => 'achievementRecord'])
+        ->only(['index', 'create', 'store', 'show']);
     Route::patch('achievement-records/{achievementRecord}/validate', [AchievementRecordController::class, 'validate'])->name('achievement-records.validate');
-    Route::patch('achievement-records/{achievementRecord}/done', [AchievementRecordController::class, 'done'])->name('achievement-records.done');
     Route::patch('achievement-records/{achievementRecord}/dismiss', [AchievementRecordController::class, 'dismiss'])->name('achievement-records.dismiss');
 
     // Kasus Pelanggaran
@@ -66,10 +76,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/create', [DisciplineCaseController::class, 'create'])->name('create');
         Route::post('/', [DisciplineCaseController::class, 'store'])->name('store');
         Route::get('/{disciplineCase}', [DisciplineCaseController::class, 'show'])->name('show');
-        Route::patch('/{disciplineCase}/validate', [DisciplineCaseController::class, 'validate'])->name('validate');
+        Route::patch('/{disciplineCase}/update-status', [DisciplineCaseController::class, 'updateStatus'])->name('update-status');
         Route::patch('/{disciplineCase}/dismiss', [DisciplineCaseController::class, 'dismiss'])->name('dismiss');
-        Route::patch('/{disciplineCase}/done', [DisciplineCaseController::class, 'done'])->name('done');
     });
+
+    // Master Pengguna — template/export/import HARUS sebelum resource agar tidak tertelan {user}
+    Route::get('users/template', [UserController::class, 'downloadTemplate'])->name('users.template');
+    Route::get('users/export', [UserController::class, 'export'])->name('users.export');
+    Route::post('users/import', [UserController::class, 'import'])->name('users.import');
+    Route::resource('users', UserController::class);
 });
 
 require __DIR__.'/auth.php';

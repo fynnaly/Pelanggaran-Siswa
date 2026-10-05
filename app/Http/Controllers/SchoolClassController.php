@@ -12,25 +12,58 @@ use Illuminate\Validation\Rule;
 class SchoolClassController extends Controller
 {
     /** Menampilkan daftar semua kelas */
-    public function index()
+    public function index(Request $request)
     {
         $academicYears = AcademicYear::orderBy('start_date')->get();
         $activeYearId = AcademicYear::where('is_active', true)->value('id');
         $selectedYearId = request('year_id') ?: $activeYearId;
 
-        $classes = SchoolClass::with(['academicYear', 'homeroomTeacher'])->withCount('students')
+        $sort = $request->string('sort')->toString();
+        $order = strtolower($request->string('order')->toString()) === 'asc' ? 'asc' : 'desc';
+        $allowed = ['id', 'name', 'grade_level', 'academic_year_id', 'students_count'];
+        $sort = in_array($sort, $allowed, true) ? $sort : 'id';
+
+        $classes = SchoolClass::with(['academicYear', 'homeroomTeacher', 'assistantTeacher'])->withCount('students')
             ->where('academic_year_id', $selectedYearId)
-            ->latest('name')
+            ->orderBy($sort, $order)
+            ->paginate(20)
+            ->withQueryString();
+        // Hanya role 'guru' yang bisa jadi wali kelas (skill: filter whereHas('roles')).
+        $teachers = User::whereHas('roles', fn ($q) => $q->where('name', 'guru'))
+            ->orderBy('name')->get(['id', 'name']);
+
+        return view('classes.index', compact('classes', 'academicYears', 'selectedYearId', 'teachers', 'sort', 'order'));
+    }
+
+    /** Menampilkan detail satu kelas beserta daftarnya */
+    public function show(SchoolClass $class)
+    {
+        $class->load(['academicYear', 'homeroomTeacher', 'assistantTeacher']);
+        $students = $class->students()
+            ->with(['currentEnrollment', 'pointLedgers'])
             ->paginate(20);
 
-        return view('classes.index', compact('classes', 'academicYears', 'selectedYearId'));
+        $zoneCounts = [];
+        foreach (config('zones.zones', []) as $z) {
+            $zoneCounts[$z['name']] = 0;
+        }
+        foreach ($students as $s) {
+            $bal = $s->pointLedgers->sortBy('id')->last()->balance_after ?? 0;
+            foreach (config('zones.zones', []) as $z) {
+                $minOk = $z['min'] === null || $bal >= $z['min'];
+                $maxOk = $z['max'] === null || $bal <= $z['max'];
+                if ($minOk && $maxOk) { $zoneCounts[$z['name']]++; break; }
+            }
+        }
+
+        return view('classes.show', compact('class', 'students', 'zoneCounts'));
     }
 
     /** Menampilkan form pembuatan kelas baru */
     public function create()
     {
         $academicYears = AcademicYear::orderBy('name', 'desc')->get();
-        $users = User::orderBy('name')->get();
+        $users = User::whereHas('roles', fn ($q) => $q->where('name', 'guru'))->orderBy('name')->get();
         return view('classes.create', compact('academicYears', 'users'));
     }
 
@@ -39,17 +72,15 @@ class SchoolClassController extends Controller
     {
         $validated = $request->validate([
             'academic_year_id' => 'required|exists:academic_years,id',
-            'name' => ['required', 'string', 'max:20',
-
-            /**
-             * ! SQLSTATE[42703]: Undefined column: 7 ERROR: column "6" does not exist LINE :
-             * * Fix, menggunakan Rule::unique qihuy
-            */
-            Rule::unique('classes', 'name')->where(function ($query) use ($request) {
-                return $query->where('academic_year_id', $request->academic_year_id);
-            })
+            'name' => ['required', 'string', 'max:50',
+                Rule::unique('classes', 'name')->where(function ($query) use ($request) {
+                    return $query->where('academic_year_id', $request->academic_year_id);
+                })
             ],
+            'grade_level' => 'nullable|in:X,XI,XII',
+            'major' => 'nullable|string|max:50',
             'homeroom_teacher_id' => 'nullable|exists:users,id',
+            'assistant_teacher_id' => 'nullable|exists:users,id|different:homeroom_teacher_id',
         ]);
 
         SchoolClass::create($validated);
@@ -63,7 +94,8 @@ class SchoolClassController extends Controller
     public function edit(SchoolClass $class)
     {
         $academicYears = AcademicYear::orderBy('name', 'desc')->get();
-        return view('classes.edit', compact('class', 'academicYears'));
+        $users = User::whereHas('roles', fn ($q) => $q->where('name', 'guru'))->orderBy('name')->get();
+        return view('classes.edit', compact('class', 'academicYears', 'users'));
     }
 
     /** Memperbarui data kelas */
@@ -74,23 +106,27 @@ class SchoolClassController extends Controller
 
         $validated = $request->validate([
             'academic_year_id' => 'sometimes|exists:academic_years,id',
-            'name' => ['sometimes', 'required', 'string', 'max:20',
-            // cari naam yg sama, but ga anggap Id kelas yang dipilih dan juga cek di taun ajaran yang sama juga.
-            Rule::unique('classes', 'name')
-            ->ignore($class->id)
-            ->where('academic_year_id', $academicYearId),
+            'name' => ['sometimes', 'required', 'string', 'max:50',
+                Rule::unique('classes', 'name')
+                ->ignore($class->id)
+                ->where('academic_year_id', $academicYearId),
             ],
+            'grade_level' => 'sometimes|nullable|in:X,XI,XII',
+            'major' => 'sometimes|nullable|string|max:50',
+            'capacity' => 'sometimes|nullable|integer|min:1|max:100',
             'homeroom_teacher_id' => 'nullable|exists:users,id',
+            'assistant_teacher_id' => 'nullable|exists:users,id|different:homeroom_teacher_id',
         ]);
 
         $class->update($validated);
 
+        $name = $validated['name'] ?? $class->name;
         return redirect()
             ->route('classes.index')
-            ->with('success', 'Kelas ' . $validated['name'] . ' berhasil diupdate.');
+            ->with('success', 'Kelas ' . $name . ' berhasil diupdate.');
     }
 
-    /** Pindahkan massal (naik kelas) sekumpulan siswa ke satu kelas target */
+    /** Pindahkan massal (naik kelas) sekumpulan siswa ke satu kelas target — via enrollments. */
     public function promote(Request $request)
     {
         $validated = $request->validate([
@@ -100,9 +136,27 @@ class SchoolClassController extends Controller
         ]);
 
         $target = SchoolClass::findOrFail($validated['class_id']);
-        $count = Student::whereIn('id', $validated['student_ids'])->count();
+        $targetYearId = $target->academic_year_id;
+        $count = 0;
 
-        Student::whereIn('id', $validated['student_ids'])->update(['class_id' => $target->id]);
+        foreach (Student::whereIn('id', $validated['student_ids'])->get() as $student) {
+            // Update kelas aktif di enrollment tahun ajaran target
+            $enroll = $student->enrollments()
+                ->where('academic_year_id', $targetYearId)
+                ->first();
+            if ($enroll) {
+                $enroll->update(['class_id' => $target->id]);
+            } else {
+                // Belum terdaftar di tahun ajaran target → buat enrollment baru
+                $student->enrollments()->create([
+                    'class_id' => $target->id,
+                    'academic_year_id' => $targetYearId,
+                    'status' => 'active',
+                    'enrolled_at' => now(),
+                ]);
+            }
+            $count++;
+        }
 
         return redirect()
             ->route('classes.index')

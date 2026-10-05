@@ -18,6 +18,13 @@ return new class extends Migration
             $table->enum('severity', ['ringan', 'sedang', 'berat'])->default('ringan');
             // * disimpan secara positif, arah debit akan ditentukan ledger
             $table->unsignedInteger('points');
+            $table->text('description')->nullable();
+            $table->string('group_type', 50)->default('kedisiplinan');
+            $table->boolean('is_recurring')->default(false);
+            $table->unsignedInteger('recurring_increment')->nullable();
+            $table->unsignedInteger('max_recurring_points')->nullable();
+            $table->date('valid_from')->nullable();
+            $table->date('valid_until')->nullable();
             $table->enum('status', ['draft', 'active'])->default('draft');
             $table->timestamps();
         });

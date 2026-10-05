@@ -16,12 +16,16 @@ return new class extends Migration
             // Akun login
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('class_id')->constrained()->cascadeOnDelete();
+            $table->enum('gender', ['L', 'P'])->default('L');
+            $table->date('birth_date')->nullable();
+            $table->string('phone', 20)->nullable();
+            $table->text('address')->nullable();
+            $table->string('parent_name', 255)->nullable();
+            $table->string('parent_phone', 20)->nullable();
             $table->string('nisn', 20)->unique();
             $table->string('nis', 20)->unique();
             $table->string('full_name');
-            $table->string('username', 20)->unique()->nullable(); // yang akan tampil di leaderboard
             $table->string('avatar_path')->nullable();
-            $table->boolean('is_leaderboard_visible')->default(true);
             $table->enum('status', ['active', 'inactive', 'graduated', 'transferred'])->default('active');
             $table->timestamps();
         });
