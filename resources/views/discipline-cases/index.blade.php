@@ -4,7 +4,7 @@
         <div class="page-header">
             <div>
                 <h1>Kasus Pelanggaran</h1>
-                <p class="text-muted text-sm">{{ $cases->total() }} total kasus</p>
+                <p class="text-muted text-sm" data-live-count>{{ $cases->total() }} total kasus</p>
             </div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
                 <a href="{{ route('kasus-pelanggaran.create') }}" class="btn btn-primary"><i data-lucide="plus" class="icon-sm"></i> Buat Kasus</a>
@@ -16,7 +16,7 @@
         @if(session('warning'))<div class="alert alert-warning"><i data-lucide="alert-triangle" class="icon-sm"></i> {{ session('warning') }}</div>@endif
         @if(session('error'))<div class="alert alert-error"><i data-lucide="alert-circle" class="icon-sm"></i> {{ session('error') }}</div>@endif
         <div class="toolbar">
-            <form method="GET" action="{{ route('kasus-pelanggaran.index') }}" style="display:flex;gap:var(--sp-sm);flex-wrap:wrap;align-items:center;width:100%">
+            <form method="GET" action="{{ route('kasus-pelanggaran.index') }}" data-live="#caseRegion" id="caseFilter" style="display:flex;gap:var(--sp-sm);flex-wrap:wrap;align-items:center;width:100%">
                 <input type="text" name="search" class="input" placeholder="Cari nomor kasus, nama siswa..." style="max-width:280px" value="{{ request('search') }}">
                 <div class="filter-group">
                     <select name="status" class="input" style="width:auto;min-width:150px" onchange="this.form.submit()">
@@ -32,9 +32,10 @@
                 </div>
             </form>
         </div>
+        <div id="caseRegion">
         <div class="table-wrap">
             <table>
-                <thead><tr><th style="width:40px">No</th><th>No. Kasus</th><th>Siswa</th><th>Pelanggaran</th><th>Poin</th><th>Status</th><th>Tanggal</th><th style="width:100px">Aksi</th></tr></thead>
+                <thead><tr><th style="width:40px"><x-sortable-header column="id" label="No" :sort="$sort" :order="$order" route="kasus-pelanggaran.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="case_number" label="No. Kasus" :sort="$sort" :order="$order" route="kasus-pelanggaran.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="student_id" label="Siswa" :sort="$sort" :order="$order" route="kasus-pelanggaran.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="violation_category_id" label="Pelanggaran" :sort="$sort" :order="$order" route="kasus-pelanggaran.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="status" label="Status" :sort="$sort" :order="$order" route="kasus-pelanggaran.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="incident_date" label="Tanggal" :sort="$sort" :order="$order" route="kasus-pelanggaran.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="created_at" label="Dibuat" :sort="$sort" :order="$order" route="kasus-pelanggaran.index" :params="request()->except('sort','order','page')" /></th><th style="width:100px">Aksi</th></tr></thead>
                 <tbody>
                     @forelse($cases as $idx => $case)
                         @php
@@ -45,7 +46,7 @@
                             $incDate = $case->incident_date ?? $case->created_at;
                         @endphp
                         <tr>
-                            <td class="mono" style="text-align:center;color:var(--on-surface-muted);font-size:.75rem">{{ $cases->firstItem() + $idx }}</td>
+                            <td class="mono" style="text-align:center;color:var(--on-surface-muted);font-size:.75rem">{{ $case->id }}</td>
                             <td class="mono">{{ $case->case_number }}</td>
                             <td><strong>{{ $case->student?->full_name ?? '-' }}</strong><br><span class="text-muted text-sm">{{ $case->schoolClass?->name ?? $case->student?->currentEnrollment?->schoolClass?->name ?? '' }}</span></td>
                             <td>
@@ -76,6 +77,7 @@
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--sp-sm);margin-top:var(--sp-lg)">
             <span class="text-sm text-muted">Menampilkan {{ $cases->firstItem() ?? 0 }}-{{ $cases->lastItem() ?? 0 }} dari {{ $cases->total() }} kasus</span>
             <div class="pagination" style="margin-top:0">{{ $cases->links() }}</div>
+        </div>
         </div>
     </div>
     <script>document.addEventListener('DOMContentLoaded',()=>{lucide.createIcons()})</script>

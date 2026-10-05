@@ -12,6 +12,8 @@
         </div>
     </x-slot>
     <div class="main-wrap">
+        @if(session('success'))<div class="alert alert-success"><i data-lucide="check-circle" class="icon-sm"></i> {{ session('success') }}</div>@endif
+        @if(session('error'))<div class="alert alert-error"><i data-lucide="alert-circle" class="icon-sm"></i> {{ session('error') }}</div>@endif
         <div class="layout-2col" style="align-items:start">
             <div>
                 <div class="card" style="margin-bottom:var(--sp-lg)">

@@ -10,12 +10,16 @@ use DB;
 class AcademicYearController extends Controller
 {
     /** Display a listing of the resource. */
-    public function index()
+    public function index(Request $request)
     {
-        $academicYears = AcademicYear::orderBy('name')
-            ->paginate(20);
+        $sort = $request->string('sort')->toString();
+        $order = strtolower($request->string('order')->toString()) === 'asc' ? 'asc' : 'desc';
+        $allowed = ['id', 'name', 'start_date', 'end_date', 'created_at'];
+        $sort = in_array($sort, $allowed, true) ? $sort : 'id';
 
-        return view('academic-years.index', compact('academicYears'));
+        $academicYears = AcademicYear::orderBy($sort, $order)->paginate(20)->withQueryString();
+
+        return view('academic-years.index', compact('academicYears', 'sort', 'order'));
     }
 
     /** Show the form for creating a new resource. */

@@ -1,7 +1,7 @@
 @php
     $groups = [
         [
-            'label' => 'Data Master',
+            'label' => 'Data Referensi',
             'icon' => 'database',
             'items' => [
                 ['route' => 'users.index', 'label' => 'Pengguna', 'pattern' => 'users.*', 'icon' => 'user-round'],
@@ -30,6 +30,7 @@
             'label' => 'Poin',
             'icon' => 'wallet',
             'items' => [
+                ['route' => 'monitor-poin.index', 'label' => 'Monitor Poin', 'pattern' => 'monitor-poin.*', 'icon' => 'activity'],
                 ['route' => 'point-ledgers.index', 'label' => 'Riwayat Poin', 'pattern' => 'point-ledgers.*', 'icon' => 'wallet'],
             ],
         ],
@@ -239,27 +240,38 @@
 <script>
 (function() {
     // --- Sidebar group collapse state → localStorage ---
-    var NAV_KEYS = ['data-master','pelanggaran','prestasi','poin'];
+    var NAV_KEYS = ['data-referensi','pelanggaran','prestasi','poin'];
+    // Re-read setiap toggle — closure snapshot lama bikin state group lain ke-reset.
+    function readNav() {
+        try { return JSON.parse(localStorage.getItem('nav-open') || '{}'); }
+        catch (e) { return {}; }
+    }
+    function writeNav(saved) {
+        localStorage.setItem('nav-open', JSON.stringify(saved));
+    }
     function loadNavState() {
-        var saved = JSON.parse(localStorage.getItem('nav-open') || '{}');
+        var raw = localStorage.getItem('nav-open');
+        var persisted = raw !== null;
+        var saved = persisted ? readNav() : {};
         NAV_KEYS.forEach(function(key) {
             var el = document.querySelector('[data-nav-key="' + key + '"]');
             if (!el) return;
-            if (saved[key] === false) el.removeAttribute('open');
-            else el.setAttribute('open', '');
+            if (persisted) {
+                if (saved[key] === false) el.removeAttribute('open');
+                else if (saved[key] === true) el.setAttribute('open', '');
+            } else {
+                saved[key] = el.hasAttribute('open');
+            }
         });
+        if (!persisted) writeNav(saved);
     }
     document.querySelectorAll('.nav-group').forEach(function(group) {
         var key = group.getAttribute('data-nav-key');
         if (!key) return;
-        var saved = JSON.parse(localStorage.getItem('nav-open') || '{}');
-        if (saved[key] === undefined) {
-            saved[key] = true;
-            localStorage.setItem('nav-open', JSON.stringify(saved));
-        }
         group.addEventListener('toggle', function() {
-            saved[key] = group.hasAttribute('open');
-            localStorage.setItem('nav-open', JSON.stringify(saved));
+            var saved = readNav();          // selalu baca terbaru
+            saved[key] = group.hasAttribute('open');  // hanya key sendiri
+            writeNav(saved);
         });
     });
     loadNavState();

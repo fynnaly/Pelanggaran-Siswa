@@ -3,7 +3,7 @@
         <div class="page-header">
             <div>
                 <h1>{{ $class->name }}</h1>
-                <p class="text-muted text-sm">{{ $class->academicYear?->name ?? '-' }} &middot; {{ $class->grade_level }} {{ $class->major }}</p>
+                <p class="text-muted text-sm">{{ $class->academicYear?->name ?? '-' }} &middot; {{ $class->tingkat ?? '-' }} {{ $class->major }}</p>
             </div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
                 <a href="{{ route('classes.index') }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" class="icon-sm"></i> Kembali</a>
@@ -17,14 +17,11 @@
             <table style="width:100%">
                 <tbody>
                     <tr><td style="padding:8px 0;color:var(--on-surface-muted);width:180px">Nama Kelas</td><td style="font-weight:600">{{ $class->name }}</td></tr>
-                    <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Tingkat</td><td class="mono" style="font-weight:600">{{ $class->grade_level ?? '-' }}</td></tr>
-                    <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Jurusan</td><td>{{ $class->major ?? '-' }}</td></tr>
+                    <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Tingkat</td><td class="mono" style="font-weight:600">{{ $class->tingkat ?? '-' }}</td></tr>
+                    <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Program Keahlian</td><td>{{ $class->major ?? '-' }}</td></tr>
                     <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Tahun Ajaran</td><td>{{ $class->academicYear?->name ?? '-' }}</td></tr>
-                    <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Guru</td><td>{{ $class->homeroomTeacher?->name ?? '-' }}</td></tr>
-                    <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Guru 2</td><td>{{ $class->assistantTeacher?->name ?? '-' }}</td></tr>
-                    @if($class->capacity)
-                    <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Kapasitas</td><td>{{ $students->total() }} / {{ $class->capacity }}</td></tr>
-                    @endif
+                    <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Wali Kelas</td><td>{{ $class->homeroomTeacher?->name ?? '-' }}</td></tr>
+                    <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Jumlah Siswa</td><td class="mono">{{ $students->total() }}</td></tr>
                 </tbody>
             </table>
         </div>
@@ -57,11 +54,11 @@
             </div>
             <div class="table-wrap">
                 <table>
-                    <thead><tr><th>No</th><th>Nama</th><th>NIS</th><th>Status</th><th>Poin</th></tr></thead>
+                    <thead><tr><th style="width:48px">No</th><th>Nama</th><th>NIS</th><th>Status</th><th>Poin</th></tr></thead>
                     <tbody>
                         @foreach($students as $idx => $student)
                             <tr>
-                                <td>{{ $students->firstItem() + $idx }}</td>
+                                <td>{{ $student->id }}</td>
                                 <td><a href="{{ route('students.show', $student) }}" style="font-weight:600">{{ $student->full_name }}</a></td>
                                 <td class="mono">{{ $student->nis }}</td>
                                 <td>
@@ -77,7 +74,7 @@
                     </tbody>
                 </table>
             </div>
-            <div style="display:flex;justify-content:flex-end;margin-top:var(--sp-lg)"><div class="pagination" style="margin-top:0">{{ $students->links() }}</div></div>
+            <div style="display:flex;justify-content:center;margin-top:var(--sp-lg)"><div class="pagination" style="margin-top:0">{{ $students->links() }}</div></div>
         </div>
         @endif
     </div>

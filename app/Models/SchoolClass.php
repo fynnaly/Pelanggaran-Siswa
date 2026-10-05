@@ -53,6 +53,17 @@ class SchoolClass extends Model
         return $this->hasMany(Enrollment::class, 'class_id');
     }
 
+    /** Tingkat format resmi Kurikulum Merdeka: "X/10", "XI/11", "XII/12". */
+    public function getTingkatAttribute(): ?string
+    {
+        return match ($this->grade_level) {
+            'X' => 'X/10',
+            'XI' => 'XI/11',
+            'XII' => 'XII/12',
+            default => null,
+        };
+    }
+
     /** Nama kelas format: "X RPL 1" */
     public function getDisplayNameAttribute(): string
     {
