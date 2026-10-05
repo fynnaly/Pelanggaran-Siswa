@@ -22,11 +22,15 @@ class DisciplineCaseController extends Controller
     {
         $status = request('status');
         $search = request('search');
+        $sort = request()->string('sort')->toString();
+        $order = strtolower(request()->string('order')->toString()) === 'asc' ? 'asc' : 'desc';
+        $allowed = ['id', 'created_at', 'status', 'case_number', 'student_id', 'violation_category_id'];
+        $sort = in_array($sort, $allowed, true) ? $sort : 'id';
         $academicYearId = AcademicYear::where('is_active', true)->first()?->id;
 
         $query = DisciplineCase::with(['student.currentEnrollment.schoolClass', 'schoolClass', 'violationCategory', 'reporter'])
             ->when($academicYearId, fn ($q) => $q->where('academic_year_id', $academicYearId))
-            ->latest('created_at');
+            ->orderBy($sort, $order);
 
         if ($status) {
             $query->where('status', $status);
@@ -41,7 +45,7 @@ class DisciplineCaseController extends Controller
 
         $cases = $query->paginate(20)->withQueryString();
 
-        return view('discipline-cases.index', compact('cases', 'status'));
+        return view('discipline-cases.index', compact('cases', 'status', 'sort', 'order'));
     }
 
     /** Menampilkan form pelaporan pelanggaran baru */

@@ -20,7 +20,7 @@ class StudentController extends Controller
         $classId = request('class_id');
         $sort = request('sort', 'created_at');
         $order = request('order', 'desc');
-        $allowed = ['nis', 'nisn', 'full_name', 'gender', 'status'];
+        $allowed = ['id', 'nis', 'nisn', 'full_name', 'gender', 'grade_level', 'class_name', 'status'];
         $sort = in_array($sort, $allowed, true) ? $sort : 'created_at';
         $order = strtolower($order) === 'asc' ? 'asc' : 'desc';
 
@@ -30,7 +30,6 @@ class StudentController extends Controller
         $filterYearId = $selectedYearId ?: $activeYearId;
 
         $allClasses = SchoolClass::where('academic_year_id', $filterYearId)->orderBy('name')->get();
-        $classesForPromote = $allClasses->pluck('name', 'id');
 
         $students = Student::with([
                 'currentEnrollment.schoolClass',
@@ -48,13 +47,22 @@ class StudentController extends Controller
                         ->orWhere('nis', 'like', "%{$q}%");
                 });
             })
-            ->orderBy($sort, $order)
+            ->when($sort === 'grade_level', fn ($query) => $query
+                ->join('enrollments as e_sort', 'e_sort.student_id', '=', 'students.id')
+                ->join('classes as c_sort', 'c_sort.id', '=', 'e_sort.class_id')
+                ->select('students.*')
+                ->orderBy('c_sort.grade_level', $order))
+            ->when($sort === 'class_name', fn ($query) => $query
+                ->join('enrollments as e_sort', 'e_sort.student_id', '=', 'students.id')
+                ->join('classes as c_sort', 'c_sort.id', '=', 'e_sort.class_id')
+                ->select('students.*')
+                ->orderBy('c_sort.name', $order))
+            ->when(! in_array($sort, ['grade_level', 'class_name'], true), fn ($query) => $query->orderBy($sort, $order))
             ->paginate(20)
             ->withQueryString();
 
         return view('students.index', compact(
             'students',
-            'classesForPromote',
             'classId',
             'allClasses',
             'sort',
@@ -211,8 +219,9 @@ class StudentController extends Controller
             return response()->json([]);
         }
 
+        // Tanpa filter status: daftar siswa (students.index) menampilkan seluruh siswa
+        // apa pun statusnya, jadi autocomplete harus konsisten dengan tabel itu.
         $students = Student::with(['currentEnrollment.schoolClass'])
-            ->where('status', 'active')
             ->where(function ($query) use ($q) {
                 $query->where('full_name', 'like', "%{$q}%")
                     ->orWhere('nisn', 'like', "%{$q}%")

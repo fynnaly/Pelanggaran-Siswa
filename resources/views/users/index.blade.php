@@ -3,7 +3,7 @@
         <div class="page-header">
             <div>
                 <h1>Pengguna</h1>
-                <p class="text-muted text-sm">{{ $users->total() }} akun terdaftar</p>
+                <p class="text-muted text-sm" data-live-count>{{ $users->total() }} akun terdaftar</p>
             </div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
                 <a href="{{ route('users.template') }}" class="btn btn-secondary btn-sm"><i data-lucide="file-down" class="icon-sm"></i> Template</a>
@@ -22,7 +22,7 @@
 
         {{-- Filter: tipe (Guru/Siswa) + jabatan (hanya saat Guru) + pencarian --}}
         <div class="toolbar" style="margin-bottom:var(--sp-md);display:flex;gap:var(--sp-sm);flex-wrap:wrap;align-items:flex-end">
-            <form action="{{ route('users.index') }}" method="GET" style="display:flex;gap:var(--sp-sm);flex:1;flex-wrap:wrap;align-items:flex-end">
+            <form action="{{ route('users.index') }}" method="GET" data-live="#userRegion" id="userFilter" style="display:flex;gap:var(--sp-sm);flex:1;flex-wrap:wrap;align-items:flex-end">
                 <div style="display:flex;flex-direction:column;gap:4px">
                     <label style="font-size:.75rem;font-weight:700;color:var(--on-surface-muted);text-transform:uppercase;letter-spacing:.05em">Tipe Pengguna</label>
                     <select name="type" class="input" style="min-width:160px" onchange="this.form.submit()">
@@ -57,20 +57,23 @@
             </div>
         </div>
 
+        <div id="userRegion">
         <div class="table-wrap">
             <table>
                 <thead>
                     <tr>
-                        <th>Nama</th>
-                        <th>Email</th>
+                        <th style="width:48px"><x-sortable-header column="id" label="No" :sort="$sort" :order="$order" route="users.index" :params="request()->except('sort','order','page')" /></th>
+                        <th><x-sortable-header column="name" label="Nama" :sort="$sort" :order="$order" route="users.index" :params="request()->except('sort','order','page')" /></th>
+                        <th><x-sortable-header column="email" label="Email" :sort="$sort" :order="$order" route="users.index" :params="request()->except('sort','order','page')" /></th>
                         <th>Role / Jabatan</th>
-                        <th>Identitas Siswa</th>
+                        <th>Identitas</th>
                         <th style="width:100px">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($users as $user)
                         <tr>
+                            <td class="text-sm text-muted">{{ $user->id }}</td>
                             <td style="font-weight:600">{{ $user->name }}</td>
                             <td class="text-sm text-muted">{{ $user->email }}</td>
                             <td>
@@ -104,7 +107,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" style="padding:40px;text-align:center;color:var(--on-surface-muted)">
+                            <td colspan="6" style="padding:40px;text-align:center;color:var(--on-surface-muted)">
                                 <i data-lucide="inbox" style="width:40px;height:40px;display:block;margin:0 auto var(--sp-sm);opacity:.4"></i>
                                 Belum ada pengguna.
                             </td>
@@ -114,8 +117,9 @@
             </table>
         </div>
 
-        <div style="display:flex;justify-content:flex-end;margin-top:var(--sp-lg)">
+        <div style="display:flex;justify-content:center;margin-top:var(--sp-lg)">
             <div class="pagination" style="margin-top:0">{{ $users->links() }}</div>
+        </div>
         </div>
     </div>
     <script>document.addEventListener('DOMContentLoaded',()=>{lucide.createIcons()})</script>

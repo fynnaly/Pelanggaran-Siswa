@@ -37,6 +37,11 @@ class UserController extends Controller
 
         $roles = Role::whereIn('name', self::STAFF_ROLES)->orderBy('name')->pluck('name');
 
+        $sort = request()->string('sort')->toString();
+        $order = strtolower(request()->string('order')->toString()) === 'asc' ? 'asc' : 'desc';
+        $allowed = ['id', 'name', 'email', 'created_at'];
+        $sort = in_array($sort, $allowed, true) ? $sort : 'name';
+
         $users = User::with(['roles', 'student.currentEnrollment.schoolClass'])
             ->when($q, fn ($query) => $query->where(function ($where) use ($q) {
                 $where->where('name', 'like', "%{$q}%")
@@ -58,11 +63,11 @@ class UserController extends Controller
                 'roles',
                 fn ($role) => $role->where('name', $jabatan),
             ))
-            ->orderBy('name')
+            ->orderBy($sort, $order)
             ->paginate(20)
             ->withQueryString();
 
-        return view('users.index', compact('users', 'roles', 'type', 'jabatan', 'q'));
+        return view('users.index', compact('users', 'roles', 'type', 'jabatan', 'q', 'sort', 'order'));
     }
 
     /**

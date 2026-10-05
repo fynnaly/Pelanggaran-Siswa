@@ -12,6 +12,7 @@ use App\Http\Controllers\PointLedgerController;
 use App\Http\Controllers\DisciplineCaseController;
 use App\Http\Controllers\AchievementCategoryController;
 use App\Http\Controllers\AchievementRecordController;
+use App\Http\Controllers\StudentPointController;
 
 // Admin/Auth routes
 Route::redirect('/', '/dashboard');
@@ -53,6 +54,11 @@ Route::middleware('auth')->group(function () {
 
     // PointLedger
     Route::resource('point-ledgers', PointLedgerController::class)->only(['index', 'show']);
+
+    // Monitor Poin — rekap saldo/zona + sertifikat (zona Istimewa / Luar Biasa)
+    Route::get('/monitor-poin', [StudentPointController::class, 'index'])->name('monitor-poin.index');
+    Route::get('/monitor-poin/export', [StudentPointController::class, 'export'])->name('monitor-poin.export');
+    Route::get('/monitor-poin/{student}/sertifikat', [StudentPointController::class, 'certificate'])->name('monitor-poin.certificate');
 
     // Achievement Category
     Route::resource('achievement-categories', AchievementCategoryController::class);

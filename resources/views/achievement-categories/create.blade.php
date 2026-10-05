@@ -15,6 +15,12 @@
                 <div class="field"><label class="field-label">Kode <span class="text-danger">*</span></label><input type="text" name="code" value="{{ old('code') }}" class="field-input" required placeholder="Contoh: Pres-001"></div>
                 <div class="field"><label class="field-label">Nama <span class="text-danger">*</span></label><input type="text" name="name" value="{{ old('name') }}" class="field-input" required placeholder="Contoh: Juara Olimpiade"></div>
                 <div class="field"><label class="field-label">Poin <span class="text-danger">*</span></label><input type="number" name="points" value="{{ old('points') }}" class="field-input" required min="1" placeholder="0"></div>
+                <div class="field"><label class="field-label">Status <span class="text-danger">*</span></label>
+                    <select name="status" class="field-input" required>
+                        <option value="active" {{ old('status', 'active') === 'active' ? 'selected' : '' }}>Aktif</option>
+                        <option value="draft" {{ old('status') === 'draft' ? 'selected' : '' }}>Draft</option>
+                    </select>
+                </div>
                 <div style="display:flex;gap:var(--sp-sm);margin-top:var(--sp-lg)">
                     <a href="{{ route('achievement-categories.index') }}" class="btn btn-secondary" style="flex:1;justify-content:center">Batal</a>
                     <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center"><i data-lucide="save" class="icon-sm"></i> Simpan</button>

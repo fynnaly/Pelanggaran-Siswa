@@ -13,10 +13,19 @@
         @if(session('error'))<div class="alert alert-error"><i data-lucide="alert-circle" class="icon-sm"></i> {{ session('error') }}</div>@endif
         <div class="table-wrap">
             <table>
-                <thead><tr><th>Kode</th><th>Nama</th><th>Tingkat</th><th>Poin</th><th>Status</th><th style="width:100px">Aksi</th></tr></thead>
+                <thead><tr>
+                    <th style="width:48px"><x-sortable-header column="id" label="No" :sort="$sort" :order="$order" route="violation-categories.index" /></th>
+                    <th><x-sortable-header column="code" label="Kode" :sort="$sort" :order="$order" route="violation-categories.index" /></th>
+                    <th><x-sortable-header column="name" label="Nama" :sort="$sort" :order="$order" route="violation-categories.index" /></th>
+                    <th><x-sortable-header column="severity" label="Tingkat" :sort="$sort" :order="$order" route="violation-categories.index" /></th>
+                    <th><x-sortable-header column="points" label="Poin" :sort="$sort" :order="$order" route="violation-categories.index" /></th>
+                    <th><x-sortable-header column="status" label="Status" :sort="$sort" :order="$order" route="violation-categories.index" /></th>
+                    <th style="width:100px">Aksi</th>
+                </tr></thead>
                 <tbody>
                     @forelse($categories as $cat)
                         <tr>
+                            <td class="text-sm text-muted">{{ $cat->id }}</td>
                             <td class="mono">{{ $cat->code }}</td>
                             <td><strong>{{ $cat->name }}</strong></td>
                             <td><span class="badge badge-warning">{{ $cat->severity }}</span></td>
@@ -33,7 +42,7 @@
                 </tbody>
             </table>
         </div>
-        <div style="display:flex;justify-content:flex-end;margin-top:var(--sp-lg)"><div class="pagination" style="margin-top:0">{{ $categories->links() }}</div></div>
+        <div style="display:flex;justify-content:center;margin-top:var(--sp-lg)"><div class="pagination" style="margin-top:0">{{ $categories->links() }}</div></div>
     </div>
     <script>document.addEventListener('DOMContentLoaded',()=>{lucide.createIcons()})</script>
 </x-app-layout>

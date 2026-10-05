@@ -16,9 +16,18 @@ class AchievementRecordController extends Controller
     {
         $status = request('status');
         $search = request('search');
+        $sort = request()->string('sort')->toString();
+        $order = strtolower(request()->string('order')->toString()) === 'asc' ? 'asc' : 'desc';
+        $allowed = ['id', 'created_at', 'status', 'student_id', 'achievement_category_id'];
+        $sort = in_array($sort, $allowed, true) ? $sort : 'created_at';
 
-        $query = AchievementRecord::with(['student.currentEnrollment.schoolClass', 'schoolClass', 'achievementCategory', 'recorder'])
-            ->latest('created_at');
+        $query = AchievementRecord::with(['student.currentEnrollment.schoolClass', 'schoolClass', 'achievementCategory', 'recorder']);
+
+        if ($sort === 'created_at') {
+            $query->latest('created_at');
+        } else {
+            $query->orderBy($sort, $order);
+        }
 
         if ($status) {
             $query->where('status', $status);
@@ -30,7 +39,7 @@ class AchievementRecordController extends Controller
 
         $records = $query->paginate(20)->withQueryString();
 
-        return view('achievement-records.index', compact('records', 'status', 'search'));
+        return view('achievement-records.index', compact('records', 'status', 'search', 'sort', 'order'));
     }
 
     public function create()
@@ -57,14 +66,16 @@ class AchievementRecordController extends Controller
 
     public function store(Request $request)
     {
+        // Batas validasi = panjang kolom DB (VARCHAR 150/20/50) — sinkron dengan
+        // migration sync_schema_phase2, supaya validasi lolos tapi SQL gagal tak terjadi.
         $validated = $request->validate([
             'student_id' => 'required|exists:students,id',
             'achievement_category_id' => 'required|exists:achievement_categories,id',
-            'event_name' => 'required|string|max:255',
+            'event_name' => 'required|string|max:150',
             'event_date' => 'nullable|date',
-            'event_period' => 'nullable|string|max:100',
-            'achievement_level' => 'nullable|string|max:100',
-            'points_awarded' => 'required|integer|min:1',
+            'event_period' => 'nullable|string|max:20',
+            'achievement_level' => 'nullable|string|max:50',
+            'points_awarded' => 'required|integer|min:1|max:1000',
             'description' => 'nullable|string',
         ]);
 

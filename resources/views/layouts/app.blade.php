@@ -118,6 +118,12 @@
 
         /* ── Cards ── */
         .card { background: var(--neutral); border-radius: var(--r-lg); padding: var(--sp-lg); border: 1px solid var(--border); transition: box-shadow .2s; }
+        .card + .card { margin-top: var(--sp-lg); }
+
+        /* ── Detail tables (halaman show) ── */
+        .detail-table { width: 100%; border-collapse: collapse; }
+        .detail-table td, .detail-table th { padding: 8px 12px 8px 0; }
+        .detail-table .dl { color: var(--on-surface-muted); white-space: nowrap; }
         .card-glass { background: var(--glass-bg); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
                        border: 1px solid var(--glass-border); border-radius: var(--r-lg); padding: var(--sp-md); box-shadow: var(--sh-g); }
 
@@ -192,15 +198,19 @@
         .list-score.warning { color: var(--accent); }
 
         /* ── Pagination ── */
-        .pagination { display: flex; align-items: center; gap: var(--sp-xs); margin-top: var(--sp-lg); justify-content: center; flex-wrap: wrap; }
-        .pagination nav { display: flex; align-items: center; gap: var(--sp-xs); flex-wrap: wrap; justify-content: center; }
-        .pagination nav span, .pagination nav a { min-width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
-                    border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--neutral);
-                    color: var(--on-surface); font-size: .875rem; cursor: pointer; transition: background .15s; text-decoration: none; padding: 0 10px; }
-        .pagination nav span.active { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
-        .pagination nav span.disabled { opacity: .4; pointer-events: none; }
-        .pagination nav a:hover { background: var(--surface); }
-        .pagination nav svg { display: none; }
+        .pagination { display: flex; align-items: center; justify-content: center; margin-top: var(--sp-lg); flex-wrap: wrap; }
+        .pg-nav { display: inline-flex; align-items: center; gap: var(--sp-xs); flex-wrap: wrap; justify-content: center; }
+        .pg-btn { min-width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;
+                  border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--neutral);
+                  color: var(--on-surface); font-size: .875rem; font-weight: 500; cursor: pointer;
+                  transition: background .15s, border-color .15s, color .15s; text-decoration: none; padding: 0 10px; }
+        .pg-btn.is-active { background: var(--primary); color: var(--on-primary); border-color: var(--primary); cursor: default; }
+        .pg-btn.is-disabled { opacity: .4; pointer-events: none; }
+        .pg-gap { padding: 0 4px; color: var(--on-surface-muted); }
+        @media(max-width:639px){
+            .pg-btn { min-width: 32px; height: 32px; font-size: .8125rem; padding: 0 8px; }
+            .pg-nav { gap: 2px; }
+        }
 
         /* ── Skeleton ── */
         .skeleton { background: #e2e8f0; border-radius: var(--r-sm); animation: pulse 1.5s ease-in-out infinite; }
@@ -265,6 +275,7 @@
             .btn-danger:hover{background:#b91c1c}
             tr:hover td{background:var(--surface)}
             .page-btn:hover:not(.active){background:var(--surface)}
+            .pg-btn:hover:not(.is-active){background:var(--surface);border-color:var(--on-surface-muted)}
             .action-btn:hover{background:var(--surface);color:var(--on-surface);border-color:var(--on-surface-muted)}
             .recovery-tab:hover{background:var(--surface)}
         }
@@ -291,6 +302,82 @@
 
     <script src="{{ asset('vendor/lucide/lucide.min.js') }}" onload="lucide.createIcons()"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js" crossorigin="anonymous"></script>
+    <script>
+        // ── Live filter (global) ─────────────────────────────────────────────
+        // Form GET dengan data-live="<selector region>" → search & select tanpa
+        // reload penuh: fetch halaman → DOMParser → copy isi region → swap.
+        // Input/toolbar/header asli tidak disentuh → fokus & kursor tetap utuh.
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('form[data-live]').forEach(form => {
+                const selector = form.getAttribute('data-live');
+                const region = document.querySelector(selector);
+                if (!region) return;
+
+                let timer = null, inflight = null;
+                const indexPath = new URL(form.action).pathname;
+
+                const buildUrl = () => {
+                    const url = new URL(form.action, location.origin);
+                    for (const [k, v] of new FormData(form)) v ? url.searchParams.set(k, v) : url.searchParams.delete(k);
+                    url.searchParams.delete('page'); // ganti filter = balik ke halaman 1
+                    return url;
+                };
+
+                const load = (url, push) => {
+                    inflight?.abort();
+                    inflight = new AbortController();
+                    fetch(url, { signal: inflight.signal, headers: { 'Accept': 'text/html' } })
+                        .then(r => r.ok ? r.text() : Promise.reject(r.status))
+                        .then(html => {
+                            const parsed = new DOMParser().parseFromString(html, 'text/html');
+                            const next = parsed.querySelector(selector);
+                            if (!next) { location.href = url; return; } // region tidak ada → navigasi biasa
+                            region.innerHTML = next.innerHTML;
+                            // angka di header ("N total kasus") ikut menyesuaikan
+                            const counts = parsed.querySelectorAll('[data-live-count]');
+                            const targets = document.querySelectorAll('[data-live-count]');
+                            counts.forEach((el, i) => { if (targets[i]) targets[i].textContent = el.textContent; });
+                            history[push ? 'pushState' : 'replaceState']({}, '', url);
+                            if (window.lucide) lucide.createIcons();
+                        })
+                        .catch(e => { if (e.name !== 'AbortError') console.error(e); });
+                };
+
+                // Ketik teks → debounce 300ms.
+                form.querySelectorAll('input[type="text"],input[type="search"]').forEach(inp => {
+                    inp.addEventListener('input', () => {
+                        clearTimeout(timer);
+                        timer = setTimeout(() => load(buildUrl(), false), 300);
+                    });
+                });
+
+                // Select filter → langsung ganti (intercept semua select; fallback onchange no-JS dilepas).
+                form.querySelectorAll('select').forEach(sel => {
+                    sel.removeAttribute('onchange');
+                    if (!sel.dataset.liveBound) {
+                        sel.dataset.liveBound = '1';
+                        sel.addEventListener('change', () => load(buildUrl(), false));
+                    }
+                });
+
+                // Enter / tombol submit → tanpa reload.
+                form.addEventListener('submit', e => { e.preventDefault(); load(buildUrl(), false); });
+
+                // Sort & pagination di dalam region (path sama) → intercept.
+                region.addEventListener('click', e => {
+                    const link = e.target.closest('a[href]');
+                    if (!link) return;
+                    const url = new URL(link.href, location.origin);
+                    if (url.pathname !== indexPath) return; // detail/edit → biarkan browser
+                    e.preventDefault();
+                    load(url, true);
+                });
+            });
+
+            window.addEventListener('popstate', () => location.reload());
+        });
+    </script>
+
     <script>
         function toggleTheme() {
             const h = document.documentElement;

@@ -7,17 +7,22 @@ use App\Models\AchievementCategory;
 
 class AchievementCategoryController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $search = request('search');
+        $sort = $request->string('sort')->toString();
+        $order = strtolower($request->string('order')->toString()) === 'asc' ? 'asc' : 'desc';
+        $allowed = ['id', 'code', 'name', 'points', 'status', 'created_at'];
+        $sort = in_array($sort, $allowed, true) ? $sort : 'id';
+
         $categories = AchievementCategory::query()
             ->when($search, fn ($q) => $q->where('name', 'like', "%{$search}%")
                 ->orWhere('code', 'like', "%{$search}%"))
-            ->latest('code')
+            ->orderBy($sort, $order)
             ->paginate(20)
             ->withQueryString();
 
-        return view('achievement-categories.index', compact('categories', 'search'));
+        return view('achievement-categories.index', compact('categories', 'search', 'sort', 'order'));
     }
 
     public function create()

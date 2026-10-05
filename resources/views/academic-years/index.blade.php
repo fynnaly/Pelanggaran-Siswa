@@ -14,10 +14,11 @@
         @if($errors->any())<div class="alert alert-error"><i data-lucide="alert-circle" class="icon-sm"></i> {{ $errors->first() }}</div>@endif
         <div class="table-wrap">
             <table>
-                <thead><tr><th>Tahun Ajaran</th><th>Tanggal Mulai</th><th>Status</th><th style="width:100px">Aksi</th></tr></thead>
+                <thead><tr><th style="width:48px"><x-sortable-header column="id" label="No" :sort="$sort" :order="$order" route="tahun-ajaran.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="name" label="Tahun Ajaran" :sort="$sort" :order="$order" route="tahun-ajaran.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="start_date" label="Tanggal Mulai" :sort="$sort" :order="$order" route="tahun-ajaran.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="is_active" label="Status" :sort="$sort" :order="$order" route="tahun-ajaran.index" :params="request()->except('sort','order','page')" /></th><th style="width:100px">Aksi</th></tr></thead>
                 <tbody>
                     @forelse($academicYears as $year)
                         <tr>
+                            <td class="text-sm text-muted">{{ $year->id }}</td>
                             <td><strong>{{ $year->name }}</strong></td>
                             <td class="text-sm text-muted">{{ $year->start_date?->format('d/m/Y') ?? '-' }}</td>
                             <td><span class="badge {{ $year->is_active?'badge-success':'' }}" style="{{ !$year->is_active?'background:var(--surface);color:var(--on-surface-muted)':'' }}">{{ $year->is_active?'Aktif':'Nonaktif' }}</span></td>
@@ -27,12 +28,12 @@
                             </div></td>
                         </tr>
                     @empty
-                        <tr><td colspan="4" style="padding:40px;text-align:center;color:var(--on-surface-muted)"><i data-lucide="inbox" class="icon-lg" style="display:block;margin:0 auto var(--sp-sm)"></i>Belum ada data.</td></tr>
+                        <tr><td colspan="5" style="padding:40px;text-align:center;color:var(--on-surface-muted)"><i data-lucide="inbox" class="icon-lg" style="display:block;margin:0 auto var(--sp-sm)"></i>Belum ada data.</td></tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
-        @if($academicYears->hasPages())<div style="display:flex;justify-content:flex-end;margin-top:var(--sp-lg)"><div class="pagination" style="margin-top:0">{{ $academicYears->links() }}</div></div>@endif
+        @if($academicYears->hasPages())<div style="display:flex;justify-content:center;margin-top:var(--sp-lg)"><div class="pagination" style="margin-top:0">{{ $academicYears->links() }}</div></div>@endif
     </div>
     <script>document.addEventListener('DOMContentLoaded',()=>{lucide.createIcons()})</script>
 </x-app-layout>

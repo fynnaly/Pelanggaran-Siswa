@@ -12,19 +12,27 @@ use Illuminate\Validation\Rule;
 class SchoolClassController extends Controller
 {
     /** Menampilkan daftar semua kelas */
-    public function index()
+    public function index(Request $request)
     {
         $academicYears = AcademicYear::orderBy('start_date')->get();
         $activeYearId = AcademicYear::where('is_active', true)->value('id');
         $selectedYearId = request('year_id') ?: $activeYearId;
 
+        $sort = $request->string('sort')->toString();
+        $order = strtolower($request->string('order')->toString()) === 'asc' ? 'asc' : 'desc';
+        $allowed = ['id', 'name', 'grade_level', 'academic_year_id', 'students_count'];
+        $sort = in_array($sort, $allowed, true) ? $sort : 'id';
+
         $classes = SchoolClass::with(['academicYear', 'homeroomTeacher', 'assistantTeacher'])->withCount('students')
             ->where('academic_year_id', $selectedYearId)
-            ->latest('name')
-            ->paginate(20);
-        $teachers = User::orderBy('name')->get(['id', 'name']);
+            ->orderBy($sort, $order)
+            ->paginate(20)
+            ->withQueryString();
+        // Hanya role 'guru' yang bisa jadi wali kelas (skill: filter whereHas('roles')).
+        $teachers = User::whereHas('roles', fn ($q) => $q->where('name', 'guru'))
+            ->orderBy('name')->get(['id', 'name']);
 
-        return view('classes.index', compact('classes', 'academicYears', 'selectedYearId', 'teachers'));
+        return view('classes.index', compact('classes', 'academicYears', 'selectedYearId', 'teachers', 'sort', 'order'));
     }
 
     /** Menampilkan detail satu kelas beserta daftarnya */
@@ -55,7 +63,7 @@ class SchoolClassController extends Controller
     public function create()
     {
         $academicYears = AcademicYear::orderBy('name', 'desc')->get();
-        $users = User::orderBy('name')->get();
+        $users = User::whereHas('roles', fn ($q) => $q->where('name', 'guru'))->orderBy('name')->get();
         return view('classes.create', compact('academicYears', 'users'));
     }
 
@@ -69,6 +77,8 @@ class SchoolClassController extends Controller
                     return $query->where('academic_year_id', $request->academic_year_id);
                 })
             ],
+            'grade_level' => 'nullable|in:X,XI,XII',
+            'major' => 'nullable|string|max:50',
             'homeroom_teacher_id' => 'nullable|exists:users,id',
             'assistant_teacher_id' => 'nullable|exists:users,id|different:homeroom_teacher_id',
         ]);
@@ -84,7 +94,7 @@ class SchoolClassController extends Controller
     public function edit(SchoolClass $class)
     {
         $academicYears = AcademicYear::orderBy('name', 'desc')->get();
-        $users = User::orderBy('name')->get();
+        $users = User::whereHas('roles', fn ($q) => $q->where('name', 'guru'))->orderBy('name')->get();
         return view('classes.edit', compact('class', 'academicYears', 'users'));
     }
 
