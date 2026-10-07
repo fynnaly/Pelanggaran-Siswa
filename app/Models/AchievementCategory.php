@@ -32,6 +32,11 @@ class AchievementCategory extends Model
         return $this->hasMany(AchievementRecord::class);
     }
 
+    public function redemptionRules(): HasMany
+    {
+        return $this->hasMany(RedemptionRule::class);
+    }
+
     /**
      * Kategori prestasi selalu aktif saat dibuat.
      * Tidak perlu input status di form.

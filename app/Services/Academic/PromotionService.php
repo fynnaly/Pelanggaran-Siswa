@@ -63,6 +63,7 @@ class PromotionService
                 if ($newGrade === null) {
                     $graduated = $this->markGraduated($oldClass, $previousYear);
                     $studentsGraduated += $graduated;
+                $oldClass->update(['status' => 'inactive']);
                     Log::info("Promotion: {$oldClass->name} ({$previousYear->name}) → {$graduated} graduated");
                     continue;
                 }
@@ -76,10 +77,12 @@ class PromotionService
                     'major'            => $oldClass->major,
                     'homeroom_teacher_id' => $oldClass->homeroom_teacher_id,
                     'capacity'         => $oldClass->capacity,
+                    'status'           => 'active',
                 ]);
                 $classesCreated++;
 
                 Log::info("Promotion: created {$newClassName} ({$newYear->name}) from {$oldClass->name} ({$previousYear->name})");
+                $oldClass->update(['status' => 'inactive']);
 
                 // Pindahkan siswa aktif ke kelas baru via enrollment
                 $promoted = $this->promoteStudents($oldClass, $newClass, $previousYear);

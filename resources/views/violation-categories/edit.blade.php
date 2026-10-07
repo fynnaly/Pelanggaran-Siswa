@@ -15,6 +15,14 @@
                 @csrf @method('PUT')
                 <div class="field"><label class="field-label">Kode <span class="text-danger">*</span></label><input type="text" name="code" value="{{ old('code', $violationCategory->code) }}" class="field-input" required placeholder="Contoh: TRM-001"></div>
                 <div class="field"><label class="field-label">Nama <span class="text-danger">*</span></label><input type="text" name="name" value="{{ old('name', $violationCategory->name) }}" class="field-input" required></div>
+                <div class="field"><label class="field-label">Induk Kategori</label>
+                    <select name="parent_id" class="field-input">
+                        <option value="">Tidak ada — kategori induk</option>
+                        @foreach($parents as $parent)
+                            <option value="{{ $parent->id }}" {{ old('parent_id', $violationCategory->parent_id)==$parent->id?'selected':'' }}>{{ $parent->code }} — {{ $parent->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div class="field"><label class="field-label">Tingkat <span class="text-danger">*</span></label>
                     <select name="severity" class="field-input" required>
                         <option value="ringan" {{ old('severity', $violationCategory->severity)==='ringan'?'selected':'' }}>Ringan</option>
@@ -23,6 +31,7 @@
                     </select>
                 </div>
                 <div class="field"><label class="field-label">Poin <span class="text-danger">*</span></label><input type="number" name="points" value="{{ old('points', $violationCategory->points) }}" class="field-input" required min="0"></div>
+                <div class="field"><label class="field-label">Sanksi</label><input type="text" name="sanksi" value="{{ old('sanksi', $violationCategory->sanksi) }}" class="field-input"></div>
                 <div class="field"><label class="field-label">Status <span class="text-danger">*</span></label>
                     <select name="status" class="field-input" required>
                         <option value="draft" {{ old('status', $violationCategory->status)==='draft'?'selected':'' }}>Draft</option>

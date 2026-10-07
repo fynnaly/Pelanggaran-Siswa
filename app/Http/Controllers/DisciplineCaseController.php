@@ -51,7 +51,14 @@ class DisciplineCaseController extends Controller
     /** Menampilkan form pelaporan pelanggaran baru */
     public function create()
     {
-        $categories = ViolationCategory::where('status', 'active')->get();
+        // Dropdown 1 = kategori induk, Dropdown 2 = sub-kategori (isi kategori).
+        $categoryGroups = ViolationCategory::where('status', 'active')
+            ->whereNull('parent_id')
+            ->with(['children' => fn ($q) => $q->where('status', 'active')->orderBy('name')])
+            ->orderBy('name')
+            ->get();
+        // Data lama flat (induk tanpa anak) tetap selectable agar kasus lama bisa dibuat.
+        $categories = ViolationCategory::where('status', 'active')->with('parent')->orderBy('name')->get();
         $classes = SchoolClass::where('academic_year_id', AcademicYear::where('is_active', true)->value('id'))
             ->orderBy('name')->get();
         $reporters = User::whereNot('id', auth()->id())->orderBy('name')->get();
@@ -71,7 +78,14 @@ class DisciplineCaseController extends Controller
             }
         }
 
-        return view('discipline-cases.create', compact('categories', 'classes', 'reporters', 'selectedStudent'));
+        // Pertahankan pilihan kategori saat validasi 422 melempar kembali.
+        $selectedGroupId = null;
+        if (old('violation_category_id')) {
+            $oldSub = ViolationCategory::find(old('violation_category_id'));
+            $selectedGroupId = $oldSub?->parent_id ?? $oldSub?->id;
+        }
+
+        return view('discipline-cases.create', compact('categories', 'categoryGroups', 'selectedGroupId', 'classes', 'reporters', 'selectedStudent'));
     }
 
     /** Menyimpan pelaporan pelanggaran baru */
@@ -79,7 +93,12 @@ class DisciplineCaseController extends Controller
     {
         $validated = $request->validate([
             'student_id' => 'required|exists:students,id',
-            'violation_category_id' => 'required|exists:violation_categories,id',
+            'violation_category_id' => ['required', 'exists:violation_categories,id', function ($attr, $value, $fail) {
+                // Kasus wajib menunjuk sub-kategori; kategori induk yang masih punya anak tidak boleh dipilih.
+                if (\App\Models\ViolationCategory::whereNull('parent_id')->whereKey($value)->whereHas('children')->exists()) {
+                    $fail('Pilih sub-kategori, bukan kategori induk.');
+                }
+            }],
             'incident_date' => 'nullable|date',
             'incident_time' => 'nullable|date_format:H:i',
             'location' => 'nullable|string|max:100',
@@ -143,10 +162,14 @@ class DisciplineCaseController extends Controller
     public function show(DisciplineCase $disciplineCase)
     {
         $disciplineCase->load([
-            'student.currentEnrollment.schoolClass', 'enrollment.schoolClass', 'schoolClass', 'violationCategory', 'reporter', 'academicYear',
-            'assignedOfficer', 'validator', 'closer',
+            'student.currentEnrollment.schoolClass', 'enrollment.schoolClass', 'schoolClass',
+            'violationCategory.parent', 'violationCategory.redemptionRules.achievementCategory',
+            'reporter', 'academicYear', 'assignedOfficer', 'validator', 'closer',
         ]);
-        return view('discipline-cases.show', compact('disciplineCase'));
+        $recovery = $disciplineCase->violationCategory
+            ? app(\App\Http\Controllers\ViolationCategoryController::class)->recoveryFor($disciplineCase->violationCategory)
+            : [];
+        return view('discipline-cases.show', compact('disciplineCase', 'recovery'));
     }
 
     /**

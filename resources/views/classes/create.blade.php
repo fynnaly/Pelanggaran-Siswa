@@ -34,6 +34,13 @@
                 <div class="field"><label class="field-label">Program Keahlian</label>
                     <input type="text" name="major" value="{{ old('major') }}" class="field-input" placeholder="Contoh: RPL">
                 </div>
+                <div class="field"><label class="field-label">Status</label>
+                    <select name="status" class="field-input">
+                        <option value="active" {{ old('status', 'active')==='active'?'selected':'' }}>Aktif</option>
+                        <option value="inactive" {{ old('status')==='inactive'?'selected':'' }}>Nonaktif</option>
+                    </select>
+                    <span class="help-text">Kelas tahun berjalan = Aktif. Kelas tahun lalu (riwayat) = Nonaktif.</span>
+                </div>
                 <div class="field"><label class="field-label">Wali Kelas</label>
                     <select name="homeroom_teacher_id" class="field-input">
                         <option value="">Belum ditentukan</option>

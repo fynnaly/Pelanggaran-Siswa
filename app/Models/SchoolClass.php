@@ -19,6 +19,7 @@ class SchoolClass extends Model
         'homeroom_teacher_id',
         'assistant_teacher_id',
         'capacity',
+        'status',
     ];
 
     protected function casts(): array

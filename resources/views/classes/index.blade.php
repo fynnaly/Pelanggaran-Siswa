@@ -23,7 +23,7 @@
         <div id="classRegion">
         <div class="table-wrap">
             <table>
-                <thead><tr><th style="width:48px"><x-sortable-header column="id" label="No" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="name" label="Nama Kelas" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="grade_level" label="Tingkat" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="major" label="Program Keahlian" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th class="mono" style="width:96px;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums"><x-sortable-header column="students_count" label="Jumlah Siswa" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="homeroom_teacher_id" label="Wali Kelas" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th style="width:100px">Aksi</th></tr></thead>
+                <thead><tr><th style="width:48px"><x-sortable-header column="id" label="No" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="name" label="Nama Kelas" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="grade_level" label="Tingkat" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="major" label="Program Keahlian" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="status" label="Status" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th class="mono" style="width:96px;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums"><x-sortable-header column="students_count" label="Jumlah Siswa" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="homeroom_teacher_id" label="Wali Kelas" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th style="width:100px">Aksi</th></tr></thead>
                 <tbody>
                     @forelse($classes as $class)
                         <tr>
@@ -31,6 +31,7 @@
                             <td style="font-weight:600">{{ $class->name }}</td>
                             <td class="mono" style="font-weight:600">{{ $class->tingkat ?? '-' }}</td>
                             <td class="text-sm text-muted">{{ $class->major ?? '-' }}</td>
+                            <td><span class="badge {{ ($class->status ?? 'active')==='active'?'badge-success':'' }}" style="{{ ($class->status ?? 'active')!=='active'?'background:var(--surface);color:var(--on-surface-muted)':'' }}">{{ ($class->status ?? 'active')==='active'?'Aktif':'Nonaktif' }}</span></td>
                             <td class="mono" style="width:96px;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums">{{ $class->students_count }}</td>
                             <td>
                                 <form action="{{ route('classes.update', $class) }}" method="POST" class="inline" style="display:inline">
@@ -51,7 +52,7 @@
                             </div></td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" style="padding:40px;text-align:center;color:var(--on-surface-muted)"><i data-lucide="inbox" class="icon-lg" style="display:block;margin:0 auto var(--sp-sm)"></i>Belum ada kelas. Tambah dulu.</td></tr>
+                        <tr><td colspan="8" style="padding:40px;text-align:center;color:var(--on-surface-muted)"><i data-lucide="inbox" class="icon-lg" style="display:block;margin:0 auto var(--sp-sm)"></i>Belum ada kelas. Tambah dulu.</td></tr>
                     @endforelse
                 </tbody>
             </table>

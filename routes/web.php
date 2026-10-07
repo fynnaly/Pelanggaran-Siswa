@@ -37,7 +37,8 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{academicYear}', [AcademicYearController::class, 'destroy'])->name('destroy');
     });
 
-    // Pelanggaran
+    // Pelanggaran — rekomendasi pemulihan otomatis per sub-kategori
+    Route::get('violation-categories/{violationCategory}/rekomendasi', [ViolationCategoryController::class, 'rekomendasi'])->name('violation-categories.rekomendasi');
     Route::resource('violation-categories', ViolationCategoryController::class);
 
     // Siswa — export/import/template CSV native (tanpa library, PHP 8.5.5 ext-gd kosong)

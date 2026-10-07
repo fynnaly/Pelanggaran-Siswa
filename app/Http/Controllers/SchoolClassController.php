@@ -20,7 +20,7 @@ class SchoolClassController extends Controller
 
         $sort = $request->string('sort')->toString();
         $order = strtolower($request->string('order')->toString()) === 'asc' ? 'asc' : 'desc';
-        $allowed = ['id', 'name', 'grade_level', 'academic_year_id', 'students_count'];
+        $allowed = ['id', 'name', 'grade_level', 'academic_year_id', 'status', 'students_count'];
         $sort = in_array($sort, $allowed, true) ? $sort : 'id';
 
         $classes = SchoolClass::with(['academicYear', 'homeroomTeacher', 'assistantTeacher'])->withCount('students')
@@ -81,7 +81,9 @@ class SchoolClassController extends Controller
             'major' => 'nullable|string|max:50',
             'homeroom_teacher_id' => 'nullable|exists:users,id',
             'assistant_teacher_id' => 'nullable|exists:users,id|different:homeroom_teacher_id',
+            'status' => 'nullable|in:active,inactive',
         ]);
+        $validated['status'] ??= 'active';
 
         SchoolClass::create($validated);
 
@@ -114,6 +116,7 @@ class SchoolClassController extends Controller
             'grade_level' => 'sometimes|nullable|in:X,XI,XII',
             'major' => 'sometimes|nullable|string|max:50',
             'capacity' => 'sometimes|nullable|integer|min:1|max:100',
+            'status' => 'sometimes|nullable|in:active,inactive',
             'homeroom_teacher_id' => 'nullable|exists:users,id',
             'assistant_teacher_id' => 'nullable|exists:users,id|different:homeroom_teacher_id',
         ]);

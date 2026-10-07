@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ViolationCategory extends Model
@@ -11,9 +12,11 @@ class ViolationCategory extends Model
         'code',
         'name',
         'description',
+        'sanksi',
         'severity',
         'points',
         'group_type',
+        'parent_id',
         'is_zero_tolerance',
         'is_recurring',
         'recurring_increment',
@@ -36,6 +39,36 @@ class ViolationCategory extends Model
     public function disciplineCases(): HasMany
     {
         return $this->hasMany(DisciplineCase::class);
+    }
+
+    /** Kategori induk (null = kategori induk). */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_id');
+    }
+
+    /** Daftar sub-kategori di bawah kategori ini. */
+    public function children(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_id');
+    }
+
+    /** Rekomendasi pemulihan otomatis (sub-prestasi padanan) untuk pelanggaran ini. */
+    public function redemptionRules(): HasMany
+    {
+        return $this->hasMany(RedemptionRule::class);
+    }
+
+    /** Kategori induk = baris tanpa parent_id. */
+    public function isParent(): bool
+    {
+        return $this->parent_id === null;
+    }
+
+    /** Sub-kategori aktif = kandidat pemilihan pada form kasus. */
+    public function isLeafActive(): bool
+    {
+        return $this->parent_id !== null && $this->isActive();
     }
 
     /**

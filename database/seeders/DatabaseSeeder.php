@@ -272,5 +272,8 @@ class DatabaseSeeder extends Seeder
             ['code' => 'TEST_500'],
             ['name' => 'Pelanggaran Test 500', 'severity' => 'sedang', 'points' => 500, 'group_type' => 'sikap', 'status' => 'active']
         );
+
+        // Hierarki kategori + sub-prestasi padanan + redemption_rules.
+        $this->call(ViolationHierarchySeeder::class);
     }
 }

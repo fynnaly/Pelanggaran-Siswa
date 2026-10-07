@@ -17,6 +17,7 @@
                     <th style="width:48px"><x-sortable-header column="id" label="No" :sort="$sort" :order="$order" route="violation-categories.index" /></th>
                     <th><x-sortable-header column="code" label="Kode" :sort="$sort" :order="$order" route="violation-categories.index" /></th>
                     <th><x-sortable-header column="name" label="Nama" :sort="$sort" :order="$order" route="violation-categories.index" /></th>
+                    <th>Induk Kategori</th>
                     <th><x-sortable-header column="severity" label="Tingkat" :sort="$sort" :order="$order" route="violation-categories.index" /></th>
                     <th><x-sortable-header column="points" label="Poin" :sort="$sort" :order="$order" route="violation-categories.index" /></th>
                     <th><x-sortable-header column="status" label="Status" :sort="$sort" :order="$order" route="violation-categories.index" /></th>
@@ -28,6 +29,7 @@
                             <td class="text-sm text-muted">{{ $cat->id }}</td>
                             <td class="mono">{{ $cat->code }}</td>
                             <td><strong>{{ $cat->name }}</strong></td>
+                            <td class="text-sm text-muted">@if($cat->parent){{ $cat->parent->name }}@else<span class="badge badge-info">Induk</span>@endif</td>
                             <td><span class="badge badge-warning">{{ $cat->severity }}</span></td>
                             <td class="mono">{{ $cat->points }}</td>
                             <td><span class="badge {{ $cat->status==='active'?'badge-success':'' }}" style="{{ $cat->status!=='active'?'background:var(--surface);color:var(--on-surface-muted)':'' }}">{{ ucfirst($cat->status) }}</span></td>
@@ -37,7 +39,7 @@
                             </div></td>
                         </tr>
                     @empty
-                        <tr><td colspan="6" style="padding:40px;text-align:center;color:var(--on-surface-muted)"><i data-lucide="inbox" class="icon-lg" style="display:block;margin:0 auto var(--sp-sm)"></i>Belum ada kategori.</td></tr>
+                        <tr><td colspan="8" style="padding:40px;text-align:center;color:var(--on-surface-muted)"><i data-lucide="inbox" class="icon-lg" style="display:block;margin:0 auto var(--sp-sm)"></i>Belum ada kategori.</td></tr>
                     @endforelse
                 </tbody>
             </table>
