@@ -39,8 +39,29 @@
                         <option value="active" {{ old('status')==='active'?'selected':'' }}>Aktif</option>
                     </select>
                 </div>
-                <div class="field"><label class="field-label">Poin <span class="text-danger">*</span></label><input type="number" name="points" value="{{ old('points') }}" class="field-input" required min="0" placeholder="0"></div>
-                <div class="field"><label class="field-label">Sanksi</label><input type="text" name="sanksi" value="{{ old('sanksi') }}" class="field-input" placeholder="Contoh: Teguran lisan + pembinaan wali kelas"></div>
+                <div class="field">
+                    <label class="field-label">Batas Toleransi Poin <span class="text-danger">*</span></label>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-sm)">
+                        <div>
+                            <input type="number" name="poin_ke_1" value="{{ old('poin_ke_1') }}" class="field-input" required min="0" max="1000" placeholder="Ke-1">
+                            <span class="help-text">Pelanggaran ke-1</span>
+                        </div>
+                        <div>
+                            <input type="number" name="poin_ke_2" value="{{ old('poin_ke_2') }}" class="field-input" min="0" max="1000" placeholder="Ke-2">
+                            <span class="help-text">Pelanggaran ke-2</span>
+                        </div>
+                        <div>
+                            <input type="number" name="poin_ke_3" value="{{ old('poin_ke_3') }}" class="field-input" min="0" max="1000" placeholder="Ke-3">
+                            <span class="help-text">Pelanggaran ke-3 (batas)</span>
+                        </div>
+                    </div>
+                    <span class="help-text">Tiga batas pengurangan poin saat pelanggaran diulang; pelanggaran ke-4 dan seterusnya tetap memakai poin ke-3. Kosongkan ke-2 dan ke-3 bila pelanggaran tidak berulang. Isi 0 atau kosongkan batas yang tidak dipakai — contoh: ke-3 = 0 → hanya 2 toleransi (ke-I + ke-II). Contoh Terlambat kurang dari 10 menit: 5 / 10 / 15.</span>
+                </div>
+                <div class="field">
+                    <label class="field-label">Sanksi (otomatis dari daftar prestasi)</label>
+                    <input type="text" class="field-input" value="Otomatis — daftar prestasi wajib (redemption rules)" readonly style="background:var(--surface);color:var(--on-surface-muted)">
+                    <span class="help-text">Sanksi diturunkan dari daftar prestasi pemulihan. Tanpa prestasi divalidasi, poin siswa tertahan (tidak naik). Setelah kategori disimpan dan dipasangkan redemption rules, daftar tampil di halaman edit & detail kasus.</span>
+                </div>
                 <div class="field"><label class="field-label">Deskripsi</label><textarea name="description" class="field-input" rows="3" placeholder="Opsional...">{{ old('description') }}</textarea></div>
                 <div style="display:flex;gap:var(--sp-sm);margin-top:var(--sp-lg)">
                     <a href="{{ route('violation-categories.index') }}" class="btn btn-secondary" style="flex:1;justify-content:center">Batal</a>

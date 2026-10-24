@@ -7,9 +7,13 @@
                     @if(in_array($disciplineCase->status, ['found','clarifying','classifying','handling','monitoring'], true))
                     <form action="{{ route('kasus-pelanggaran.update-status', $disciplineCase) }}" method="POST" style="margin:0;padding:0;border:none;display:inline-flex;gap:var(--sp-xs);align-items:center">@csrf @method('PATCH')
                         <select name="status" class="input" style="width:auto;min-width:140px" required>
+                            @php $cur = $disciplineCase->status; @endphp
                             @foreach(['clarifying' => 'Klarifikasi','classifying' => 'Klasifikasi','handling' => 'Penanganan','monitoring' => 'Monitoring','closed' => 'Selesai'] as $val => $label)
-                                <option value="{{ $val }}">{{ $label }}</option>
+                                <option value="{{ $val }}" @selected($val === $cur)>{{ $label }}</option>
                             @endforeach
+                            @if($cur === 'found')
+                                <option value="found" selected>Temuan (saat ini)</option>
+                            @endif
                         </select>
                         <button class="btn btn-primary btn-sm">Ubah Status</button>
                     </form>
@@ -63,7 +67,7 @@
                         <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted);width:140px">Kategori</td><td style="padding:8px 0;font-weight:600">{{ $disciplineCase->violationCategory?->parent?->name ?? '-' }}</td></tr>
                         <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Sub Kategori</td><td style="padding:8px 0;font-weight:600">{{ $disciplineCase->violationCategory?->name }} <span class="mono text-muted text-sm">{{ $disciplineCase->violationCategory?->code }}</span></td></tr>
                         <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Tingkat</td><td style="padding:8px 0"><span class="badge badge-warning">{{ ucfirst($disciplineCase->violationCategory?->severity ?? '-') }}</span></td></tr>
-                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Sanksi</td><td style="padding:8px 0">{{ $disciplineCase->violationCategory?->sanksi ?? '-' }}</td></tr>
+                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Sanksi</td><td style="padding:8px 0">{{ $disciplineCase->violationCategory?->resolveSanksi() ?? '-' }}</td></tr>
                         <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Poin Dikurangi</td><td class="mono" style="padding:8px 0;font-size:1.25rem;font-weight:700;color:var(--danger)">-{{ $disciplineCase->getEffectivePoints() }}</td></tr>
                     </table>
                 </div>

@@ -68,12 +68,15 @@ class PromotionService
                     continue;
                 }
 
-                // Buat kelas baru di tahun ajaran baru — JANGAN mutasi kelas lama
+                // Buat kelas baru di tahun ajaran baru — JANGAN mutasi kelas lama.
+                // grade_level HARUS $newGrade (bukan $oldClass->grade_level): nama sudah
+                // diganti naik kelas oleh replaceGrade(), jadi tingkat ikut menyesuaikan.
+                // Menyalin grade_level lama membuat "XI TKJ 1" tetap ber-taraf "X/10".
                 $newClassName = $this->replaceGrade($oldClass->name, $newGrade);
                 $newClass = SchoolClass::create([
                     'academic_year_id' => $newYear->id,
                     'name'             => $newClassName,
-                    'grade_level'      => $oldClass->grade_level,
+                    'grade_level'      => $newGrade,
                     'major'            => $oldClass->major,
                     'homeroom_teacher_id' => $oldClass->homeroom_teacher_id,
                     'capacity'         => $oldClass->capacity,
@@ -115,7 +118,12 @@ class PromotionService
         });
     }
 
-    /** Tandai siswa aktif di kelas lama sebagai graduated (enrollment + status siswa). */
+    /**
+     * Tandai siswa aktif di kelas lama sebagai graduated (enrollment + status siswa).
+     *
+     * Juga menutup enrollment 'active' lain milik siswa yang sama (tahun lain)
+     * supaya lulusan tidak pegang enrollment aktif di manapun.
+     */
     protected function markGraduated(SchoolClass $oldClass, AcademicYear $prevYear): int
     {
         $enrollmentIds = Enrollment::where('class_id', $oldClass->id)
@@ -130,6 +138,12 @@ class PromotionService
         $studentIds = Enrollment::whereIn('id', $enrollmentIds)->pluck('student_id');
 
         Enrollment::whereIn('id', $enrollmentIds)->update(['status' => 'graduated', 'ended_at' => now()]);
+
+        // Tutup sisa enrollment aktif siswa lulus di tahun lain (completed).
+        Enrollment::whereIn('student_id', $studentIds)
+            ->where('status', 'active')
+            ->update(['status' => 'completed', 'ended_at' => now()]);
+
         Student::whereIn('id', $studentIds)->update(['status' => 'graduated']);
 
         return $enrollmentIds->count();
@@ -161,7 +175,11 @@ class PromotionService
                     $existing->update(['class_id' => $newClass->id]);
                 }
             } else {
-                // Naik kelas — buat enrollment baru di kelas baru
+                // Naik kelas — TUTUP enrollment lama, lalu buat enrollment baru.
+                // Tanpa baris ini, enrollment lama tetap 'active' selamanya dan
+                // currentEnrollment (filter active) jatuh ke tahun-tahun lampau.
+                $enroll->update(['status' => 'completed', 'ended_at' => now()]);
+
                 Enrollment::create([
                     'student_id'     => $enroll->student_id,
                     'class_id'       => $newClass->id,

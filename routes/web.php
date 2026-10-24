@@ -13,6 +13,7 @@ use App\Http\Controllers\DisciplineCaseController;
 use App\Http\Controllers\AchievementCategoryController;
 use App\Http\Controllers\AchievementRecordController;
 use App\Http\Controllers\StudentPointController;
+use App\Http\Controllers\SettingController;
 
 // Admin/Auth routes
 Route::redirect('/', '/dashboard');
@@ -22,6 +23,13 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    // Pengaturan global (nama aplikasi, kop sertifikat, tanda tangan digital) —
+    // ditaruh SEBELUM resource agar tidak tertelan sebagai {student}/{user}.
+    Route::prefix('settings')->name('settings.')->group(function () {
+        Route::get('/', [SettingController::class, 'index'])->name('index');
+        Route::put('/', [SettingController::class, 'update'])->name('update');
+    });
+
     // Auth Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -53,18 +61,25 @@ Route::middleware('auth')->group(function () {
     Route::post('classes/promote', [SchoolClassController::class, 'promote'])->name('classes.promote');
     Route::resource('classes', SchoolClassController::class);
 
-    // PointLedger
+    // PointLedger — siswa/{student} SEBELUM resource agar tidak tertelan {pointLedger}
+    Route::get('point-ledgers/siswa/{student}', [PointLedgerController::class, 'forStudent'])->name('point-ledgers.siswa');
     Route::resource('point-ledgers', PointLedgerController::class)->only(['index', 'show']);
 
-    // Monitor Poin — rekap saldo/zona + sertifikat (zona Istimewa / Luar Biasa)
+    // Monitor Poin — rekap saldo/zona + sertifikat (semua siswa, tanpa batas zona)
     Route::get('/monitor-poin', [StudentPointController::class, 'index'])->name('monitor-poin.index');
     Route::get('/monitor-poin/export', [StudentPointController::class, 'export'])->name('monitor-poin.export');
+    Route::post('/monitor-poin/sertifikat/bulk', [StudentPointController::class, 'bulkCertificates'])->name('monitor-poin.bulk-certificates');
+    Route::get('/monitor-poin/sertifikat/cetak', [StudentPointController::class, 'printAll'])->name('monitor-poin.print-certificates');
     Route::get('/monitor-poin/{student}/sertifikat', [StudentPointController::class, 'certificate'])->name('monitor-poin.certificate');
 
     // Achievement Category
     Route::resource('achievement-categories', AchievementCategoryController::class);
 
     // Achievement Record
+    // Kasus terbuka siswa (dropdown tautan penebusan di form create).
+    Route::get('students/{student}/open-cases', [AchievementRecordController::class, 'openCases'])
+        ->name('achievement-records.open-cases');
+
     Route::resource('achievement-records', AchievementRecordController::class)
         ->parameters(['achievement-records' => 'achievementRecord'])
         ->only(['index', 'create', 'store', 'show']);
@@ -73,6 +88,7 @@ Route::middleware('auth')->group(function () {
 
     // Kasus Pelanggaran
     Route::prefix('kasus-pelanggaran')->name('kasus-pelanggaran.')->group(function () {
+        Route::post('/bulk-status', [DisciplineCaseController::class, 'bulkStatus'])->name('bulk-status');
         Route::get('/', [DisciplineCaseController::class, 'index'])->name('index');
         Route::get('/create', [DisciplineCaseController::class, 'create'])->name('create');
         Route::post('/', [DisciplineCaseController::class, 'store'])->name('store');

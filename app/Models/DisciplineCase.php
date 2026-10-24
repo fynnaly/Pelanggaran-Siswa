@@ -129,35 +129,35 @@ class DisciplineCase extends Model
     }
 
     /**
-     * Poin efektif dengan eskalasi pelanggaran berulang.
+     * Poin efektif dengan eskalasi pelanggaran berulang (3 batas toleransi).
      *
-     * Rumus (flat addition, per dokumen 04-pelanggaran.md):
-     *   base + recurring_increment × (nomor_kejadian − 1), dibatasi max_recurring_points.
-     * Contoh base 16, increment 4: ke-2 = 20, ke-3 = 24, ...
+     * Sumber kebenaran rumus ada di ViolationCategory::tierPoints() supaya UI dan
+     * perhitungan ledger memakai tabel batas yang sama:
+     *   ke-1 = points, ke-2 = points + increment, ke-3 = max_recurring_points.
+     *   Pelanggaran ke-4 dst. tetap memakai poin batas akhir.
+     *
+     * Contoh P1.1 (5/10/15): ke-1 = 5, ke-2 = 10, ke-3 = 15, ke-4 = 15.
      * Override manual (points_override) selalu menang — eskalasi tidak dipakai.
      */
     public function getEffectivePoints(): int
     {
         if ($this->points_override !== null) {
-            return $this->points_override;
+            return (int) $this->points_override;
         }
 
         $category = $this->violationCategory;
-        $base = $category?->points ?? 0;
 
-        if (! $category?->is_recurring || ! $category->recurring_increment) {
-            return $base;
+        if (! $category) {
+            return 0;
         }
 
-        $occurrence = $this->getOccurrenceNumber();
-        if ($occurrence <= 1) {
-            return $base;
-        }
+        return $category->pointsForOccurrence($this->getOccurrenceNumber());
+    }
 
-        $escalated = $base + (int) $category->recurring_increment * ($occurrence - 1);
-        $max = $category->max_recurring_points;
-
-        return $max !== null ? min($escalated, (int) $max) : $escalated;
+    /** Batas toleransi yang sedang berlaku untuk kasus ini (1..3). */
+    public function getCurrentTier(): int
+    {
+        return min($this->getOccurrenceNumber(), ViolationCategory::MAX_TIER);
     }
 
     /** Tingkat efektif (override atau dari kategori). */

@@ -32,8 +32,8 @@ class OpeningBalanceService
                     return false;
                 }
 
-                $lastBalance = static::getLastBalance($student->id);
-                                $newBalance = $lastBalance;
+                $lastBalance = PointLedger::getLastBalance($student->id);
+                $newBalance = $lastBalance;
 
                 PointLedger::create([
                     'student_id'       => $student->id,

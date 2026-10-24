@@ -24,7 +24,7 @@ class DisciplineCaseController extends Controller
         $search = request('search');
         $sort = request()->string('sort')->toString();
         $order = strtolower(request()->string('order')->toString()) === 'asc' ? 'asc' : 'desc';
-        $allowed = ['id', 'created_at', 'status', 'case_number', 'student_id', 'violation_category_id'];
+        $allowed = ['id', 'created_at', 'incident_date', 'status', 'case_number', 'student_id', 'violation_category_id'];
         $sort = in_array($sort, $allowed, true) ? $sort : 'id';
         $academicYearId = AcademicYear::where('is_active', true)->first()?->id;
 
@@ -137,6 +137,9 @@ class DisciplineCaseController extends Controller
         $academicYearId = $enrollment?->academic_year_id ?? $incidentYear?->id;
 
         $cat = ViolationCategory::find($validated['violation_category_id']);
+        // BK & Kesiswaan = verifikator; kasusnya langsung seeded di tahap
+        // terverifikasi (found dilewati). Guru biasa tetap found → menunggu BK.
+        $isVerifier = auth()->user()?->hasAnyRole(['bk', 'kesiswaan', 'admin']);
         $case = DisciplineCase::create([
             'case_number' => DisciplineCase::generateCaseNumber(),
             'student_id' => $validated['student_id'],
@@ -149,9 +152,17 @@ class DisciplineCaseController extends Controller
             'incident_date' => $validated['incident_date'] ?? now()->toDateString(),
             'incident_time' => $validated['incident_time'] ?? null,
             'description' => $description,
-            'status' => 'found',
+            'status' => $isVerifier ? 'clarifying' : 'found',
+            'validator_id' => $isVerifier ? auth()->id() : null,
+            'validated_at' => $isVerifier ? now() : null,
             'is_recurring' => $cat->is_recurring ?? false,
         ]);
+
+        if ($isVerifier) {
+            return redirect()
+                ->route('kasus-pelanggaran.index')
+                ->with('success', 'Laporan ' . $case->case_number . ' dicatat sebagai ' . $cat->code . ' — langsung terverifikasi (status: Klarifikasi).');
+        }
 
         return redirect()
             ->route('kasus-pelanggaran.index')
@@ -173,6 +184,74 @@ class DisciplineCaseController extends Controller
     }
 
     /**
+     * Terapkan transisi status pada satu kasus — DIPAKAI BERSAMA oleh
+     * updateStatus (satu kasus) dan bulkStatus (massal) supaya aturan
+     * kolom/notes/debit tidak terpecah dua.
+     *
+     * Return true bila transisi ini membuat debit poin baru ke ledger.
+     *
+     * Catatan: debit hanya dibuat SEKALI per kasus (guard pointLedger exists)
+     * — poin dipotong saat pertama masuk handling; transisi bolak-balik
+     * ke handling tidak boleh memotong dua kali.
+     */
+    private function applyStatusChange(DisciplineCase $case, string $newStatus, ?string $notes = null): bool
+    {
+        $updates = ['status' => $newStatus];
+
+        // Catatan per tahap — hanya ditulis bila user mengisi.
+        $notesField = match ($newStatus) {
+            'clarifying' => 'clarification_notes',
+            'classifying' => 'classification_notes',
+            'handling' => 'validation_notes',
+            'monitoring' => 'handling_notes',
+            'closed' => 'monitoring_notes',
+            default => null,
+        };
+        if ($notesField && filled($notes)) {
+            $updates[$notesField] = $notes;
+        }
+
+        if ($newStatus === 'handling') {
+            $updates['validator_id'] = auth()->id();
+            $updates['validated_at'] = now();
+        }
+
+        if ($newStatus === 'closed') {
+            $updates['closed_at'] = now();
+            $updates['closed_by'] = auth()->id();
+        }
+
+        $case->update($updates);
+
+        if ($newStatus !== 'handling' || $case->pointLedger()->exists()) {
+            return false;
+        }
+
+        $this->debitCase($case);
+
+        return true;
+    }
+
+    /** Debit poin efektif kasus ke ledger (sekali seumur hidup kasus). */
+    private function debitCase(DisciplineCase $case): void
+    {
+        $lastBalance = PointLedger::getLastBalance($case->student_id, $case->academic_year_id);
+
+        PointLedger::create([
+            'student_id' => $case->student_id,
+            'academic_year_id' => $case->academic_year_id,
+            'direction' => PointLedger::DIR_DEBIT,
+            'amount' => $case->getEffectivePoints(),
+            'balance_after' => $lastBalance - $case->getEffectivePoints(),
+            'transaction_type' => PointLedger::TYPE_VIOLATION,
+            'source_type' => DisciplineCase::class,
+            'source_id' => $case->id,
+            'reason' => 'Pelanggaran: ' . $case->violationCategory->code,
+            'created_by' => auth()->id(),
+        ]);
+    }
+
+    /**
      * Update status kasus (found → clarifying → classifying → handling → monitoring → closed).
      * Transisi ke 'handling' membuat debit poin ke ledger.
      */
@@ -187,65 +266,94 @@ class DisciplineCaseController extends Controller
 
         $newStatus = $validated['status'];
 
-        // Validasi: pindah ke handling → buat debit ledger dalam transaksi atomik
         if ($newStatus === 'handling') {
-            DB::transaction(function () use ($disciplineCase, $validated) {
-                $disciplineCase->update([
-                    'status' => 'handling',
-                    'validator_id' => auth()->id(),
-                    'validated_at' => now(),
-                    'validation_notes' => $validated['notes'] ?? null,
-                ]);
+            // Transaksi atomik: update status + debit ledger tidak boleh terpisah.
+            $debited = DB::transaction(
+                fn () => $this->applyStatusChange($disciplineCase, 'handling', $validated['notes'] ?? null)
+            );
 
-                $academicYearId = $disciplineCase->academic_year_id;
-                $lastBalance = PointLedger::getLastBalance($disciplineCase->student_id, $academicYearId);
-                $points = $disciplineCase->getEffectivePoints();
-                $newBalance = $lastBalance - $points;
-
-                PointLedger::create([
-                    'student_id' => $disciplineCase->student_id,
-                    'academic_year_id' => $academicYearId,
-                    'direction' => PointLedger::DIR_DEBIT,
-                    'amount' => $points,
-                    'balance_after' => $newBalance,
-                    'transaction_type' => PointLedger::TYPE_VIOLATION,
-                    'source_type' => DisciplineCase::class,
-                    'source_id' => $disciplineCase->id,
-                    'reason' => 'Pelanggaran: ' . $disciplineCase->violationCategory->code,
-                    'created_by' => auth()->id(),
-                ]);
-            });
+            $message = $debited
+                ? 'Kasus divalidasi, poin ' . $disciplineCase->getEffectivePoints() . ' berhasil dikurang.'
+                : 'Kasus kembali ke penanganan — poin sudah dipotong sebelumnya.';
 
             return redirect()
                 ->route('kasus-pelanggaran.show', $disciplineCase)
-                ->with('success', 'Kasus divalidasi, poin ' . $disciplineCase->getEffectivePoints() . ' berhasil dikurang.');
+                ->with('success', $message);
         }
 
-        // Transisi lainnya
-        $updates = ['status' => $newStatus];
-
-        // Catatan per tahap
-        $notesField = match ($newStatus) {
-            'clarifying' => 'clarification_notes',
-            'classifying' => 'classification_notes',
-            'monitoring' => 'handling_notes',
-            'closed' => 'monitoring_notes',
-            default => null,
-        };
-        if ($notesField && ! empty($validated['notes'])) {
-            $updates[$notesField] = $validated['notes'];
-        }
-
-        if ($newStatus === 'closed') {
-            $updates['closed_at'] = now();
-            $updates['closed_by'] = auth()->id();
-        }
-
-        $disciplineCase->update($updates);
+        $this->applyStatusChange($disciplineCase, $newStatus, $validated['notes'] ?? null);
 
         return redirect()
             ->route('kasus-pelanggaran.show', $disciplineCase)
             ->with('success', 'Kasus diperbarui ke status: ' . $newStatus);
+    }
+
+    /**
+     * Ubah status massal dari index: pilih kasus → majukan sekali klik.
+     *
+     * Aturan: hanya MAJU ke tahap berikutnya/lebih depan (forward). Kasus yang
+     * sudah berada di tahap tujuan atau lebih depan, dismissed, dan closed
+     * dilewati — salah satunya mencegah debit ganda saat target handling.
+     * Debit ledger tetap dibuat per kasus yang benar-benar masuk handling
+     * (sekali, guard di applyStatusChange).
+     */
+    public function bulkStatus(Request $request)
+    {
+        $ids = $request->input('ids');
+        $newStatus = $request->input('status');
+
+        if (! is_array($ids) || $ids === []) {
+            return redirect()->back()->with('error', 'Pilih minimal satu kasus terlebih dahulu.');
+        }
+
+        $allowed = ['clarifying', 'classifying', 'handling', 'monitoring', 'closed'];
+        if (! in_array($newStatus, $allowed, true)) {
+            return redirect()->back()->with('error', 'Tahap tujuan tidak dikenal.');
+        }
+
+        // Urutan tahap — kasus hanya boleh bergerak ke depan.
+        $order = ['found' => 0, 'clarifying' => 1, 'classifying' => 2, 'handling' => 3, 'monitoring' => 4, 'closed' => 5];
+        $target = $order[$newStatus];
+
+        $cases = DisciplineCase::with('violationCategory')->whereIn('id', $ids)->get();
+        $advanceable = $cases->filter(fn ($case) => ($order[$case->status] ?? 99) < $target);
+        $skipped = $cases->count() - $advanceable->count();
+
+        if ($advanceable->isEmpty()) {
+            return redirect()->back()->with('warning', 'Tidak ada kasus yang bisa dimajukan — semua sudah di tahap tujuan atau lebih depan.');
+        }
+
+        // Policy per kasus: role bk/kesiswaan/admin + status asal valid.
+        foreach ($advanceable as $case) {
+            $this->authorize('update', $case);
+        }
+
+        $deducted = 0;
+        DB::transaction(function () use ($advanceable, $newStatus, &$deducted) {
+            foreach ($advanceable as $case) {
+                if ($this->applyStatusChange($case, $newStatus)) {
+                    $deducted++;
+                }
+            }
+        });
+
+        $labels = [
+            'clarifying' => 'Klarifikasi',
+            'classifying' => 'Klasifikasi',
+            'handling' => 'Penanganan',
+            'monitoring' => 'Monitoring',
+            'closed' => 'Selesai',
+        ];
+
+        $message = $advanceable->count() . ' kasus dimajukan ke ' . $labels[$newStatus] . '.';
+        if ($deducted > 0) {
+            $message .= ' ' . $deducted . ' debit poin dibuat.';
+        }
+        if ($skipped > 0) {
+            $message .= ' ' . $skipped . ' kasus dilewati.';
+        }
+
+        return redirect()->back()->with('success', $message);
     }
 
     /** Buang kasus: status → dismissed */

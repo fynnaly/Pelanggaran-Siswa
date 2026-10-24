@@ -26,8 +26,11 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 
-# Local workspace artifacts — excluded from version control
+# Local workspace artifacts
 /.hermes/
 /docs/
 /.worktrees/
 /check_mp*.php
+.claude/
+CLAUDE.md
+.agents/

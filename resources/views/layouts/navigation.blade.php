@@ -4,17 +4,17 @@
             'label' => 'Data Referensi',
             'icon' => 'database',
             'items' => [
-                ['route' => 'users.index', 'label' => 'Pengguna', 'pattern' => 'users.*', 'icon' => 'user-round'],
-                ['route' => 'students.index', 'label' => 'Siswa', 'pattern' => 'students.*', 'icon' => 'users'],
-                ['route' => 'classes.index', 'label' => 'Kelas', 'pattern' => 'classes.*', 'icon' => 'school'],
-                ['route' => 'tahun-ajaran.index', 'label' => 'Tahun Ajaran', 'pattern' => 'tahun-ajaran.*', 'icon' => 'calendar'],
+                ['route' => 'users.index', 'label' => 'Pengguna', 'pattern' => 'users.*', 'icon' => ''],
+                ['route' => 'students.index', 'label' => 'Siswa', 'pattern' => 'students.*', 'icon' => ''],
+                ['route' => 'classes.index', 'label' => 'Kelas', 'pattern' => 'classes.*', 'icon' => ''],
+                ['route' => 'tahun-ajaran.index', 'label' => 'Tahun Ajaran', 'pattern' => 'tahun-ajaran.*', 'icon' => '' ],
             ],
         ],
         [
             'label' => 'Pelanggaran',
             'icon' => 'shield-alert',
             'items' => [
-                ['route' => 'violation-categories.index', 'label' => 'Daftar Pelanggaran', 'pattern' => 'violation-categories.*', 'icon' => 'tags'],
+                ['route' => 'violation-categories.index', 'label' => 'Daftar Pelanggaran', 'pattern' => 'violation-categories.*', 'icon' => ''],
                 ['route' => 'kasus-pelanggaran.index', 'label' => 'Kasus', 'pattern' => 'kasus-pelanggaran.*', 'icon' => 'file-text'],
             ],
         ],
@@ -22,16 +22,23 @@
             'label' => 'Prestasi',
             'icon' => 'trophy',
             'items' => [
-                ['route' => 'achievement-categories.index', 'label' => 'Kategori', 'pattern' => 'achievement-categories.*', 'icon' => 'trophy'],
-                ['route' => 'achievement-records.index', 'label' => 'Rekam Prestasi', 'pattern' => 'achievement-records.*', 'icon' => 'award'],
+                ['route' => 'achievement-categories.index', 'label' => 'Kategori', 'pattern' => 'achievement-categories.*', 'icon' => ''],
+                ['route' => 'achievement-records.index', 'label' => 'Rekam Prestasi', 'pattern' => 'achievement-records.*', 'icon' => ''],
             ],
         ],
         [
             'label' => 'Poin',
             'icon' => 'wallet',
             'items' => [
-                ['route' => 'monitor-poin.index', 'label' => 'Monitor Poin', 'pattern' => 'monitor-poin.*', 'icon' => 'activity'],
-                ['route' => 'point-ledgers.index', 'label' => 'Riwayat Poin', 'pattern' => 'point-ledgers.*', 'icon' => 'wallet'],
+                ['route' => 'monitor-poin.index', 'label' => 'Monitor Poin', 'pattern' => 'monitor-poin.*', 'icon' => ''],
+                ['route' => 'point-ledgers.index', 'label' => 'Riwayat Poin', 'pattern' => 'point-ledgers.*', 'icon' => ''],
+            ],
+        ],
+        [
+            'label' => 'Sistem',
+            'icon' => 'settings',
+            'items' => [
+                ['route' => 'settings.index', 'label' => 'Pengaturan', 'pattern' => 'settings.*', 'icon' => ''],
             ],
         ],
     ];
@@ -42,11 +49,13 @@
 {{-- Desktop sidebar (≥1024px) --}}
 <aside class="sidebar" style="
     position:fixed;top:0;left:0;bottom:0;width:256px;
-    background:var(--neutral);border-right:1px solid var(--border);
+    background:var(--neutral);
     display:none;flex-direction:column;z-index:40;
     overflow-y:auto;
 ">
-    <div style="padding:var(--sp-lg);border-bottom:1px solid var(--border)">
+    {{-- Tanpa border-bottom & tanpa garis vertikal: strip atas menyatu dengan app-header
+         (bg --neutral sama), garis vertikal pemisah baru digambar main (app.blade). --}}
+    <div style="padding:var(--sp-lg)">
         <a href="{{ route('dashboard') }}" style="display:flex;align-items:center;gap:var(--sp-sm);text-decoration:none;color:var(--primary);font-size:1.125rem;font-weight:700">
             <img src="{{ asset('image.ico') }}" alt="Logo" style="width:24px;height:24px;border-radius:4px">
             <span>Pelanggaran Kuy</span>
@@ -240,7 +249,7 @@
 <script>
 (function() {
     // --- Sidebar group collapse state → localStorage ---
-    var NAV_KEYS = ['data-referensi','pelanggaran','prestasi','poin'];
+    var NAV_KEYS = ['data-referensi','pelanggaran','prestasi','poin','sistem'];
     // Re-read setiap toggle — closure snapshot lama bikin state group lain ke-reset.
     function readNav() {
         try { return JSON.parse(localStorage.getItem('nav-open') || '{}'); }

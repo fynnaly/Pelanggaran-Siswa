@@ -15,10 +15,11 @@
 
                 @if (is_array($element))
                     @foreach ($element as $page => $url)
+                        @php $near = abs($page - $paginator->currentPage()) <= 1; @endphp
                         @if ($page == $paginator->currentPage())
-                            <span class="pg-btn is-active" aria-current="page">{{ $page }}</span>
+                            <span class="pg-btn pg-num is-active" aria-current="page">{{ $page }}</span>
                         @else
-                            <a href="{{ $url }}" aria-label="Halaman {{ $page }}" class="pg-btn">{{ $page }}</a>
+                            <a href="{{ $url }}" aria-label="Halaman {{ $page }}" class="pg-btn pg-num{{ $near ? ' is-near' : '' }}">{{ $page }}</a>
                         @endif
                     @endforeach
                 @endif

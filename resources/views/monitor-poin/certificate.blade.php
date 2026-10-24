@@ -55,51 +55,7 @@
         <a href="{{ route('monitor-poin.index') }}" class="btn"><i data-lucide="arrow-left" style="width:14px;height:14px"></i> Kembali</a>
         <button class="btn btn-primary" onclick="window.print()"><i data-lucide="printer" style="width:14px;height:14px"></i> Cetak</button>
     </div>
-    <div class="page">
-        <div class="inner">
-            <div class="kop">
-                <img src="{{ asset('image.png') }}" alt="Logo" onerror="this.style.display='none'">
-                <div class="kop-text">
-                    <h1>PEMERINTAH KABUPATEN BANTUL</h1>
-                    <h1 style="font-size:15px">DINAS PENDIDIKAN DAN KEBUDAYAAN</h1>
-                    <p>SMK BAKTINUSANTARA 666 &middot; Jl. Bantul, Yogyakarta &middot; Telp. (0274) 512345</p>
-                </div>
-            </div>
-            <div class="title">
-                <h2>Sertifikat</h2>
-                <p class="sub">Anugerah Genep Waluya {{ $zone['name']==='Istimewa' ? 'Utama' : '' }}</p>
-            </div>
-            <div class="award">
-                <span class="badge {{ $zone['name']==='Luar Biasa' ? 'luar' : '' }}">{{ $zone['name'] }}</span>
-            </div>
-            <p class="body-text">
-                Dengan bangga kami berikan penghargaan kepada siswa berprestasi yang telah mencapai
-                zona pembinaan <strong>{{ $zone['name'] }}</strong> pada Program Kerja Kesiswaan
-                Tahun Ajaran {{ $student->academic_year_name }}, dengan rincian sebagai berikut:
-            </p>
-            <table class="data">
-                <tr><td>Nama Lengkap</td><td>{{ $student->full_name }}</td></tr>
-                <tr><td>NISN</td><td>{{ $student->nisn }}</td></tr>
-                <tr><td>NIS</td><td>{{ $student->nis }}</td></tr>
-                <tr><td>Kelas</td><td>{{ $student->class_name }}</td></tr>
-                <tr><td>Saldo Poin</td><td>{{ number_format($student->current_balance) }}</td></tr>
-                <tr><td>Zona Pembinaan</td><td>{{ $zone['name'] }}</td></tr>
-            </table>
-            <div class="sign">
-                <div class="col">
-                    <div>Mengetahui,</div>
-                    <div>Kepala Sekolah</div>
-                    <div class="line">____________________</div>
-                </div>
-                <div class="col">
-                    <div>Bantul, {{ now()->translatedFormat('d F Y') }}</div>
-                    <div>Kesiswaan</div>
-                    <div class="line">____________________</div>
-                </div>
-            </div>
-            <p class="foot">Sertifikat ini diterbitkan secara elektronik oleh Sistem Informasi Pelanggaran &amp; Prestasi Siswa.</p>
-        </div>
-    </div>
+    @include('monitor-poin._certificate')
     <script src="{{ asset('vendor/lucide/lucide.min.js') }}" onload="lucide.createIcons()"></script>
 </body>
 </html>

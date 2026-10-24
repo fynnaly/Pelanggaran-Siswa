@@ -28,6 +28,18 @@
                         @if($achievementRecord->verified_at)<tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Divalidasi</td><td style="padding:8px 0">{{ $achievementRecord->verified_at?->format('d M Y H:i') }}</td></tr>@endif
                     </table>
                 </div>
+                <div class="card" style="margin-bottom:var(--sp-lg)">
+                    <h2 style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)"><i data-lucide="shield-check" class="icon"></i> Penebusan Kasus</h2>
+                    @if($achievementRecord->disciplineCase)
+                        <table style="width:100%;border-collapse:collapse">
+                            <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted);width:140px">Kasus</td><td style="padding:8px 0;font-weight:600">{{ $achievementRecord->disciplineCase->case_number }}</td></tr>
+                            <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Pelanggaran</td><td style="padding:8px 0">{{ $achievementRecord->disciplineCase->violationCategory?->name }}</td></tr>
+                        </table>
+                        <p class="text-muted text-sm" style="margin-top:var(--sp-sm)">Prestasi ini menebus kasus di atas — sanksi dianggap dijalani, poin dipulihkan saat divalidasi.</p>
+                    @else
+                        <p class="text-muted text-sm">Prestasi biasa — tidak menaut ke kasus pelanggaran.</p>
+                    @endif
+                </div>
                 <div class="card">
                     <h2 style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)"><i data-lucide="file-text" class="icon"></i> Keterangan</h2>
                     @if($achievementRecord->description)<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--sp-md);line-height:1.7">{{ nl2br(e($achievementRecord->description)) }}</div>@else<p class="text-muted text-sm">Tidak ada keterangan.</p>@endif

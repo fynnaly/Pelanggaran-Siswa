@@ -14,6 +14,7 @@ class AchievementRecord extends Model
         'enrollment_id',
         'class_id',
         'achievement_category_id',
+        'discipline_case_id',
         'academic_year_id',
         'recorded_by',
         'status',
@@ -46,6 +47,20 @@ class AchievementRecord extends Model
     public function achievementCategory(): BelongsTo
     {
         return $this->belongsTo(AchievementCategory::class);
+    }
+
+    /**
+     * Kasus pelanggaran yang ditebus prestasi ini (nullable).
+     * Prestasi berpasangan dengan kasus = sanksi sudah dijalani + poin dipulihkan.
+     */
+    public function disciplineCase(): BelongsTo
+    {
+        return $this->belongsTo(DisciplineCase::class, 'discipline_case_id');
+    }
+
+    public function isRedemption(): bool
+    {
+        return $this->discipline_case_id !== null;
     }
 
     public function enrollment(): BelongsTo

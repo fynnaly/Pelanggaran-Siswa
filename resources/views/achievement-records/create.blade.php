@@ -32,13 +32,24 @@
                     <span class="help-text">Pilih siswa yang meraih prestasi</span>
                 </div>
                 <div class="field"><label class="field-label">Kategori Prestasi <span class="text-danger">*</span></label>
-                    <select name="achievement_category_id" class="field-input" required>
+                    <select name="achievement_category_id" class="field-input" required x-model="selectedCategoryId" @change="updatePoinPreview()">
                         <option value="">Pilih kategori...</option>
                         @foreach($categories as $cat)
-                            <option value="{{ $cat->id }}" {{ old('achievement_category_id')==$cat->id?'selected':'' }}>{{ $cat->name }} (+{{ $cat->points }} poin)</option>
+                            <option value="{{ $cat->id }}" data-points="{{ $cat->points }}" {{ old('achievement_category_id')==$cat->id?'selected':'' }}>{{ $cat->code }} — {{ $cat->name }} (+{{ $cat->points }} poin)</option>
                         @endforeach
                     </select>
-                    <span class="help-text">Pilih jenis prestasi yang diraih siswa</span>
+                    <span class="help-text">Poin otomatis dari kategori — <strong x-text="poinPreview"></strong></span>
+                </div>
+                <div class="field" x-show="openCases.length > 0" x-cloak>
+                    <label class="field-label">Tautkan ke Kasus Pelanggaran</label>
+                    <select name="discipline_case_id" class="field-input" x-model="selectedCaseId" @change="checkCaseMatch()">
+                        <option value="">Prestasi biasa (tanpa penebusan)</option>
+                        <template x-for="c in openCases" :key="c.id">
+                            <option :value="c.id" x-text="c.label"></option>
+                        </template>
+                    </select>
+                    <span class="help-text" x-show="!caseHint">Siswa ini punya kasus terbuka — pilih bila prestasi ini menebus salah satunya.</span>
+                    <span class="help-text" x-show="caseHint" x-text="caseHint" style="color:var(--tertiary);font-weight:600"></span>
                 </div>
                 <div class="field"><label class="field-label">Nama Event / Pencapaian <span class="text-danger">*</span></label>
                     <input type="text" name="event_name" class="field-input" maxlength="150" required value="{{ old('event_name') }}" placeholder="Contoh: Lomba Cerdas Cermat Tingkat Provinsi">
@@ -50,21 +61,11 @@
                     <span class="help-text">Kosongkan untuk hari ini</span>
                 </div>
                 @error('event_date')<span class="text-danger text-sm">{{ $message }}</span>@enderror
-                <div class="field"><label class="field-label">Periode</label>
-                    <input type="text" name="event_period" class="field-input" maxlength="20" value="{{ old('event_period') }}" placeholder="Contoh: 2025/2026">
-                    <span class="help-text">Periode pelaksanaan event</span>
-                </div>
-                @error('event_period')<span class="text-danger text-sm">{{ $message }}</span>@enderror
                 <div class="field"><label class="field-label">Tingkat / Level</label>
                     <input type="text" name="achievement_level" class="field-input" maxlength="50" value="{{ old('achievement_level') }}" placeholder="Contoh: Provinsi, Nasional">
                     <span class="help-text">Tingkat pencapaian (opsional)</span>
                 </div>
                 @error('achievement_level')<span class="text-danger text-sm">{{ $message }}</span>@enderror
-                <div class="field"><label class="field-label">Poin yang Diberikan <span class="text-danger">*</span></label>
-                    <input type="number" name="points_awarded" class="field-input" min="1" required value="{{ old('points_awarded') }}" placeholder="Contoh: 10">
-                    <span class="help-text">Poin yang akan ditambahkan ke saldo siswa saat diverifikasi</span>
-                </div>
-                @error('points_awarded')<span class="text-danger text-sm">{{ $message }}</span>@enderror
                 <div class="field"><label class="field-label">Keterangan</label><textarea name="description" class="field-input" rows="4" placeholder="Ceritakan kronologi prestasi (waktu, event, pencapaian)...">{{ old('description') }}</textarea></div>
                 <div style="display:flex;gap:var(--sp-sm);margin-top:var(--sp-lg)">
                     <a href="{{ route('achievement-records.index') }}" class="btn btn-secondary" style="flex:1;justify-content:center">Batal</a>
@@ -75,6 +76,16 @@
     </div>
     <script>document.addEventListener('DOMContentLoaded',()=>{lucide.createIcons()})</script>
     <script>
-        function recordForm(preset){return{results:[],selectedStudentId:preset?.id||null,selectedStudentName:preset?.full_name||'',searchTimeout:null,searchStudent(q){clearTimeout(this.searchTimeout);if(q.length<2){this.results=[];return}this.searchTimeout=setTimeout(async()=>{try{const r=await fetch('/students/search?q='+encodeURIComponent(q));this.results=Array.isArray(r.data)?r.data:await r.json()||[]}catch(e){this.results=[]}},250)},selectStudent(s){this.selectedStudentId=s.id;this.selectedStudentName=s.full_name;this.results=[];document.querySelector('input[name=student_search]').value='';},clearStudent(){this.selectedStudentId=null;this.selectedStudentName='';}}}
+        function recordForm(preset){return{
+            results:[],selectedStudentId:preset?.id||null,selectedStudentName:preset?.full_name||'',
+            openCases:[],selectedCaseId:'',caseHint:'',selectedCategoryId:'',poinPreview:'belum pilih kategori',
+            searchTimeout:null,
+            searchStudent(q){clearTimeout(this.searchTimeout);if(q.length<2){this.results=[];return}this.searchTimeout=setTimeout(async()=>{try{const r=await fetch('/students/search?q='+encodeURIComponent(q));this.results=Array.isArray(r.data)?r.data:await r.json()||[]}catch(e){this.results=[]}},250)},
+            selectStudent(s){this.selectedStudentId=s.id;this.selectedStudentName=s.full_name;this.results=[];document.querySelector('input[name=student_search]').value='';this.loadOpenCases()},
+            clearStudent(){this.selectedStudentId=null;this.selectedStudentName='';this.openCases=[];this.selectedCaseId='';this.caseHint=''},
+            async loadOpenCases(){this.openCases=[];this.selectedCaseId='';this.caseHint='';if(!this.selectedStudentId)return;try{const r=await fetch('/students/'+this.selectedStudentId+'/open-cases',{headers:{'Accept':'application/json','X-Requested-With':'XMLHttpRequest'}});this.openCases=await r.json()||[]}catch(e){this.openCases=[]}},
+            updatePoinPreview(){const el=document.querySelector('select[name=achievement_category_id] option:checked');const p=el?.dataset?.points;this.poinPreview=p?'+'+p+' poin':'belum pilih kategori';this.checkCaseMatch()},
+            checkCaseMatch(){this.caseHint='';if(!this.selectedCaseId||!this.selectedCategoryId)return;const c=this.openCases.find(x=>String(x.id)===String(this.selectedCaseId));if(!c||!c.required_achievement?.length)return;const need=c.required_achievement.map(a=>a.code).join(', ');this.caseHint='Kasus ini mewajibkan: '+need+'. Tanpa prestasi terverifikasi, poin tertahan.'}
+        }}
     </script>
 </x-app-layout>

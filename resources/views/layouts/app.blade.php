@@ -51,7 +51,7 @@
         /* ── Base ── */
         [x-cloak] { display: none !important; }
         body { font-family: 'Figtree', sans-serif; font-size: 1rem; line-height: 1.6;
-               color: var(--on-surface); background: var(--surface); transition: background .2s, color .2s;
+               margin: 0; color: var(--on-surface); background: var(--surface); transition: background .2s, color .2s;
                overflow-x: hidden; }
         h1 { font-size: 2.25rem; font-weight: 700; line-height: 1.15; letter-spacing: -.01em; }
         h2 { font-size: 1.5rem; font-weight: 600; line-height: 1.25; }
@@ -110,11 +110,25 @@
         .layout-2col { display: grid; gap: var(--sp-lg); grid-template-columns: 1fr; }
         @media(min-width:1024px) { .layout-2col { grid-template-columns: 2fr 1fr; } }
 
-        /* ── Sidebar offset ── */
-        .app-shell { min-height: 100vh; overflow-x: hidden; }
-        @media(min-width:1024px) { .app-shell { margin-left: 256px; } }
+        /* ── Layout root: mobile = flow, desktop ≥1024 = grid 2 kolom ── */
+        .layout-root { min-height: 100vh; display: flex; flex-direction: column; }
+        .app-shell { overflow-x: hidden; display: flex; flex-direction: column; flex: 1; min-width: 0; }
+        .app-shell > main { flex: 1; min-width: 0; }
         .app-header { background: var(--neutral); border-bottom: 1px solid var(--border); padding: var(--sp-md) var(--sp-lg); }
         .app-header > div { display: flex; flex-direction: column; }
+        /* page-header punya margin-bottom:var(--sp-xl); di dalam app-header jadi gap ganda.
+           Nol-kan di sini. padding negatif invalid CSS, browser ignore. */
+        .app-header .page-header { margin-bottom: 0; }
+        /* Strip atas menyatu: header grid-column 1/-1 — background + border-bottom
+           membentang dari ujung kiri viewport (x=0). Garis vertikal sidebar hanya
+           di bawah header (border-left main+footer) → corner bertemu persis, tanpa
+           celah 1px di tema gelap maupun terang. */
+        @media(min-width:1024px) {
+            .layout-root { display: grid; grid-template-columns: 256px minmax(0,1fr); grid-template-rows: auto 1fr; min-height: 100vh; }
+            .layout-root > .app-header { grid-column: 1 / -1; grid-row: 1; padding-left: calc(256px + var(--sp-lg)); }
+            .layout-root > .app-shell { grid-column: 2; grid-row: 2; margin-left: 0; min-height: 0; min-width: 0; }
+            .app-shell > main { border-left: 1px solid var(--border); }
+        }
 
         /* ── Cards ── */
         .card { background: var(--neutral); border-radius: var(--r-lg); padding: var(--sp-lg); border: 1px solid var(--border); transition: box-shadow .2s; }
@@ -198,8 +212,8 @@
         .list-score.warning { color: var(--accent); }
 
         /* ── Pagination ── */
-        .pagination { display: flex; align-items: center; justify-content: center; margin-top: var(--sp-lg); flex-wrap: wrap; }
-        .pg-nav { display: inline-flex; align-items: center; gap: var(--sp-xs); flex-wrap: wrap; justify-content: center; }
+        .pagination { display: flex; align-items: center; justify-content: center; margin-top: var(--sp-lg); padding-inline: var(--sp-sm); }
+        .pg-nav { display: inline-flex; align-items: center; gap: var(--sp-xs); flex-wrap: wrap; justify-content: center; max-width: 100%; }
         .pg-btn { min-width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;
                   border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--neutral);
                   color: var(--on-surface); font-size: .875rem; font-weight: 500; cursor: pointer;
@@ -210,6 +224,10 @@
         @media(max-width:639px){
             .pg-btn { min-width: 32px; height: 32px; font-size: .8125rem; padding: 0 8px; }
             .pg-nav { gap: 2px; }
+            /* Sisakan hanya halaman aktif + tetangganya (‹ 4 5 6 ›) supaya tidak pernah wrap
+               atau mentok ke tepi layar. Panah ‹ › tetap ada untuk navigasi. */
+            .pg-num:not(.is-active):not(.is-near) { display: none; }
+            .pg-gap { display: none; }
         }
 
         /* ── Skeleton ── */
@@ -282,18 +300,18 @@
     </style>
 </head>
 <body class="antialiased" style="font-family:'Figtree',sans-serif;background:var(--surface);color:var(--on-surface);overflow-x:hidden">
-    <div class="min-h-screen">
+    <div class="layout-root">
         @include('layouts.navigation')
 
-        <div class="app-shell">
-            @isset($header)
-                <div class="app-header">
-                    <div style="max-width:1280px;margin:0 auto;display:flex;align-items:center;gap:var(--sp-md);">
-                        {{ $header }}
-                    </div>
+        @isset($header)
+            <div class="app-header">
+                <div style="max-width:1280px;margin:0 auto;display:flex;align-items:center;gap:var(--sp-md);">
+                    {{ $header }}
                 </div>
-            @endisset
+            </div>
+        @endisset
 
+        <div class="app-shell">
             <main>
                 {{ $slot }}
             </main>

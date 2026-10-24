@@ -57,7 +57,7 @@
                                     <select name="violation_category_id" id="leafSelect" class="field-input" x-model="leafId" @change="onLeafChange()" required>
                                         <option value="">Pilih sub kategori...</option>
                                         @foreach($categories as $cat)
-                                            <option value="{{ $cat->id }}" data-group="{{ $cat->parent_id ?? $cat->id }}" data-points="{{ $cat->points }}" data-severity="{{ $cat->severity }}" {{ old('violation_category_id')==$cat->id?'selected':'' }}>{{ $cat->parent?->name ? $cat->parent->name . ' — ' : '' }}{{ $cat->name }} ({{ $cat->points }} poin)</option>
+                                            <option value="{{ $cat->id }}" data-group="{{ $cat->parent_id ?? $cat->id }}" data-points="{{ $cat->points }}" data-severity="{{ $cat->severity }}" {{ old('violation_category_id')==$cat->id?'selected':'' }}>{{ $cat->code }} — {{ $cat->name }} ({{ implode('/', $cat->tierPoints()) }} poin)</option>
                                         @endforeach
                                     </select>
                                     <span class="help-text">Isi dari kategori yang dipilih — jenis pelanggaran spesifiknya</span>
@@ -67,7 +67,7 @@
                                 {{-- Panel otomatis: tampil setelah sub kategori dipilih --}}
                                 <div x-show="leafId" x-cloak style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--sp-md);margin-bottom:var(--sp-md)">
                                     <div style="display:flex;gap:var(--sp-md);flex-wrap:wrap;margin-bottom:var(--sp-sm)">
-                                        <span class="text-sm"><span class="text-muted">Poin:</span> <strong x-text="leafPoints()" style="color:var(--danger)"></strong></span>
+                                        <span class="text-sm"><span class="text-muted">Poin ke-1/2/3:</span> <strong x-text="leafTiers()" style="color:var(--danger)"></strong></span>
                                         <span class="text-sm"><span class="text-muted">Tingkat:</span> <strong x-text="leafSeverity()"></strong></span>
                                     </div>
                                     <div x-show="meta && meta.sanksi" style="margin-bottom:var(--sp-sm)">
@@ -131,6 +131,7 @@
                 sel.querySelectorAll('option[data-group]').forEach(o=>{if(o.dataset.group===String(this.groupId??'')&&!o.hidden)n++});
                 return n>1;},
             leafPoints(){const o=document.querySelector('#leafSelect option[value="'+this.leafId+'"]');return o?o.dataset.points:'-';},
+            leafTiers(){if(this.meta&&Array.isArray(this.meta.tiers)&&this.meta.tiers.length)return this.meta.tiers.join(' / ');return this.leafPoints();},
             leafSeverity(){const o=document.querySelector('#leafSelect option[value="'+this.leafId+'"]');return o?o.dataset.severity:'-';},
             async onLeafChange(){this.meta=null;if(!this.leafId){return;}this.metaLoading=true;
                 try{const r=await fetch('/violation-categories/'+this.leafId+'/rekomendasi');this.meta=r.ok?await r.json():null;}

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AchievementCategory extends Model
@@ -13,6 +14,7 @@ class AchievementCategory extends Model
         'description',
         'points',
         'group_type',
+        'parent_id',
         'max_points_per_event',
         'status',
         'effective_date',
@@ -30,6 +32,24 @@ class AchievementCategory extends Model
     public function achievementRecords(): HasMany
     {
         return $this->hasMany(AchievementRecord::class);
+    }
+
+    /** Kategori induk (null = kategori induk R1-R10). */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_id');
+    }
+
+    /** Daftar sub di bawah kategori ini. */
+    public function children(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_id');
+    }
+
+    /** Kategori induk = baris tanpa parent_id. */
+    public function isParent(): bool
+    {
+        return $this->parent_id === null;
     }
 
     public function redemptionRules(): HasMany

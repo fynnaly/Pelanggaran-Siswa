@@ -30,8 +30,34 @@
                         <option value="berat" {{ old('severity', $violationCategory->severity)==='berat'?'selected':'' }}>Berat</option>
                     </select>
                 </div>
-                <div class="field"><label class="field-label">Poin <span class="text-danger">*</span></label><input type="number" name="points" value="{{ old('points', $violationCategory->points) }}" class="field-input" required min="0"></div>
-                <div class="field"><label class="field-label">Sanksi</label><input type="text" name="sanksi" value="{{ old('sanksi', $violationCategory->sanksi) }}" class="field-input"></div>
+                @php
+                    // Tampilkan 3 batas toleransi tersimpan; field ke-II/III kosong
+                    // bila kategori tidak berulang.
+                    $tiers = $violationCategory->tierPoints();
+                @endphp
+                <div class="field">
+                    <label class="field-label">Batas Toleransi Poin <span class="text-danger">*</span></label>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-sm)">
+                        <div>
+                            <input type="number" name="poin_ke_1" value="{{ old('poin_ke_1', $tiers[0] ?? 0) }}" class="field-input" required min="0" max="1000" placeholder="Ke-1">
+                            <span class="help-text">Pelanggaran ke-1</span>
+                        </div>
+                        <div>
+                            <input type="number" name="poin_ke_2" value="{{ old('poin_ke_2', $tiers[1] ?? '') }}" class="field-input" min="0" max="1000" placeholder="Ke-2">
+                            <span class="help-text">Pelanggaran ke-2</span>
+                        </div>
+                        <div>
+                            <input type="number" name="poin_ke_3" value="{{ old('poin_ke_3', $tiers[2] ?? '') }}" class="field-input" min="0" max="1000" placeholder="Ke-3">
+                            <span class="help-text">Pelanggaran ke-3 (batas)</span>
+                        </div>
+                    </div>
+                    <span class="help-text">Tiga batas pengurangan poin saat pelanggaran diulang; pelanggaran ke-4 dan seterusnya tetap memakai poin ke-3. Kosongkan ke-2 dan ke-3 bila pelanggaran tidak berulang. Isi 0 atau kosongkan batas yang tidak dipakai — contoh: ke-3 = 0 → hanya 2 toleransi (ke-I + ke-II).</span>
+                </div>
+                <div class="field">
+                    <label class="field-label">Sanksi (otomatis dari daftar prestasi)</label>
+                    <input type="text" class="field-input" value="{{ $violationCategory->resolveSanksi() }}" readonly style="background:var(--surface);color:var(--on-surface-muted)">
+                    <span class="help-text">Baca saja — sanksi mengikuti redemption rules / fallback severity. Tanpa prestasi, poin tertahan.</span>
+                </div>
                 <div class="field"><label class="field-label">Status <span class="text-danger">*</span></label>
                     <select name="status" class="field-input" required>
                         <option value="draft" {{ old('status', $violationCategory->status)==='draft'?'selected':'' }}>Draft</option>

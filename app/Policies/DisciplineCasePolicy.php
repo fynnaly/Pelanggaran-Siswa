@@ -6,10 +6,10 @@ use App\Models\DisciplineCase;
 
 class DisciplineCasePolicy
 {
-    /** Guru dan admin bisa buat laporan pelanggaran. */
+    /** Guru, BK, Kesiswaan, dan admin bisa buat laporan pelanggaran. */
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['guru', 'admin']);
+        return $user->hasAnyRole(['guru', 'bk', 'kesiswaan', 'admin']);
     }
 
     /**

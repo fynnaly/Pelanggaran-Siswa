@@ -117,7 +117,8 @@
             </table>
         </div>
 
-        <div style="display:flex;justify-content:center;margin-top:var(--sp-lg)">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-wrap:wrap;margin-top:var(--sp-lg)">
+            <span class="text-sm text-muted">Menampilkan {{ $users->firstItem() ?? 0 }}-{{ $users->lastItem() ?? 0 }} dari {{ $users->total() }}</span>
             <div class="pagination" style="margin-top:0">{{ $users->links() }}</div>
         </div>
         </div>

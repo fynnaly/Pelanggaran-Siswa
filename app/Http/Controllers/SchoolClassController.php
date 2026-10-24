@@ -139,6 +139,14 @@ class SchoolClassController extends Controller
         ]);
 
         $target = SchoolClass::findOrFail($validated['class_id']);
+
+        // Kelas arsip/nonaktif tidak boleh dipakai sebagai target pindah.
+        if ($target->status !== 'active') {
+            return redirect()
+                ->route('classes.index')
+                ->with('error', 'Kelas ' . $target->name . ' nonaktif (arsip tahun ajaran ' . ($target->academicYear?->name ?? '-') . ') — tidak bisa dipakai sebagai tujuan pindah.');
+        }
+
         $targetYearId = $target->academic_year_id;
         $count = 0;
 
