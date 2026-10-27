@@ -119,8 +119,12 @@
             <span class="theme-label">Mode Terang</span>
         </button>
         <div style="display:flex;align-items:center;gap:var(--sp-sm);padding:8px var(--sp-md);margin-top:var(--sp-xs)">
-            <div style="width:32px;height:32px;border-radius:var(--r-full);background:var(--primary);color:var(--on-primary);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0">
-                {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 2)) }}
+            <div style="width:32px;height:32px;border-radius:var(--r-full);background:var(--primary);color:var(--on-primary);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0;overflow:hidden">
+                @if(Auth::user()?->avatar_path)
+                    <img src="{{ asset('storage/'.Auth::user()->avatar_path) }}" alt="{{ Auth::user()->name }}" style="width:100%;height:100%;object-fit:cover">
+                @else
+                    {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 2)) }}
+                @endif
             </div>
             <div style="flex:1;min-width:0">
                 <div style="font-size:.875rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ Auth::user()->name ?? 'User' }}</div>
@@ -157,8 +161,12 @@
             <button onclick="toggleTheme()" style="width:36px;height:36px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--neutral);color:var(--on-surface);cursor:pointer;display:flex;align-items:center;justify-content:center">
                 <i data-lucide="sun" class="icon-theme" style="width:16px;height:16px"></i>
             </button>
-            <div style="width:32px;height:32px;border-radius:var(--r-full);background:var(--primary);color:var(--on-primary);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700">
-                {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 2)) }}
+            <div style="width:32px;height:32px;border-radius:var(--r-full);background:var(--primary);color:var(--on-primary);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;overflow:hidden">
+                @if(Auth::user()?->avatar_path)
+                    <img src="{{ asset('storage/'.Auth::user()->avatar_path) }}" alt="{{ Auth::user()->name }}" style="width:100%;height:100%;object-fit:cover">
+                @else
+                    {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 2)) }}
+                @endif
             </div>
         </div>
     </div>

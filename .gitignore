@@ -3,6 +3,8 @@
 .env
 .env.backup
 .env.production
+.env.testing
+.env.*.local
 .phpactor.json
 .phpunit.result.cache
 /.codex
@@ -27,10 +29,13 @@ Homestead.yaml
 Thumbs.db
 
 # Local workspace
-/.hermes/
 /docs/
 /.worktrees/
 /pelanggaran_siswa
+docs/procedure
+
+# Local Agents
+.hermes/
 .claude/
 CLAUDE.md
 .agents/
