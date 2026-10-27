@@ -4,34 +4,41 @@
             'label' => 'Data Referensi',
             'icon' => 'database',
             'items' => [
-                ['route' => 'users.index', 'label' => 'Pengguna', 'pattern' => 'users.*', 'icon' => 'user-round'],
-                ['route' => 'students.index', 'label' => 'Siswa', 'pattern' => 'students.*', 'icon' => 'users'],
-                ['route' => 'classes.index', 'label' => 'Kelas', 'pattern' => 'classes.*', 'icon' => 'school'],
-                ['route' => 'tahun-ajaran.index', 'label' => 'Tahun Ajaran', 'pattern' => 'tahun-ajaran.*', 'icon' => 'calendar'],
+                ['route' => 'users.index', 'label' => 'Pengguna', 'pattern' => 'users.*', 'icon' => ''],
+                ['route' => 'students.index', 'label' => 'Siswa', 'pattern' => 'students.*', 'icon' => ''],
+                ['route' => 'classes.index', 'label' => 'Kelas', 'pattern' => 'classes.*', 'icon' => ''],
+                ['route' => 'tahun-ajaran.index', 'label' => 'Tahun Ajaran', 'pattern' => 'tahun-ajaran.*', 'icon' => '' ],
             ],
         ],
         [
             'label' => 'Pelanggaran',
             'icon' => 'shield-alert',
             'items' => [
-                ['route' => 'violation-categories.index', 'label' => 'Daftar Pelanggaran', 'pattern' => 'violation-categories.*', 'icon' => 'tags'],
-                ['route' => 'kasus-pelanggaran.index', 'label' => 'Kasus', 'pattern' => 'kasus-pelanggaran.*', 'icon' => 'file-text'],
+                ['route' => 'violation-categories.index', 'label' => 'Daftar Pelanggaran', 'pattern' => 'violation-categories.*', 'icon' => ''],
+                ['route' => 'kasus-pelanggaran.index', 'label' => 'Kasus', 'pattern' => 'kasus-pelanggaran.*', 'icon' => ''],
             ],
         ],
         [
             'label' => 'Prestasi',
             'icon' => 'trophy',
             'items' => [
-                ['route' => 'achievement-categories.index', 'label' => 'Kategori', 'pattern' => 'achievement-categories.*', 'icon' => 'trophy'],
-                ['route' => 'achievement-records.index', 'label' => 'Rekam Prestasi', 'pattern' => 'achievement-records.*', 'icon' => 'award'],
+                ['route' => 'achievement-categories.index', 'label' => 'Kategori', 'pattern' => 'achievement-categories.*', 'icon' => ''],
+                ['route' => 'achievement-records.index', 'label' => 'Rekam Prestasi', 'pattern' => 'achievement-records.*', 'icon' => ''],
             ],
         ],
         [
             'label' => 'Poin',
             'icon' => 'wallet',
             'items' => [
-                ['route' => 'monitor-poin.index', 'label' => 'Monitor Poin', 'pattern' => 'monitor-poin.*', 'icon' => 'activity'],
-                ['route' => 'point-ledgers.index', 'label' => 'Riwayat Poin', 'pattern' => 'point-ledgers.*', 'icon' => 'wallet'],
+                ['route' => 'monitor-poin.index', 'label' => 'Monitor Poin', 'pattern' => 'monitor-poin.*', 'icon' => ''],
+                ['route' => 'point-ledgers.index', 'label' => 'Riwayat Poin', 'pattern' => 'point-ledgers.*', 'icon' => ''],
+            ],
+        ],
+        [
+            'label' => 'Sistem',
+            'icon' => 'settings',
+            'items' => [
+                ['route' => 'settings.index', 'label' => 'Pengaturan', 'pattern' => 'settings.*', 'icon' => ''],
             ],
         ],
     ];
@@ -42,11 +49,13 @@
 {{-- Desktop sidebar (≥1024px) --}}
 <aside class="sidebar" style="
     position:fixed;top:0;left:0;bottom:0;width:256px;
-    background:var(--neutral);border-right:1px solid var(--border);
+    background:var(--neutral);
     display:none;flex-direction:column;z-index:40;
     overflow-y:auto;
 ">
-    <div style="padding:var(--sp-lg);border-bottom:1px solid var(--border)">
+    {{-- Tanpa border-bottom & tanpa garis vertikal: strip atas menyatu dengan app-header
+         (bg --neutral sama), garis vertikal pemisah baru digambar main (app.blade). --}}
+    <div style="padding:var(--sp-lg)">
         <a href="{{ route('dashboard') }}" style="display:flex;align-items:center;gap:var(--sp-sm);text-decoration:none;color:var(--primary);font-size:1.125rem;font-weight:700">
             <img src="{{ asset('image.ico') }}" alt="Logo" style="width:24px;height:24px;border-radius:4px">
             <span>Pelanggaran Kuy</span>
@@ -110,8 +119,12 @@
             <span class="theme-label">Mode Terang</span>
         </button>
         <div style="display:flex;align-items:center;gap:var(--sp-sm);padding:8px var(--sp-md);margin-top:var(--sp-xs)">
-            <div style="width:32px;height:32px;border-radius:var(--r-full);background:var(--primary);color:var(--on-primary);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0">
-                {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 2)) }}
+            <div style="width:32px;height:32px;border-radius:var(--r-full);background:var(--primary);color:var(--on-primary);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0;overflow:hidden">
+                @if(Auth::user()?->avatar_path)
+                    <img src="{{ asset('storage/'.Auth::user()->avatar_path) }}" alt="{{ Auth::user()->name }}" style="width:100%;height:100%;object-fit:cover">
+                @else
+                    {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 2)) }}
+                @endif
             </div>
             <div style="flex:1;min-width:0">
                 <div style="font-size:.875rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ Auth::user()->name ?? 'User' }}</div>
@@ -148,8 +161,12 @@
             <button onclick="toggleTheme()" style="width:36px;height:36px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--neutral);color:var(--on-surface);cursor:pointer;display:flex;align-items:center;justify-content:center">
                 <i data-lucide="sun" class="icon-theme" style="width:16px;height:16px"></i>
             </button>
-            <div style="width:32px;height:32px;border-radius:var(--r-full);background:var(--primary);color:var(--on-primary);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700">
-                {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 2)) }}
+            <div style="width:32px;height:32px;border-radius:var(--r-full);background:var(--primary);color:var(--on-primary);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;overflow:hidden">
+                @if(Auth::user()?->avatar_path)
+                    <img src="{{ asset('storage/'.Auth::user()->avatar_path) }}" alt="{{ Auth::user()->name }}" style="width:100%;height:100%;object-fit:cover">
+                @else
+                    {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 2)) }}
+                @endif
             </div>
         </div>
     </div>
@@ -240,7 +257,7 @@
 <script>
 (function() {
     // --- Sidebar group collapse state → localStorage ---
-    var NAV_KEYS = ['data-referensi','pelanggaran','prestasi','poin'];
+    var NAV_KEYS = ['data-referensi','pelanggaran','prestasi','poin','sistem'];
     // Re-read setiap toggle — closure snapshot lama bikin state group lain ke-reset.
     function readNav() {
         try { return JSON.parse(localStorage.getItem('nav-open') || '{}'); }

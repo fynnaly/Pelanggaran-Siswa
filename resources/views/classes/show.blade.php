@@ -20,6 +20,7 @@
                     <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Tingkat</td><td class="mono" style="font-weight:600">{{ $class->tingkat ?? '-' }}</td></tr>
                     <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Program Keahlian</td><td>{{ $class->major ?? '-' }}</td></tr>
                     <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Tahun Ajaran</td><td>{{ $class->academicYear?->name ?? '-' }}</td></tr>
+                    <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Status</td><td><span class="badge {{ ($class->status ?? 'active')==='active'?'badge-success':'' }}" style="{{ ($class->status ?? 'active')!=='active'?'background:var(--surface);color:var(--on-surface-muted)':'' }}">{{ ($class->status ?? 'active')==='active'?'Aktif':'Nonaktif' }}</span></td></tr>
                     <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Wali Kelas</td><td>{{ $class->homeroomTeacher?->name ?? '-' }}</td></tr>
                     <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Jumlah Siswa</td><td class="mono">{{ $students->total() }}</td></tr>
                 </tbody>

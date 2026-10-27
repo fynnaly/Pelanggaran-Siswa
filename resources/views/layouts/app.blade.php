@@ -51,7 +51,7 @@
         /* ── Base ── */
         [x-cloak] { display: none !important; }
         body { font-family: 'Figtree', sans-serif; font-size: 1rem; line-height: 1.6;
-               color: var(--on-surface); background: var(--surface); transition: background .2s, color .2s;
+               margin: 0; color: var(--on-surface); background: var(--surface); transition: background .2s, color .2s;
                overflow-x: hidden; }
         h1 { font-size: 2.25rem; font-weight: 700; line-height: 1.15; letter-spacing: -.01em; }
         h2 { font-size: 1.5rem; font-weight: 600; line-height: 1.25; }
@@ -110,11 +110,25 @@
         .layout-2col { display: grid; gap: var(--sp-lg); grid-template-columns: 1fr; }
         @media(min-width:1024px) { .layout-2col { grid-template-columns: 2fr 1fr; } }
 
-        /* ── Sidebar offset ── */
-        .app-shell { min-height: 100vh; overflow-x: hidden; }
-        @media(min-width:1024px) { .app-shell { margin-left: 256px; } }
+        /* ── Layout root: mobile = flow, desktop ≥1024 = grid 2 kolom ── */
+        .layout-root { min-height: 100vh; display: flex; flex-direction: column; }
+        .app-shell { overflow-x: hidden; display: flex; flex-direction: column; flex: 1; min-width: 0; }
+        .app-shell > main { flex: 1; min-width: 0; }
         .app-header { background: var(--neutral); border-bottom: 1px solid var(--border); padding: var(--sp-md) var(--sp-lg); }
         .app-header > div { display: flex; flex-direction: column; }
+        /* page-header punya margin-bottom:var(--sp-xl); di dalam app-header jadi gap ganda.
+           Nol-kan di sini. padding negatif invalid CSS, browser ignore. */
+        .app-header .page-header { margin-bottom: 0; }
+        /* Strip atas menyatu: header grid-column 1/-1 — background + border-bottom
+           membentang dari ujung kiri viewport (x=0). Garis vertikal sidebar hanya
+           di bawah header (border-left main+footer) → corner bertemu persis, tanpa
+           celah 1px di tema gelap maupun terang. */
+        @media(min-width:1024px) {
+            .layout-root { display: grid; grid-template-columns: 256px minmax(0,1fr); grid-template-rows: auto 1fr; min-height: 100vh; }
+            .layout-root > .app-header { grid-column: 1 / -1; grid-row: 1; padding-left: calc(256px + var(--sp-lg)); }
+            .layout-root > .app-shell { grid-column: 2; grid-row: 2; margin-left: 0; min-height: 0; min-width: 0; }
+            .app-shell > main { border-left: 1px solid var(--border); }
+        }
 
         /* ── Cards ── */
         .card { background: var(--neutral); border-radius: var(--r-lg); padding: var(--sp-lg); border: 1px solid var(--border); transition: box-shadow .2s; }
@@ -198,8 +212,8 @@
         .list-score.warning { color: var(--accent); }
 
         /* ── Pagination ── */
-        .pagination { display: flex; align-items: center; justify-content: center; margin-top: var(--sp-lg); flex-wrap: wrap; }
-        .pg-nav { display: inline-flex; align-items: center; gap: var(--sp-xs); flex-wrap: wrap; justify-content: center; }
+        .pagination { display: flex; align-items: center; justify-content: center; margin-top: var(--sp-lg); padding-inline: var(--sp-sm); }
+        .pg-nav { display: inline-flex; align-items: center; gap: var(--sp-xs); flex-wrap: wrap; justify-content: center; max-width: 100%; }
         .pg-btn { min-width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;
                   border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--neutral);
                   color: var(--on-surface); font-size: .875rem; font-weight: 500; cursor: pointer;
@@ -210,6 +224,10 @@
         @media(max-width:639px){
             .pg-btn { min-width: 32px; height: 32px; font-size: .8125rem; padding: 0 8px; }
             .pg-nav { gap: 2px; }
+            /* Sisakan hanya halaman aktif + tetangganya (‹ 4 5 6 ›) supaya tidak pernah wrap
+               atau mentok ke tepi layar. Panah ‹ › tetap ada untuk navigasi. */
+            .pg-num:not(.is-active):not(.is-near) { display: none; }
+            .pg-gap { display: none; }
         }
 
         /* ── Skeleton ── */
@@ -282,18 +300,18 @@
     </style>
 </head>
 <body class="antialiased" style="font-family:'Figtree',sans-serif;background:var(--surface);color:var(--on-surface);overflow-x:hidden">
-    <div class="min-h-screen">
+    <div class="layout-root">
         @include('layouts.navigation')
 
-        <div class="app-shell">
-            @isset($header)
-                <div class="app-header">
-                    <div style="max-width:1280px;margin:0 auto;display:flex;align-items:center;gap:var(--sp-md);">
-                        {{ $header }}
-                    </div>
+        @isset($header)
+            <div class="app-header">
+                <div style="max-width:1280px;margin:0 auto;display:flex;align-items:center;gap:var(--sp-md);">
+                    {{ $header }}
                 </div>
-            @endisset
+            </div>
+        @endisset
 
+        <div class="app-shell">
             <main>
                 {{ $slot }}
             </main>
@@ -378,7 +396,57 @@
         });
     </script>
 
+    <!-- Probe Deteksi Force Dark Mode Browser -->
+    <div id="fd-probe" style="position:fixed;left:-9999px;top:-9999px;width:10px;height:10px;background-color:#ffffff;color:#000000;color-scheme:only light;pointer-events:none;z-index:-1" aria-hidden="true"></div>
+
+    <!-- Modal Peringatan Force Dark Mode Browser -->
+    <div id="fd-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;padding:var(--sp-md)">
+        <div style="background:var(--neutral);border:1px solid var(--border);border-radius:var(--r-lg);max-width:440px;width:100%;padding:var(--sp-lg);box-shadow:var(--sh-md)">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:var(--sp-sm)">
+                <div style="width:36px;height:36px;border-radius:var(--r-full);background:var(--ws);color:var(--wt);display:flex;align-items:center;justify-content:center">
+                    <i data-lucide="moon" class="icon-sm"></i>
+                </div>
+                <div>
+                    <h3 style="font-size:1rem;font-weight:600;margin:0">Fitur Force Dark Browser Aktif</h3>
+                    <span class="text-xs text-muted">Deteksi tema peramban</span>
+                </div>
+            </div>
+            <p class="text-sm text-muted" style="margin-bottom:var(--sp-lg);line-height:1.5">
+                Browser Anda mengaktifkan fitur <strong>Force Dark Mode</strong> bawaan. Tampilan tema terang mungkin tetap tampak gelap atau mengalami pembalikan warna oleh browser.
+            </p>
+            <div style="display:flex;justify-content:flex-end;gap:var(--sp-sm)">
+                <button type="button" class="btn btn-primary btn-sm" onclick="closeForceDarkModal(true)">Mengerti</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        function checkForceDarkNotice() {
+            if (sessionStorage.getItem('fd_alert_dismissed')) return;
+            const probe = document.getElementById('fd-probe');
+            if (!probe) return;
+            const bg = window.getComputedStyle(probe).backgroundColor;
+            const match = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+            if (match) {
+                const r = parseInt(match[1], 10);
+                const g = parseInt(match[2], 10);
+                const b = parseInt(match[3], 10);
+                if (r < 180 && g < 180 && b < 180) {
+                    const m = document.getElementById('fd-modal');
+                    if (m) {
+                        m.style.display = 'flex';
+                        if (window.lucide) lucide.createIcons();
+                    }
+                }
+            }
+        }
+
+        function closeForceDarkModal(dismissSession) {
+            const m = document.getElementById('fd-modal');
+            if (m) m.style.display = 'none';
+            if (dismissSession) sessionStorage.setItem('fd_alert_dismissed', '1');
+        }
+
         function toggleTheme() {
             const h = document.documentElement;
             const d = h.classList.toggle('dark');
@@ -388,6 +456,9 @@
                 el.setAttribute('data-lucide', d ? 'moon' : 'sun');
             });
             lucide.createIcons();
+            if (!d) {
+                setTimeout(checkForceDarkNotice, 80);
+            }
         }
     </script>
 </body>

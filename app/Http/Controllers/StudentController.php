@@ -7,6 +7,7 @@ use App\Models\Enrollment;
 use App\Models\PointLedger;
 use App\Models\SchoolClass;
 use App\Models\Student;
+use App\Support\Xlsx;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -75,8 +76,10 @@ class StudentController extends Controller
     /** Form tambah siswa — kirim daftar kelas dari controller (jangan query di Blade). */
     public function create()
     {
+        // Hanya kelas aktif — kelas arsip (nonaktif/tahun lama) tidak boleh dipakai mendaftar.
         $classes = SchoolClass::with('academicYear')
             ->where('academic_year_id', AcademicYear::where('is_active', true)->value('id'))
+            ->where('status', 'active')
             ->orderBy('name')->get();
         $academicYears = AcademicYear::orderByDesc('start_date')->get();
 
@@ -87,8 +90,9 @@ class StudentController extends Controller
     public function store(Request $request)
         {
             $validated = $request->validate([
-                'nisn'      => 'required|string|max:20|unique:students',
-                'nis'       => 'required|string|max:20|unique:students',
+                // NISN standar Kemendikbud: 10 digit angka. NIS sekolah: YYYYMMDD+urutan = 12 digit.
+                'nisn'      => 'required|digits:10|unique:students',
+                'nis'       => 'required|digits:12|unique:students',
                 'full_name' => 'required|string|max:100',
                 'gender'    => 'required|in:L,P',
                 'birth_date'=> 'nullable|date',
@@ -98,8 +102,10 @@ class StudentController extends Controller
                 'address'   => 'nullable|string',
                 'parent_name' => 'nullable|string|max:100',
                 'parent_phone' => 'nullable|string|max:20',
-                'status'    => 'required|in:active,inactive,graduated,transferred',
             ]);
+
+        // Status siswa baru selalu 'active' — tidak ditanyakan di form.
+        $validated['status'] = 'active';
 
         return DB::transaction(function () use ($validated, $request) {
             // Opsional: buat user login jika email diisi (untuk role siswa). Jika tidak diisi, siswa tetap master tanpa akun.
@@ -142,8 +148,10 @@ class StudentController extends Controller
     /** Form edit siswa */
     public function edit(Student $student)
     {
+        // Hanya kelas aktif — kelas arsip tidak boleh dipilih ulang.
         $classes = SchoolClass::with('academicYear')
             ->where('academic_year_id', AcademicYear::where('is_active', true)->value('id'))
+            ->where('status', 'active')
             ->orderBy('name')->get();
         $academicYears = AcademicYear::orderByDesc('start_date')->get();
 
@@ -166,8 +174,8 @@ class StudentController extends Controller
     public function update(Request $request, Student $student)
     {
         $validated = $request->validate([
-            'nisn'      => 'sometimes|string|max:20|unique:students,nisn,' . $student->id,
-            'nis'       => 'sometimes|string|max:20|unique:students,nis,' . $student->id,
+            'nisn'      => 'sometimes|digits:10|unique:students,nisn,' . $student->id,
+            'nis'       => 'sometimes|digits:12|unique:students,nis,' . $student->id,
             'full_name' => 'sometimes|string|max:100',
             'gender'    => 'sometimes|in:L,P',
             'birth_date'=> 'nullable|date',
@@ -213,7 +221,30 @@ class StudentController extends Controller
      */
     public function search(Request $request)
     {
+        $classId = $request->input('class_id');
         $q = $request->input('q', '');
+
+        // Jika request membawa class_id, ambil seluruh siswa aktif pada kelas tersebut
+        if ($classId) {
+            $activeYearId = AcademicYear::where('is_active', true)->value('id');
+            $students = Student::with(['currentEnrollment.schoolClass'])
+                ->whereHas('enrollments', function ($query) use ($classId, $activeYearId) {
+                    $query->where('class_id', $classId)
+                        ->when($activeYearId, fn ($eq) => $eq->where('academic_year_id', $activeYearId));
+                })
+                ->where('status', 'active')
+                ->orderBy('full_name')
+                ->get()
+                ->map(fn ($s) => [
+                    'id' => $s->id,
+                    'full_name' => $s->full_name,
+                    'nis' => $s->nis,
+                    'class_id' => $s->currentEnrollment?->class_id,
+                    'kelas' => $s->currentEnrollment?->schoolClass?->name ?? '-',
+                ]);
+
+            return response()->json($students);
+        }
 
         if (strlen($q) < 2) {
             return response()->json([]);
@@ -233,6 +264,7 @@ class StudentController extends Controller
                 'id' => $s->id,
                 'full_name' => $s->full_name,
                 'nis' => $s->nis,
+                'class_id' => $s->currentEnrollment?->class_id,
                 'kelas' => $s->currentEnrollment?->schoolClass?->name ?? '-',
             ]);
 
@@ -244,20 +276,28 @@ class StudentController extends Controller
     // Per docs/UJIKOM-v2.0.md: Export = CSV native
     // ────────────────────────────────────────────────
 
-    /** Download template CSV kosong untuk import siswa */
+    /** Download template XLSX untuk import siswa (file asli ber-style, siap unduh). */
     public function downloadTemplate()
     {
-        $headers = ['NISN', 'NIS', 'Nama Lengkap', 'Jenis Kelamin', 'Telepon', 'Alamat', 'Nama Orang Tua', 'No. HP Orang Tua', 'Kelas (nama)', 'Tahun Ajaran (nama)', 'Status'];
-        $example = ['0012345678', '12345', 'Budi Santoso', 'Laki-laki', '08123456789', 'Jl. Merdeka No. 1', 'Bapak Santoso', '08987654321', 'X PPLG 1', '2025/2026', 'active'];
+        $path = public_path('template-siswa.xlsx');
 
-        return response()->streamDownload(function () use ($headers, $example) {
-            $out = fopen('php://output', 'w');
-            // BOM agar Excel Windows baca UTF-8 dengan benar
-            fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
-            fputcsv($out, $headers);
-            fputcsv($out, $example);
-            fclose($out);
-        }, 'template-siswa.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+        if (is_file($path)) {
+            return response()->download($path, 'template-siswa.xlsx', [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ]);
+        }
+
+        // Fallback darurat bila file template hilang: generate polos tanpa style.
+        $rows = [
+            ['NISN', 'NIS', 'Nama Lengkap', 'Jenis Kelamin', 'Telepon', 'Alamat', 'Nama Orang Tua', 'No. HP Orang Tua', 'Kelas (nama)', 'Tahun Ajaran (nama)', 'Status'],
+            ['3690012345', '202412010001', 'Budi Santoso', 'Laki-laki', '08123456789', 'Jl. Merdeka No. 1', 'Bapak Santoso', '08987654321', 'X PPLG 1', '2025/2026', 'active'],
+        ];
+
+        $tmp = Xlsx::write($rows);
+
+        return response()->download($tmp, 'template-siswa.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend(true);
     }
 
     /** Export daftar siswa ke CSV (paginate 5000, include poin terkini) */
@@ -297,28 +337,49 @@ class StudentController extends Controller
     }
 
     /**
-     * Import siswa dari CSV.
-     * Kolom wajib: NISN, NIS, Nama Lengkap. Opsional: Kelas (nama), Tahun Ajaran (nama), Status.
-     * - Jika NISN sudah ada → skip (idempotent).
+     * Import siswa dari CSV atau XLSX.
+     * Kolom wajib: NISN (10 digit), NIS (12 digit), Nama Lengkap.
+     * Opsional: Kelas (nama), Tahun Ajaran (nama), Status.
+     * - Format NISN/NIS salah → baris dilewati dengan pesan (validasi dulu, bukan fatal).
+     * - Jika NISN/NIS sudah ada → skip (idempotent).
      * - Jika Kelas tidak ditemukan → buat otomatis di tahun ajaran aktif.
+     * - CSV dibaca native fgetcsv (tanpa BOM); XLSX via App\Support\Xlsx (tanpa ext-gd).
      */
     public function import(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes:csv,txt|max:2048',
+            'file' => 'required|file|mimes:csv,txt,xlsx|max:5120',
         ]);
 
         $path = $request->file('file')->getRealPath();
-        $handle = fopen($path, 'r');
-        if (! $handle) {
-            return back()->with('error', 'Gagal membaca file CSV.');
-        }
+        $isXlsx = strtolower($request->file('file')->getClientOriginalExtension()) === 'xlsx';
 
-        // Lewati BOM jika ada
-        $first = fgets($handle);
-        $first = preg_replace('/^\xEF\xBB\xBF/', '', $first);
-        $header = str_getcsv(trim($first));
-        $header = array_map(fn ($h) => trim(strtolower($h)), $header);
+        if ($isXlsx) {
+            try {
+                $allRows = Xlsx::read($path);
+            } catch (\Throwable $e) {
+                return back()->with('error', 'Import gagal: ' . $e->getMessage());
+            }
+            $header = array_map(fn ($h) => trim(strtolower((string) $h)), $allRows[0] ?? []);
+            $dataRows = array_slice($allRows, 1);
+        } else {
+            $handle = fopen($path, 'r');
+            if (! $handle) {
+                return back()->with('error', 'Gagal membaca file CSV.');
+            }
+
+            // Lewati BOM jika ada
+            $first = fgets($handle);
+            $first = preg_replace('/^\xEF\xBB\xBF/', '', $first);
+            $header = str_getcsv(trim($first));
+            $header = array_map(fn ($h) => trim(strtolower($h)), $header);
+
+            $dataRows = [];
+            while (($row = fgetcsv($handle)) !== false) {
+                $dataRows[] = $row;
+            }
+            fclose($handle);
+        }
 
         // Mapping header → index
         $idx = fn ($name) => array_search(strtolower($name), $header, true);
@@ -336,7 +397,6 @@ class StudentController extends Controller
         $iStatus = $idx('status');
 
         if ($iNisn === false || $iNis === false || $iNama === false) {
-            fclose($handle);
             return back()->with('error', 'Header CSV tidak valid. Wajib ada kolom: NISN, NIS, Nama Lengkap.');
         }
 
@@ -350,7 +410,7 @@ class StudentController extends Controller
         DB::beginTransaction();
         try {
             $rowNum = 1;
-            while (($row = fgetcsv($handle)) !== false) {
+            foreach ($dataRows as $row) {
                 $rowNum++;
                 if (count(array_filter($row, fn ($v) => trim((string) $v) !== '')) === 0) {
                     continue;
@@ -373,6 +433,16 @@ class StudentController extends Controller
 
                 if ($nisn === '' || $nis === '' || $nama === '') {
                     $errors[] = "Baris {$rowNum}: NISN/NIS/Nama kosong — dilewati.";
+                    $skipped++;
+                    continue;
+                }
+                if (! preg_match('/^\d{10}$/', $nisn)) {
+                    $errors[] = "Baris {$rowNum} ({$nama}): NISN \"{$nisn}\" bukan 10 digit angka — dilewati.";
+                    $skipped++;
+                    continue;
+                }
+                if (! preg_match('/^\d{12}$/', $nis)) {
+                    $errors[] = "Baris {$rowNum} ({$nama}): NIS \"{$nis}\" bukan 12 digit angka — dilewati.";
                     $skipped++;
                     continue;
                 }
@@ -432,11 +502,8 @@ class StudentController extends Controller
             DB::commit();
         } catch (\Throwable $e) {
             DB::rollBack();
-            fclose($handle);
             return back()->with('error', 'Import gagal: ' . $e->getMessage());
         }
-
-        fclose($handle);
 
         $msg = "Import selesai — {$imported} siswa ditambahkan" . ($skipped ? ", {$skipped} dilewati" : "") . ".";
         if ($errors) {

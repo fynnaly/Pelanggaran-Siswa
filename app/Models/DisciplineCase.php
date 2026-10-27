@@ -116,48 +116,52 @@ class DisciplineCase extends Model
 
     /**
      * Nomor kejadian kasus ini untuk kategori + tahun ajaran yang sama (1 = pertama).
-     * Hanya kasus non-dismissed yang dihitung — kasus ditolak tidak memicu eskalasi.
+     * Hanya kasus yang sudah di-debit (handling, monitoring, closed) sebelum kasus ini yang dihitung.
+     * Kasus dengan status 'found' atau 'dismissed' tidak menambah tier eskalasi.
      */
     public function getOccurrenceNumber(): int
     {
-        return self::where('student_id', $this->student_id)
+        $priorCount = self::where('student_id', $this->student_id)
             ->where('violation_category_id', $this->violation_category_id)
             ->where('academic_year_id', $this->academic_year_id)
-            ->where('id', '<=', $this->id)
-            ->where('status', '!=', 'dismissed')
+            ->where('id', '<', $this->id ?? PHP_INT_MAX)
+            ->whereIn('status', ['handling', 'monitoring', 'closed'])
             ->count();
+
+        return $priorCount + 1;
     }
 
     /**
-     * Poin efektif dengan eskalasi pelanggaran berulang.
+     * Poin efektif dengan eskalasi pelanggaran berulang (3 batas toleransi).
      *
-     * Rumus (flat addition, per dokumen 04-pelanggaran.md):
-     *   base + recurring_increment × (nomor_kejadian − 1), dibatasi max_recurring_points.
-     * Contoh base 16, increment 4: ke-2 = 20, ke-3 = 24, ...
+     * Sumber kebenaran rumus ada di ViolationCategory::tierPoints() supaya UI dan
+     * perhitungan ledger memakai tabel batas yang sama.
+     * Zero tolerance flat pada base points (64) dan tidak bertambah.
      * Override manual (points_override) selalu menang — eskalasi tidak dipakai.
      */
     public function getEffectivePoints(): int
     {
         if ($this->points_override !== null) {
-            return $this->points_override;
+            return (int) $this->points_override;
         }
 
         $category = $this->violationCategory;
-        $base = $category?->points ?? 0;
 
-        if (! $category?->is_recurring || ! $category->recurring_increment) {
-            return $base;
+        if (! $category) {
+            return 0;
         }
 
-        $occurrence = $this->getOccurrenceNumber();
-        if ($occurrence <= 1) {
-            return $base;
+        if ($category->is_zero_tolerance) {
+            return (int) $category->points;
         }
 
-        $escalated = $base + (int) $category->recurring_increment * ($occurrence - 1);
-        $max = $category->max_recurring_points;
+        return $category->pointsForOccurrence($this->getOccurrenceNumber());
+    }
 
-        return $max !== null ? min($escalated, (int) $max) : $escalated;
+    /** Batas toleransi yang sedang berlaku untuk kasus ini (1..3). */
+    public function getCurrentTier(): int
+    {
+        return min($this->getOccurrenceNumber(), ViolationCategory::MAX_TIER);
     }
 
     /** Tingkat efektif (override atau dari kategori). */

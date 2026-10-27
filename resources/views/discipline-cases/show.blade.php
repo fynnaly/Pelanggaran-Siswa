@@ -7,9 +7,13 @@
                     @if(in_array($disciplineCase->status, ['found','clarifying','classifying','handling','monitoring'], true))
                     <form action="{{ route('kasus-pelanggaran.update-status', $disciplineCase) }}" method="POST" style="margin:0;padding:0;border:none;display:inline-flex;gap:var(--sp-xs);align-items:center">@csrf @method('PATCH')
                         <select name="status" class="input" style="width:auto;min-width:140px" required>
-                            @foreach(['clarifying' => 'Klarifikasi','classifying' => 'Klasifikasi','handling' => 'Penanganan','monitoring' => 'Monitoring','closed' => 'Selesai'] as $val => $label)
-                                <option value="{{ $val }}">{{ $label }}</option>
+                            @php $cur = $disciplineCase->status; @endphp
+                            @foreach(['handling' => 'Penanganan (Potong Poin)', 'closed' => 'Selesai'] as $val => $label)
+                                <option value="{{ $val }}" @selected($val === $cur)>{{ $label }}</option>
                             @endforeach
+                            @if($cur === 'found')
+                                <option value="found" selected>Temuan (saat ini)</option>
+                            @endif
                         </select>
                         <button class="btn btn-primary btn-sm">Ubah Status</button>
                     </form>
@@ -60,10 +64,38 @@
                 <div class="card" style="margin-bottom:var(--sp-lg)">
                     <h2 style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)"><i data-lucide="tag" class="icon"></i> Pelanggaran</h2>
                     <table style="width:100%;border-collapse:collapse">
-                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted);width:140px">Kategori</td><td style="padding:8px 0;font-weight:600">{{ $disciplineCase->violationCategory?->name }}</td></tr>
-                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Tingkat</td><td style="padding:8px 0"><span class="badge badge-warning">{{ ucfirst($disciplineCase->violationCategory?->severity ?? '-') }}</span></td></tr>
+                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted);width:140px">Kategori</td><td style="padding:8px 0;font-weight:600">{{ $disciplineCase->violationCategory?->parent?->name ?? '-' }}</td></tr>
+                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Sub Kategori</td><td style="padding:8px 0;font-weight:600">{{ $disciplineCase->violationCategory?->name }} <span class="mono text-muted text-sm">{{ $disciplineCase->violationCategory?->code }}</span></td></tr>
+                        @php
+                            $sev = $disciplineCase->violationCategory?->severity;
+                            $sevClass = in_array($sev, ['berat', 'sangat_berat']) ? 'badge-danger' : ($sev === 'sedang' ? 'badge-warning' : 'badge-info');
+                            $sevLabel = $sev === 'sangat_berat' ? 'Sangat Berat (Zero Tolerance)' : ucfirst($sev ?? '-');
+                        @endphp
+                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Tingkat</td><td style="padding:8px 0"><span class="badge {{ $sevClass }}">{{ $sevLabel }}</span></td></tr>
+                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Tangga Toleransi</td><td style="padding:8px 0">Ke-{{ $disciplineCase->getCurrentTier() }} dari {{ count($disciplineCase->violationCategory?->tierPoints() ?? [1]) }} ({{ implode(' → ', $disciplineCase->violationCategory?->tierPoints() ?? []) }} poin)</td></tr>
+                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Sanksi</td><td style="padding:8px 0">{{ $disciplineCase->violationCategory?->resolveSanksi() ?? '-' }}</td></tr>
                         <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Poin Dikurangi</td><td class="mono" style="padding:8px 0;font-size:1.25rem;font-weight:700;color:var(--danger)">-{{ $disciplineCase->getEffectivePoints() }}</td></tr>
                     </table>
+                </div>
+                <div class="card" style="margin-top:var(--sp-lg)">
+                    <h2 style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)"><i data-lucide="rotate-ccw" class="icon"></i> Rekomendasi Pemulihan Poin</h2>
+                    @if($disciplineCase->violationCategory?->is_zero_tolerance)
+                        <p class="text-sm" style="color:var(--danger);font-weight:600">Zero tolerance — Program Pembinaan Intensif, tidak bisa ditebus poin prestasi biasa.</p>
+                    @elseif(count($recovery) > 0)
+                        <div class="recovery-cards">
+                            @foreach($recovery as $rec)
+                                <div class="recovery-card">
+                                    <div class="recovery-card-icon"><i data-lucide="trophy" style="width:18px;height:18px"></i></div>
+                                    <div class="recovery-card-body">
+                                        <div class="recovery-card-title">{{ $rec['name'] }}</div>
+                                        <div class="text-sm text-muted">{{ $rec['code'] }} &middot; +{{ $rec['poin'] }} poin penebus</div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-sm text-muted">Belum ada rekomendasi padanan untuk sub kategori ini.</p>
+                    @endif
                 </div>
                 <div class="card">
                     <h2 style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)"><i data-lucide="user-check" class="icon"></i> Pelapor</h2>

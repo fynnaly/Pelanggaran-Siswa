@@ -48,7 +48,7 @@
                         $total = max($totalCases, 1);
                         $segs = [
                             ['label' => 'Ditemukan', 'count' => $totalCasesFound, 'bg' => 'var(--accent)'],
-                            ['label' => 'Divalidasi', 'count' => $totalCasesValidated, 'bg' => 'var(--primary)'],
+                            ['label' => 'Penanganan', 'count' => $totalCasesValidated, 'bg' => 'var(--primary)'],
                             ['label' => 'Selesai', 'count' => $totalCasesDone, 'bg' => 'var(--tertiary)'],
                             ['label' => 'Dibuang', 'count' => $totalCasesDismissed, 'bg' => 'var(--on-surface-muted)'],
                         ];
@@ -106,7 +106,7 @@
 
                 <div>
                     <div class="section-header">
-                                            <h2 style="display:flex;align-items:center;gap:var(--sp-sm)"><i data-lucide="users" class="icon"></i> 5 Siswa Poin Terendah</h2>
+                                            <h2 style="display:flex;align-items:center;gap:var(--sp-sm)"><i data-lucide="users" class="icon"></i>Siswa Poin Terendah</h2>
                                         </div>
                                         <div class="card">
                                             @forelse($lowPointStudents as $idx => $student)
@@ -163,7 +163,15 @@
                                     @php
                                         $count = $zone['count'];
                                         $pct = $maxZoneCount > 0 ? ($count / $maxZoneCount) * 100 : 0;
-                                        $bg = $zone['color'] === 'danger' ? 'var(--ds)' : ($zone['color'] === 'warning' ? 'var(--ws)' : ($zone['color'] === 'info' ? '#dbeafe' : ($zone['color'] === 'primary' ? 'var(--primary)' : 'var(--bs)')));
+                                        // Warna solid pekat — var(--ds/--ws/--bs) terlalu pucat
+                                        // di atas track var(--surface), batang nyaris tak terlihat.
+                                        $bg = match ($zone['color'] ?? 'success') {
+                                            'danger'  => 'var(--danger)',
+                                            'warning' => 'var(--accent)',
+                                            'info'    => '#3b82f6',
+                                            'primary' => 'var(--primary)',
+                                            default   => 'var(--tertiary)',
+                                        };
                                     @endphp
                                     <div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-sm)" title="{{ $name }} ({{ $zone['range'] }})">
                                         <div style="width:120px;min-width:120px;font-size:.75rem;font-weight:600;color:var(--on-surface)">{{ $name }}</div>

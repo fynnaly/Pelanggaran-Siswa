@@ -45,7 +45,7 @@
                         <tr>
                             <td class="text-sm text-muted">{{ $rec->id }}</td>
                             <td><strong>{{ $rec->student?->full_name ?? '-' }}</strong><br><span class="text-muted text-sm">{{ $rec->schoolClass?->name ?? $rec->student?->currentEnrollment?->schoolClass?->name ?? '' }}</span></td>
-                            <td>{{ $rec->achievementCategory?->name ?? '-' }}</td>
+                            <td>{{ $rec->achievementCategory?->name ?? '-' }}@if($rec->discipline_case_id) <span class="badge badge-info" style="margin-left:6px;font-size:.65rem">Penebus {{ $rec->disciplineCase?->case_number ?? '#' }}</span>@endif</td>
                             <td class="mono" style="color:var(--tertiary)">+{{ $rec->achievementCategory?->points ?? '-' }}</td>
                             <td class="text-sm">{{ $rec->recorder?->name ?? '-' }}</td>
                             <td>

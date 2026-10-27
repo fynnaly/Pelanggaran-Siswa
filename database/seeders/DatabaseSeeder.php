@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\AcademicYear;
 use App\Models\SchoolClass;
 use App\Models\Student;
-use App\Models\ViolationCategory;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -16,8 +15,8 @@ class DatabaseSeeder extends Seeder
     /** Seed the application's database. */
     public function run(): void
     {
-        // Roles — 7 role sesuai ROMBAK 01-user.md + SOP jenjang
-        foreach (['admin', 'guru', 'bk', 'siswa', 'kesiswaan', 'kepala_sekolah'] as $peran) {
+        // Roles — 8 role: 7 existing + wali_kelas (RBAC baru, pakai SchoolClass.homeroom_teacher_id)
+        foreach (['admin', 'guru', 'wali_kelas', 'bk', 'siswa', 'kesiswaan', 'kepala_sekolah'] as $peran) {
             Role::firstOrCreate(['name' => $peran, 'guard_name' => 'web']);
         }
 
@@ -161,116 +160,12 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-        // Violation Categories
-        // recurring_increment = tambahan poin per pengulangan (flat addition).
-        // Cap max_recurring_points supaya pengulangan tak terbatas tidak drain saldo.
-        ViolationCategory::firstOrCreate(
-            ['code' => 'B.15'],
-            [
-                'name' => 'Terlambat < 10 menit',
-                'severity' => 'ringan',
-                'points' => 5,
-                'group_type' => 'kehadiran',
-                'is_recurring' => true,
-                'recurring_increment' => 5,
-                'max_recurring_points' => 25,
-                'description' => 'Masuk kelas lebih dari 5 menit, kurang dari 10 menit. Ketiga angka (5/10/15) adalah poin untuk pelanggaran ke-1/ke-2/ke-3.',
-                'status' => 'active',
-            ]
-        );
-        ViolationCategory::firstOrCreate(
-            ['code' => 'B.16'],
-            [
-                'name' => 'Terlambat > 10 menit',
-                'severity' => 'ringan',
-                'points' => 10,
-                'group_type' => 'kehadiran',
-                'is_recurring' => true,
-                'recurring_increment' => 5,
-                'max_recurring_points' => 30,
-                'description' => 'Masuk kelas lebih dari 10 menit, kurang dari 30 menit. Ketiga angka (10/15/20) adalah poin untuk pelanggaran ke-1/ke-2/ke-3.',
-                'status' => 'active',
-            ]
-        );
-        ViolationCategory::firstOrCreate(
-            ['code' => 'B.17'],
-            [
-                'name' => 'Terlambat > 30 menit',
-                'severity' => 'sedang',
-                'points' => 15,
-                'group_type' => 'kehadiran',
-                'is_recurring' => true,
-                'recurring_increment' => 5,
-                'max_recurring_points' => 40,
-                'description' => 'Masuk kelas lebih dari 30 menit. Ketiga angka (15/20/25) adalah poin untuk pelanggaran ke-1/ke-2/ke-3.',
-                'status' => 'active',
-            ]
-        );
-        ViolationCategory::firstOrCreate(
-            ['code' => 'A.08'],
-            [
-                'name' => 'Melawan guru',
-                'severity' => 'berat',
-                'points' => 100,
-                'group_type' => 'sikap',
-                'is_recurring' => true,
-                'recurring_increment' => 25,
-                'max_recurring_points' => 300,
-                'description' => 'Perilaku membangkang terhadap guru di sekolah.',
-                'status' => 'active',
-            ]
-        );
-        ViolationCategory::firstOrCreate(
-            ['code' => 'C.01'],
-            [
-                'name' => 'Bolos sekolah',
-                'severity' => 'berat',
-                'points' => 50,
-                'group_type' => 'kehadiran',
-                'is_recurring' => true,
-                'recurring_increment' => 10,
-                'max_recurring_points' => 200,
-                'description' => 'Tidak hadir tanpa keterangan resmi.',
-                'status' => 'active',
-            ]
-        );
-        ViolationCategory::firstOrCreate(
-            ['code' => 'D.02'],
-            [
-                'name' => 'Merusak barang sekolah',
-                'severity' => 'berat',
-                'points' => 200,
-                'group_type' => 'perilaku',
-                'is_zero_tolerance' => true,
-                'is_recurring' => true,
-                'recurring_increment' => 50,
-                'max_recurring_points' => 500,
-                'description' => 'Merusak fasilitas atau barang milik sekolah.',
-                'status' => 'active',
-            ]
-        );
-        ViolationCategory::firstOrCreate(
-            ['code' => 'E.05'],
-            [
-                'name' => 'Pemakaian telepon genggam dan internet di kelas',
-                'severity' => 'ringan',
-                'points' => 5,
-                'group_type' => 'sikap',
-                'is_recurring' => true,
-                'recurring_increment' => 2,
-                'max_recurring_points' => 25,
-                'description' => 'Menggunakan telepon genggam dan akses internet di dalam kelas tanpa izin.',
-                'status' => 'active',
-            ]
-        );
+        // Kategori pelanggaran & penghargaan TIDAK di-seed di sini.
+        // Sumber tunggal: PancawaluyaSeeder (P1-P5 pelanggaran, R1-R10 penghargaan)
+        // sesuai Pedoman Pendidikan Karakter Pancawaluya. Kode warisan a,b,c,d,e
+        // tidak dipakai lagi.
 
-        ViolationCategory::firstOrCreate(
-            ['code' => 'TEST_1500'],
-            ['name' => 'Pelanggaran Test 1500', 'severity' => 'berat', 'points' => 1500, 'group_type' => 'sikap', 'status' => 'active']
-        );
-        ViolationCategory::firstOrCreate(
-            ['code' => 'TEST_500'],
-            ['name' => 'Pelanggaran Test 500', 'severity' => 'sedang', 'points' => 500, 'group_type' => 'sikap', 'status' => 'active']
-        );
+        // Pedoman Pancawaluya (TABEL 1 penghargaan R1-R10 + TABEL 2 pelanggaran P1-P5).
+        $this->call(PancawaluyaSeeder::class);
     }
 }

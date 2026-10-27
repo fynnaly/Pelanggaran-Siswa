@@ -25,6 +25,7 @@
             <table>
                 <thead><tr>
                     <th style="width:48px"><x-sortable-header column="id" label="No" :sort="$sort" :order="$order" route="achievement-categories.index" :params="request()->except('sort','order','page')" /></th>
+                    <th><x-sortable-header column="parent" label="Kategori" :sort="$sort" :order="$order" route="achievement-categories.index" :params="request()->except('sort','order','page')" /></th>
                     <th><x-sortable-header column="code" label="Kode" :sort="$sort" :order="$order" route="achievement-categories.index" :params="request()->except('sort','order','page')" /></th>
                     <th><x-sortable-header column="name" label="Nama" :sort="$sort" :order="$order" route="achievement-categories.index" :params="request()->except('sort','order','page')" /></th>
                     <th><x-sortable-header column="points" label="Poin" :sort="$sort" :order="$order" route="achievement-categories.index" :params="request()->except('sort','order','page')" /></th>
@@ -35,6 +36,7 @@
                     @forelse($categories as $cat)
                         <tr>
                             <td class="text-sm text-muted">{{ $cat->id }}</td>
+                            <td class="text-sm text-muted">@if($cat->parent){{ $cat->parent->name }}@elseif($cat->children_count > 0)<span class="badge badge-info">Induk</span>@else<span class="text-muted">-</span>@endif</td>
                             <td class="mono">{{ $cat->code }}</td>
                             <td><strong>{{ $cat->name }}</strong></td>
                             <td class="mono">+{{ $cat->points }}</td>
@@ -45,12 +47,12 @@
                             </div></td>
                         </tr>
                     @empty
-                        <tr><td colspan="5" style="padding:40px;text-align:center;color:var(--on-surface-muted)"><i data-lucide="inbox" class="icon-lg" style="display:block;margin:0 auto var(--sp-sm)"></i>Belum ada kategori prestasi.</td></tr>
+                        <tr><td colspan="7" style="padding:40px;text-align:center;color:var(--on-surface-muted)"><i data-lucide="inbox" class="icon-lg" style="display:block;margin:0 auto var(--sp-sm)"></i>Belum ada kategori prestasi.</td></tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--sp-sm);margin-top:var(--sp-lg)">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-wrap:wrap;margin-top:var(--sp-lg)">
             <span class="text-sm text-muted">Menampilkan {{ $categories->firstItem() ?? 0 }}-{{ $categories->lastItem() ?? 0 }} dari {{ $categories->total() }}</span>
             <div class="pagination" style="margin-top:0">{{ $categories->links() }}</div>
         </div>

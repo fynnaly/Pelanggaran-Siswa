@@ -8,6 +8,18 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            $cols = array_values(array_filter(['class_id', 'academic_year_id'], fn ($col) => Schema::hasColumn('students', $col)));
+            if (! empty($cols)) {
+                Schema::disableForeignKeyConstraints();
+                Schema::table('students', function ($table) use ($cols) {
+                    $table->dropColumn($cols);
+                });
+                Schema::enableForeignKeyConstraints();
+            }
+            return;
+        }
+
         $foreignKeys = collect(DB::select(
             'SELECT CONSTRAINT_NAME name FROM information_schema.TABLE_CONSTRAINTS '
             . 'WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND CONSTRAINT_TYPE = ?',

@@ -15,14 +15,18 @@
             @if($errors->any())<div class="alert alert-error" style="margin-bottom:var(--sp-lg)"><i data-lucide="alert-circle" class="icon-sm"></i> {{ $errors->first() }}</div>@endif
             <form action="{{ route('students.update', $student) }}" method="POST">
                 @csrf @method('PUT')
-                <div class="field"><label class="field-label">NISN <span class="text-danger">*</span></label><input type="text" name="nisn" value="{{ old('nisn', $student->nisn) }}" class="field-input" required maxlength="20"></div>
-                <div class="field"><label class="field-label">NIS <span class="text-danger">*</span></label><input type="text" name="nis" value="{{ old('nis', $student->nis) }}" class="field-input" required maxlength="20"></div>
+                <div class="field"><label class="field-label">NISN <span class="text-danger">*</span></label><input type="text" name="nisn" value="{{ old('nisn', $student->nisn) }}" class="field-input" required maxlength="10" placeholder="10 digit angka"></div>
+                <div class="field"><label class="field-label">NIS <span class="text-danger">*</span></label><input type="text" name="nis" value="{{ old('nis', $student->nis) }}" class="field-input" required maxlength="12" placeholder="12 digit: YYYYMMDD + urutan 4"></div>
                 <div class="field"><label class="field-label">Nama Lengkap <span class="text-danger">*</span></label><input type="text" name="full_name" value="{{ old('full_name', $student->full_name) }}" class="field-input" required maxlength="255"></div>
                 <div class="field"><label class="field-label">Jenis Kelamin <span class="text-danger">*</span></label>
-                    <select name="gender" class="field-input" required>
-                        <option value="L" {{ old('gender', $student->gender)==='L'?'selected':'' }}>Laki-laki</option>
-                        <option value="P" {{ old('gender', $student->gender)==='P'?'selected':'' }}>Perempuan</option>
-                    </select>
+                    <div style="display:flex;gap:var(--sp-lg)">
+                        <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer">
+                            <input type="radio" name="gender" value="L" required {{ old('gender', $student->gender)==='L'?'checked':'' }} style="width:16px;height:16px;accent-color:var(--primary)"> Laki-laki
+                        </label>
+                        <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer">
+                            <input type="radio" name="gender" value="P" required {{ old('gender', $student->gender)==='P'?'checked':'' }} style="width:16px;height:16px;accent-color:var(--primary)"> Perempuan
+                        </label>
+                    </div>
                 </div>
                 <div class="field"><label class="field-label">Tanggal Lahir</label><input type="date" name="birth_date" value="{{ old('birth_date', $student->birth_date?->format('Y-m-d')) }}" class="field-input"></div>
                 <div class="field"><label class="field-label">Tahun Ajaran <span class="text-danger">*</span></label>

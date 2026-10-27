@@ -15,7 +15,11 @@ return new class extends Migration
             $table->id();
             // Akun login
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('class_id')->constrained()->cascadeOnDelete();
+            if (DB::getDriverName() === 'sqlite') {
+                $table->unsignedBigInteger('class_id')->nullable();
+            } else {
+                $table->foreignId('class_id')->constrained()->cascadeOnDelete();
+            }
             $table->enum('gender', ['L', 'P'])->default('L');
             $table->date('birth_date')->nullable();
             $table->string('phone', 20)->nullable();

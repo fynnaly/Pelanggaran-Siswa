@@ -15,9 +15,9 @@ class DashboardController extends Controller
     {
         $totalStudentsActive = Student::where('status', 'active')->count();
 
-        $totalCasesFound = DisciplineCase::where('status', 'found')->count();
-        $totalCasesValidated = DisciplineCase::where('status', 'validated')->count();
-        $totalCasesDone = DisciplineCase::where('status', 'done')->count();
+        $totalCasesFound = DisciplineCase::whereIn('status', ['found', 'clarifying', 'classifying'])->count();
+        $totalCasesValidated = DisciplineCase::whereIn('status', ['handling', 'monitoring'])->count();
+        $totalCasesDone = DisciplineCase::where('status', 'closed')->count();
         $totalCases = DisciplineCase::count();
         $totalCasesDismissed = DisciplineCase::where('status', 'dismissed')->count();
 
@@ -87,7 +87,7 @@ class DashboardController extends Controller
             ->selectRaw('DATE(created_at) AS d, COUNT(*) AS c')
             ->groupBy(DB::raw('DATE(created_at)'))
             ->pluck('c', 'd');
-        $dailyDone = DisciplineCase::where('status', 'done')
+        $dailyDone = DisciplineCase::where('status', 'closed')
             ->where('updated_at', '>=', now()->subDays(29)->startOfDay())
             ->selectRaw('DATE(updated_at) AS d, COUNT(*) AS c')
             ->groupBy(DB::raw('DATE(updated_at)'))

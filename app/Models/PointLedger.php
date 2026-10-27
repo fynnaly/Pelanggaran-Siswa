@@ -82,13 +82,16 @@ class PointLedger extends Model
         return $this->direction === 'credit' ? 'Kredit (+)' : 'Debit (-)';
     }
 
-    /** Ambil saldo terakhir siswa di tahun ajaran tertentu (chronological latest by id). */
-    public static function getLastBalance(int $studentId, int $academicYearId): int
+    /** Ambil saldo terakhir siswa — jika tahun ajaran diisi, scope per tahun; jika null, global (carry forward). */
+    public static function getLastBalance(int $studentId, ?int $academicYearId = null): int
     {
-        return self::where('student_id', $studentId)
-            ->where('academic_year_id', $academicYearId)
-            ->latest('id')
-            ->value('balance_after') ?? self::OPENING_AMOUNT;
+        $q = self::where('student_id', $studentId);
+
+        if ($academicYearId !== null) {
+            $q->where('academic_year_id', $academicYearId);
+        }
+
+        return $q->latest('id')->value('balance_after') ?? self::OPENING_AMOUNT;
     }
 
     /** Cek apakah siswa sudah punya OPENING_BALANCE di tahun ini. */

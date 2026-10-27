@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('student_id')->constrained()->cascadeOnDelete();
             $table->foreignId('violation_category_id')->constrained()->restrictOnDelete();
             $table->foreignId('report_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->enum('status', ['found', 'validated', 'dismissed', 'done'])->default('found');
+            $table->string('status', 20)->default('found');
             $table->string('location', 100)->nullable();
             $table->text('description');
             $table->foreignId('validated_by')->nullable()->constrained('users')->nullOnDelete();

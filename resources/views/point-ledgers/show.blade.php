@@ -53,9 +53,9 @@
                             <td class="mono text-muted">{{ $i + 1 }}</td>
                             <td class="text-sm text-muted" style="white-space:nowrap">{{ $entry->created_at?->format('d/m/Y H:i') }}</td>
                             <td>
-                                @if($entry->discipline_case_id)
-                                    <a href="{{ route('kasus-pelanggaran.show', $entry->discipline_case_id) }}" style="font-weight:600;display:inline-flex;align-items:center;gap:4px">
-                                        <i data-lucide="file-text" style="width:14px;height:14px"></i> {{ $entry->case?->case_number ?? '#' . $entry->discipline_case_id }}
+                                @if($entry->source_type === \App\Models\DisciplineCase::class && $entry->source_id)
+                                    <a href="{{ route('kasus-pelanggaran.show', $entry->source_id) }}" style="font-weight:600;display:inline-flex;align-items:center;gap:4px">
+                                        <i data-lucide="file-text" style="width:14px;height:14px"></i> {{ $entry->source?->case_number ?? '#' . $entry->source_id }}
                                     </a>
                                 @else
                                     <span class="text-muted">-</span>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Student;
 use App\Models\User;
+use App\Support\Xlsx;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -12,8 +13,19 @@ use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
+    /** Alias umum yang sering dipakai pengguna — dinormalisasi ke role resmi. */
+    private const ROLE_ALIASES = [
+        'murid' => 'siswa',
+        'student' => 'siswa',
+        'teacher' => 'guru',
+        'wali kelas' => 'wali_kelas',
+        'walikelas' => 'wali_kelas',
+        'wali-kelas' => 'wali_kelas',
+    ];
+
     private const STAFF_ROLES = [
         'guru',
+        'wali_kelas',
         'bk',
         'kesiswaan',
         'kepala_sekolah',
@@ -215,9 +227,18 @@ class UserController extends Controller
     // CSV Native — import/export pengguna
     // ────────────────────────────────────────────────
 
-    /** Download template CSV kosong untuk import pengguna */
+    /**
+     * Download template XLSX untuk import pengguna (file ber-style, siap Excel).
+     * Fallback CSV polos bila file belum ada (jalankan Xlsx::write dulu).
+     */
     public function downloadTemplate()
     {
+        $path = public_path('template-pengguna.xlsx');
+
+        if (is_file($path)) {
+            return response()->download($path, 'template-pengguna.xlsx');
+        }
+
         $headers = ['Nama', 'Email', 'Password', 'Role'];
         $example = ['Budi Santoso', 'budi@guru.com', 'rahasia123', 'guru'];
 
@@ -255,27 +276,46 @@ class UserController extends Controller
         }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
-    /** Import pengguna dari CSV. Wajib: Nama, Email, Password, Role. */
+    /**
+     * Import pengguna dari CSV atau XLSX. Wajib: Nama, Email, Password, Role.
+     *
+     * Validasi memakai ekstensi, bukan `mimes:csv,txt`: Excel menyimpan .csv
+     * dengan MIME application/vnd.ms-excel sehingga rule mime selalu menolak
+     * file yang sebenarnya valid. Ekstensi + pembacaan Xlsx/CSV sendiri lebih
+     * dapat dipercaya untuk file hasil ekspor spreadsheet.
+     */
     public function import(Request $request)
     {
         $this->authorizeManagement();
 
         $request->validate([
-            'file' => 'required|file|mimes:csv,txt|max:2048',
+            'file' => 'required|file|max:4096',
         ]);
 
-        $path = $request->file('file')->getRealPath();
-        $handle = fopen($path, 'r');
-        if (! $handle) {
-            return back()->with('error', 'Gagal membaca file CSV.');
+        $file = $request->file('file');
+        $ext = strtolower($file->getClientOriginalExtension());
+        $allowed = ['csv', 'txt', 'xlsx'];
+
+        if (! in_array($ext, $allowed, true)) {
+            return back()->with('error', 'Format tidak didukung: .' . ($ext ?: '(tanpa ekstensi)')
+                . ' — gunakan berkas .csv, .txt, atau .xlsx.');
         }
 
-        $first = fgets($handle);
-        $first = preg_replace('/^ï»¿/', '', $first);
-        $header = str_getcsv(trim($first));
-        $header = array_map(fn ($h) => trim(strtolower($h)), $header);
+        try {
+            $rows = $ext === 'xlsx'
+                ? Xlsx::read($file->getRealPath())
+                : $this->readDelimitedRows(file_get_contents($file->getRealPath()));
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Gagal membaca berkas: ' . $e->getMessage());
+        }
 
-        $idx = fn ($name) => array_search(strtolower($name), $header, true);
+        if ($rows === []) {
+            return back()->with('error', 'Berkas kosong — tidak ada baris untuk diimpor.');
+        }
+
+        $header = array_shift($rows);
+        $header = array_map(fn ($h) => mb_strtolower(trim((string) $h)), $header);
+        $idx = fn ($name) => array_search(mb_strtolower($name), $header, true);
 
         $iNama  = $idx('nama');
         $iEmail = $idx('email');
@@ -283,36 +323,51 @@ class UserController extends Controller
         $iRole  = $idx('role');
 
         if ($iNama === false || $iEmail === false || $iPass === false || $iRole === false) {
-            fclose($handle);
-            return back()->with('error', 'Header CSV tidak valid. Wajib: Nama, Email, Password, Role.');
+            $seen = array_values(array_filter($header, fn ($h) => $h !== ''));
+            $missing = array_filter(['Nama', 'Email', 'Password', 'Role'],
+                fn ($want) => array_search(mb_strtolower($want), $header, true) === false);
+
+            return back()->with('error',
+                'Header tidak valid. Ditemukan: [' . ($seen ? implode(', ', $seen) : 'tidak ada kolom terbaca') . ']'
+                . '. Kolom wajib yang belum ada: [' . implode(', ', $missing) . '].'
+                . ' Pemisah kolom harus koma (,) atau titik koma (;).');
         }
 
         $validRoles = Role::pluck('name')->all();
         $imported = 0;
         $skipped = 0;
+        $issues = [];
 
         DB::beginTransaction();
         try {
-            $rowNum = 1;
-            while (($row = fgetcsv($handle)) !== false) {
-                $rowNum++;
+            foreach ($rows as $offset => $row) {
+                $rowNum = $offset + 2;
                 if (count(array_filter($row, fn ($v) => trim((string) $v) !== '')) === 0) continue;
 
-                $name = trim($row[$iNama] ?? '');
-                $email = trim($row[$iEmail] ?? '');
-                $password = trim($row[$iPass] ?? '');
-                $role = trim(strtolower($row[$iRole] ?? ''));
+                $name = trim((string) ($row[$iNama] ?? ''));
+                $email = trim((string) ($row[$iEmail] ?? ''));
+                $password = trim((string) ($row[$iPass] ?? ''));
+                $role = mb_strtolower(trim((string) ($row[$iRole] ?? '')));
+                $role = self::ROLE_ALIASES[$role] ?? $role;
 
                 if ($name === '' || $email === '' || $password === '') {
                     $skipped++;
+                    $issues[] = "Baris {$rowNum}: Nama/Email/Password wajib terisi.";
+                    continue;
+                }
+                if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $skipped++;
+                    $issues[] = "Baris {$rowNum}: email '{$email}' tidak valid.";
                     continue;
                 }
                 if (! in_array($role, $validRoles, true)) {
                     $skipped++;
+                    $issues[] = "Baris {$rowNum}: role '{$role}' tidak dikenal. Role tersedia: " . implode(', ', $validRoles) . '.';
                     continue;
                 }
                 if (User::where('email', $email)->exists()) {
                     $skipped++;
+                    $issues[] = "Baris {$rowNum}: email '{$email}' sudah terdaftar.";
                     continue;
                 }
 
@@ -327,13 +382,54 @@ class UserController extends Controller
             DB::commit();
         } catch (\Throwable $e) {
             DB::rollBack();
-            fclose($handle);
             return back()->with('error', 'Import gagal: ' . $e->getMessage());
         }
 
-        fclose($handle);
         $msg = "Import selesai — {$imported} pengguna ditambahkan" . ($skipped ? ", {$skipped} dilewati" : "") . ".";
-        return back()->with('success', $msg);
+        if ($issues !== []) {
+            $msg .= "\n" . implode("\n", array_slice($issues, 0, 10));
+            if (count($issues) > 10) {
+                $msg .= "\n... dan " . (count($issues) - 10) . " baris bermasalah lainnya.";
+            }
+        }
+
+        return back()->with($imported > 0 ? 'success' : 'error', $msg);
+    }
+
+    /**
+     * Baca berkas CSV/TSV mentah menjadi array baris.
+     *
+     * Menangani dua kerusakan khas ekspor Excel: BOM (UTF-8 maupun UTF-16)
+     * dan pemisah titik koma (locale Windows yang list separator-nya koma-argumen).
+     */
+    private function readDelimitedRows(string $content): array
+    {
+        if ($content === '') {
+            return [];
+        }
+
+        if (str_starts_with($content, "\xFF\xFE") || str_starts_with($content, "\xFE\xFF")) {
+            $content = mb_convert_encoding($content, 'UTF-8', 'UTF-16');
+        }
+        $content = preg_replace('/^\xEF\xBB\xBF/', '', $content) ?? $content;
+        if (! mb_check_encoding($content, 'UTF-8')) {
+            $content = mb_convert_encoding($content, 'UTF-8', 'Windows-1252');
+        }
+
+        $firstLine = preg_split('/\r\n|\n|\r/', $content)[0] ?? '';
+        $delimiter = match (true) {
+            substr_count($firstLine, "\t") > substr_count($firstLine, ',') => "\t",
+            substr_count($firstLine, ';') > substr_count($firstLine, ',') => ';',
+            default => ',',
+        };
+
+        $rows = [];
+        foreach (preg_split('/\r\n|\n|\r/', $content) as $line) {
+            if (trim($line) === '') continue;
+            $rows[] = str_getcsv($line, $delimiter, '"', '');
+        }
+
+        return $rows;
     }
 
     /** Restrict account mutations to management roles. */

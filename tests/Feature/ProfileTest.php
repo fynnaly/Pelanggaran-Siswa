@@ -56,6 +56,7 @@ test('user can delete their account', function () {
     $response = $this
         ->actingAs($user)
         ->delete('/profile', [
+            'confirm_name' => $user->name,
             'password' => 'password',
         ]);
 
@@ -64,7 +65,8 @@ test('user can delete their account', function () {
         ->assertRedirect('/');
 
     $this->assertGuest();
-    $this->assertNull($user->fresh());
+    $this->assertTrue($user->fresh()->trashed());
+    $this->assertNull(User::find($user->id));
 });
 
 test('correct password must be provided to delete account', function () {
@@ -74,11 +76,30 @@ test('correct password must be provided to delete account', function () {
         ->actingAs($user)
         ->from('/profile')
         ->delete('/profile', [
+            'confirm_name' => $user->name,
             'password' => 'wrong-password',
         ]);
 
     $response
         ->assertSessionHasErrorsIn('userDeletion', 'password')
+        ->assertRedirect('/profile');
+
+    $this->assertNotNull($user->fresh());
+});
+
+test('correct confirm name must be provided to delete account', function () {
+    $user = User::factory()->create();
+
+    $response = $this
+        ->actingAs($user)
+        ->from('/profile')
+        ->delete('/profile', [
+            'confirm_name' => 'Wrong Name',
+            'password' => 'password',
+        ]);
+
+    $response
+        ->assertSessionHasErrorsIn('userDeletion', 'confirm_name')
         ->assertRedirect('/profile');
 
     $this->assertNotNull($user->fresh());
