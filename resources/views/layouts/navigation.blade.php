@@ -15,7 +15,7 @@
             'icon' => 'shield-alert',
             'items' => [
                 ['route' => 'violation-categories.index', 'label' => 'Daftar Pelanggaran', 'pattern' => 'violation-categories.*', 'icon' => ''],
-                ['route' => 'kasus-pelanggaran.index', 'label' => 'Kasus', 'pattern' => 'kasus-pelanggaran.*', 'icon' => 'file-text'],
+                ['route' => 'kasus-pelanggaran.index', 'label' => 'Kasus', 'pattern' => 'kasus-pelanggaran.*', 'icon' => ''],
             ],
         ],
         [

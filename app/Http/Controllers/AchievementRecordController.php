@@ -6,8 +6,9 @@ use App\Models\AchievementCategory;
 use App\Models\AchievementRecord;
 use App\Models\AcademicYear;
 use App\Models\DisciplineCase;
-use App\Models\Student;
 use App\Models\PointLedger;
+use App\Models\SchoolClass;
+use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -51,6 +52,10 @@ class AchievementRecordController extends Controller
             ->whereNotNull('parent_id')
             ->get();
 
+        $classes = SchoolClass::where('academic_year_id', AcademicYear::where('is_active', true)->value('id'))
+            ->orderBy('name')
+            ->get();
+
         $selectedStudent = null;
         if (old('student_id')) {
             $record = Student::with('currentEnrollment.schoolClass')
@@ -66,7 +71,7 @@ class AchievementRecordController extends Controller
             }
         }
 
-        return view('achievement-records.create', compact('categories', 'selectedStudent'));
+        return view('achievement-records.create', compact('categories', 'selectedStudent', 'classes'));
     }
 
     /**
@@ -112,7 +117,9 @@ class AchievementRecordController extends Controller
         // kategori prestasi (achievement_categories.points) — kolom lama tetap ada
         // untuk data historis, tapi form tidak lagi menanyakannya.
         $validated = $request->validate([
-            'student_id' => 'required|exists:students,id',
+            'student_id' => 'nullable|exists:students,id',
+            'student_ids' => 'nullable|array',
+            'student_ids.*' => 'exists:students,id',
             'achievement_category_id' => 'required|exists:achievement_categories,id',
             'discipline_case_id' => 'nullable|exists:discipline_cases,id',
             'event_name' => 'required|string|max:150',
@@ -121,56 +128,76 @@ class AchievementRecordController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $category = AchievementCategory::findOrFail($validated['achievement_category_id']);
+        $studentIds = collect($validated['student_ids'] ?? [])
+            ->push($validated['student_id'] ?? null)
+            ->filter()
+            ->unique()
+            ->values();
 
-        // Snapshot konteks saat kejadian: ambil dari enrollment siswa pada tahun berjalan.
-        $activeYear = AcademicYear::where('is_active', true)->first();
-        $student = Student::with(['enrollments.schoolClass'])->findOrFail($validated['student_id']);
-        $enrollment = $student->enrollments
-            ->firstWhere('academic_year_id', $activeYear?->id)
-            ?? $student->enrollments->firstWhere('status', 'active')
-            ?? $student->enrollments->sortByDesc('id')->first();
-
-        $academicYearId = $enrollment?->academic_year_id ?? $activeYear?->id;
-
-        // Kaitan ke kasus wajib bila siswa punya kasus terbuka dan form memilih
-        // kasus; kalau kasus dipilih tapi tidak cocok dengan siswa → tolak (cegah
-        // prestasi orang lain menutup kasus siswa lain).
-        $caseId = $validated['discipline_case_id'] ?? null;
-        if ($caseId !== null) {
-            $ownsCase = DisciplineCase::whereKey($caseId)
-                ->where('student_id', $student->id)
-                ->whereNotIn('status', ['closed', 'dismissed'])
-                ->exists();
-            abort_unless($ownsCase, 422, 'Kasus pelanggaran tidak valid untuk siswa ini.');
+        if ($studentIds->isEmpty()) {
+            return back()->withInput()->with('error', 'Pilih minimal satu siswa penerima prestasi.');
         }
 
-        $record = DB::transaction(function () use ($validated, $academicYearId, $enrollment, $category) {
-            return AchievementRecord::create([
-                'student_id' => $validated['student_id'],
-                'enrollment_id' => $enrollment?->id,
-                'class_id' => $enrollment?->class_id,
-                'achievement_category_id' => $validated['achievement_category_id'],
-                'discipline_case_id' => $validated['discipline_case_id'] ?? null,
-                'academic_year_id' => $academicYearId,
-                'recorded_by' => auth()->id(),
-                'status' => 'pending',
-                'event_name' => $validated['event_name'],
-                'event_date' => $validated['event_date'] ?? null,
-                'achievement_level' => $validated['achievement_level'] ?? null,
-                // Poin dari kategori — bukan input manual (satu sumber kebenaran).
-                'points_awarded' => $category->points,
-                'description' => $validated['description'] ?? null,
-            ]);
+        $category = AchievementCategory::findOrFail($validated['achievement_category_id']);
+        $activeYear = AcademicYear::where('is_active', true)->first();
+        $caseId = $validated['discipline_case_id'] ?? null;
+        $createdRecords = [];
+
+        DB::transaction(function () use ($studentIds, $validated, $category, $activeYear, $caseId, &$createdRecords) {
+            foreach ($studentIds as $sid) {
+                $student = Student::with(['enrollments.schoolClass'])->findOrFail($sid);
+                $enrollment = $student->enrollments
+                    ->firstWhere('academic_year_id', $activeYear?->id)
+                    ?? $student->enrollments->firstWhere('status', 'active')
+                    ?? $student->enrollments->sortByDesc('id')->first();
+
+                $academicYearId = $enrollment?->academic_year_id ?? $activeYear?->id;
+
+                // Tautkan kasus hanya jika input kasus cocok dengan siswa ini
+                $linkedCaseId = null;
+                if ($caseId !== null) {
+                    $ownsCase = DisciplineCase::whereKey($caseId)
+                        ->where('student_id', $student->id)
+                        ->whereNotIn('status', ['closed', 'dismissed'])
+                        ->exists();
+                    if ($ownsCase) {
+                        $linkedCaseId = $caseId;
+                    }
+                }
+
+                $createdRecords[] = AchievementRecord::create([
+                    'student_id' => $sid,
+                    'enrollment_id' => $enrollment?->id,
+                    'class_id' => $enrollment?->class_id,
+                    'achievement_category_id' => $validated['achievement_category_id'],
+                    'discipline_case_id' => $linkedCaseId,
+                    'academic_year_id' => $academicYearId,
+                    'recorded_by' => auth()->id(),
+                    'status' => 'pending',
+                    'event_name' => $validated['event_name'],
+                    'event_date' => $validated['event_date'] ?? null,
+                    'achievement_level' => $validated['achievement_level'] ?? null,
+                    'points_awarded' => $category->points,
+                    'description' => $validated['description'] ?? null,
+                ]);
+            }
         });
 
-        $pesan = $record->isRedemption()
-            ? 'Rekam prestasi dicatat sebagai penebusan kasus ' . $record->disciplineCase?->case_number . ' (status: pending).'
-            : 'Rekam prestasi berhasil dicatat (status: pending).';
+        $count = count($createdRecords);
+        if ($count === 1) {
+            $record = $createdRecords[0];
+            $pesan = $record->isRedemption()
+                ? 'Rekam prestasi dicatat sebagai penebusan kasus ' . $record->disciplineCase?->case_number . ' (status: pending).'
+                : 'Rekam prestasi berhasil dicatat (status: pending).';
+
+            return redirect()
+                ->route('achievement-records.show', $record)
+                ->with('success', $pesan);
+        }
 
         return redirect()
-            ->route('achievement-records.show', $record)
-            ->with('success', $pesan);
+            ->route('achievement-records.index')
+            ->with('success', "{$count} catatan prestasi berhasil direkam secara kolektif (status: pending).");
     }
 
     public function show(AchievementRecord $achievementRecord)

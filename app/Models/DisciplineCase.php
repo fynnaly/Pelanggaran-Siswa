@@ -116,27 +116,27 @@ class DisciplineCase extends Model
 
     /**
      * Nomor kejadian kasus ini untuk kategori + tahun ajaran yang sama (1 = pertama).
-     * Hanya kasus non-dismissed yang dihitung — kasus ditolak tidak memicu eskalasi.
+     * Hanya kasus yang sudah di-debit (handling, monitoring, closed) sebelum kasus ini yang dihitung.
+     * Kasus dengan status 'found' atau 'dismissed' tidak menambah tier eskalasi.
      */
     public function getOccurrenceNumber(): int
     {
-        return self::where('student_id', $this->student_id)
+        $priorCount = self::where('student_id', $this->student_id)
             ->where('violation_category_id', $this->violation_category_id)
             ->where('academic_year_id', $this->academic_year_id)
-            ->where('id', '<=', $this->id)
-            ->where('status', '!=', 'dismissed')
+            ->where('id', '<', $this->id ?? PHP_INT_MAX)
+            ->whereIn('status', ['handling', 'monitoring', 'closed'])
             ->count();
+
+        return $priorCount + 1;
     }
 
     /**
      * Poin efektif dengan eskalasi pelanggaran berulang (3 batas toleransi).
      *
      * Sumber kebenaran rumus ada di ViolationCategory::tierPoints() supaya UI dan
-     * perhitungan ledger memakai tabel batas yang sama:
-     *   ke-1 = points, ke-2 = points + increment, ke-3 = max_recurring_points.
-     *   Pelanggaran ke-4 dst. tetap memakai poin batas akhir.
-     *
-     * Contoh P1.1 (5/10/15): ke-1 = 5, ke-2 = 10, ke-3 = 15, ke-4 = 15.
+     * perhitungan ledger memakai tabel batas yang sama.
+     * Zero tolerance flat pada base points (64) dan tidak bertambah.
      * Override manual (points_override) selalu menang — eskalasi tidak dipakai.
      */
     public function getEffectivePoints(): int
@@ -149,6 +149,10 @@ class DisciplineCase extends Model
 
         if (! $category) {
             return 0;
+        }
+
+        if ($category->is_zero_tolerance) {
+            return (int) $category->points;
         }
 
         return $category->pointsForOccurrence($this->getOccurrenceNumber());

@@ -1,6 +1,9 @@
 <x-guest-layout>
     @if($errors->any())
-        <div class="alert-error">{{ $errors->first() }}</div>
+        <div class="alert-error" role="alert">
+            <i data-lucide="alert-circle" class="alert-icon"></i>
+            <span>{{ $errors->first() }}</span>
+        </div>
     @endif
 
     <form method="POST" action="{{ route('login') }}">
@@ -13,22 +16,38 @@
         </div>
 
         <div class="field">
-            <label class="field-label" for="password">Kata Sandi</label>
-            <input id="password" class="field-input" type="password" name="password" required
-                   autocomplete="current-password" placeholder="Masukkan kata sandi">
+            <label class="field-label" for="password">Kata sandi</label>
+            <div class="password-box">
+                <input id="password" class="field-input" type="password" name="password" required
+                       autocomplete="current-password" placeholder="Masukkan kata sandi">
+                <button type="button" class="toggle-pwd-btn" onclick="togglePassword()" aria-label="Tampilkan kata sandi" title="Tampilkan kata sandi" tabindex="-1">
+                    <i data-lucide="eye" id="eyeIcon" class="icon-sm"></i>
+                </button>
+            </div>
         </div>
 
-        <label class="check-row" for="remember_me">
-            <input id="remember_me" type="checkbox" name="remember" value="1">
-            Ingat saya
-        </label>
+        <div class="options-row">
+            <label class="remember-label" for="remember_me">
+                <input id="remember_me" type="checkbox" name="remember" value="1">
+                <span>Ingat saya</span>
+            </label>
+        </div>
 
-        <button type="submit" class="btn">Masuk</button>
-
-        @if (Route::has('password.request'))
-            <div class="help-link">
-                <a href="{{ route('password.request') }}">Lupa kata sandi?</a>
-            </div>
-        @endif
+        <button type="submit" class="btn-primary">Masuk</button>
     </form>
+
+    <script>
+        function togglePassword() {
+            const input = document.getElementById('password');
+            const icon = document.getElementById('eyeIcon');
+            const btn = icon.parentElement;
+            if (!input || !icon) return;
+            const isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+            icon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+            btn.setAttribute('aria-label', isPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi');
+            btn.setAttribute('title', isPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi');
+            if (window.lucide) lucide.createIcons();
+        }
+    </script>
 </x-guest-layout>

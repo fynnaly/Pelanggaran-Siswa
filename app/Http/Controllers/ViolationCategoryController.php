@@ -62,7 +62,7 @@ class ViolationCategoryController extends Controller
             'parent_id' => $existing
                 ? ['nullable', 'exists:violation_categories,id', Rule::notIn([$existing->id])]
                 : ['nullable', 'exists:violation_categories,id'],
-            'severity' => [$existing ? 'sometimes' : 'required', 'required', 'in:ringan,sedang,berat'],
+            'severity' => [$existing ? 'sometimes' : 'required', 'required', 'in:ringan,sedang,berat,sangat_berat'],
             'points' => ['nullable', 'integer', 'min:0', 'max:1000'],
             // 0 atau kosong = tidak ada toleransi untuk batas itu.
             // tierColumns() mengabaikan 0/non-naik, jadi ke-3=0 → berhenti di ke-2.

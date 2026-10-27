@@ -396,7 +396,57 @@
         });
     </script>
 
+    <!-- Probe Deteksi Force Dark Mode Browser -->
+    <div id="fd-probe" style="position:fixed;left:-9999px;top:-9999px;width:10px;height:10px;background-color:#ffffff;color:#000000;color-scheme:only light;pointer-events:none;z-index:-1" aria-hidden="true"></div>
+
+    <!-- Modal Peringatan Force Dark Mode Browser -->
+    <div id="fd-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;padding:var(--sp-md)">
+        <div style="background:var(--neutral);border:1px solid var(--border);border-radius:var(--r-lg);max-width:440px;width:100%;padding:var(--sp-lg);box-shadow:var(--sh-md)">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:var(--sp-sm)">
+                <div style="width:36px;height:36px;border-radius:var(--r-full);background:var(--ws);color:var(--wt);display:flex;align-items:center;justify-content:center">
+                    <i data-lucide="moon" class="icon-sm"></i>
+                </div>
+                <div>
+                    <h3 style="font-size:1rem;font-weight:600;margin:0">Fitur Force Dark Browser Aktif</h3>
+                    <span class="text-xs text-muted">Deteksi tema peramban</span>
+                </div>
+            </div>
+            <p class="text-sm text-muted" style="margin-bottom:var(--sp-lg);line-height:1.5">
+                Browser Anda mengaktifkan fitur <strong>Force Dark Mode</strong> bawaan. Tampilan tema terang mungkin tetap tampak gelap atau mengalami pembalikan warna oleh browser.
+            </p>
+            <div style="display:flex;justify-content:flex-end;gap:var(--sp-sm)">
+                <button type="button" class="btn btn-primary btn-sm" onclick="closeForceDarkModal(true)">Mengerti</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        function checkForceDarkNotice() {
+            if (sessionStorage.getItem('fd_alert_dismissed')) return;
+            const probe = document.getElementById('fd-probe');
+            if (!probe) return;
+            const bg = window.getComputedStyle(probe).backgroundColor;
+            const match = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+            if (match) {
+                const r = parseInt(match[1], 10);
+                const g = parseInt(match[2], 10);
+                const b = parseInt(match[3], 10);
+                if (r < 180 && g < 180 && b < 180) {
+                    const m = document.getElementById('fd-modal');
+                    if (m) {
+                        m.style.display = 'flex';
+                        if (window.lucide) lucide.createIcons();
+                    }
+                }
+            }
+        }
+
+        function closeForceDarkModal(dismissSession) {
+            const m = document.getElementById('fd-modal');
+            if (m) m.style.display = 'none';
+            if (dismissSession) sessionStorage.setItem('fd_alert_dismissed', '1');
+        }
+
         function toggleTheme() {
             const h = document.documentElement;
             const d = h.classList.toggle('dark');
@@ -406,6 +456,9 @@
                 el.setAttribute('data-lucide', d ? 'moon' : 'sun');
             });
             lucide.createIcons();
+            if (!d) {
+                setTimeout(checkForceDarkNotice, 80);
+            }
         }
     </script>
 </body>

@@ -28,7 +28,9 @@
                         <option value="ringan" {{ old('severity', $violationCategory->severity)==='ringan'?'selected':'' }}>Ringan</option>
                         <option value="sedang" {{ old('severity', $violationCategory->severity)==='sedang'?'selected':'' }}>Sedang</option>
                         <option value="berat" {{ old('severity', $violationCategory->severity)==='berat'?'selected':'' }}>Berat</option>
+                        <option value="sangat_berat" {{ old('severity', $violationCategory->severity)==='sangat_berat'?'selected':'' }}>Sangat Berat (Zero Tolerance)</option>
                     </select>
+                    <span class="help-text">Skala acuan sekolah: 8 (Ringan), 16 (Sedang), 32 (Berat), 64 (Sangat Berat / Zero Tolerance).</span>
                 </div>
                 @php
                     // Tampilkan 3 batas toleransi tersimpan; field ke-II/III kosong

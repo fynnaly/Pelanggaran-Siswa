@@ -51,6 +51,8 @@ class DisciplineCaseController extends Controller
     /** Menampilkan form pelaporan pelanggaran baru */
     public function create()
     {
+        $this->authorize('create', DisciplineCase::class);
+
         // Dropdown 1 = kategori induk, Dropdown 2 = sub-kategori (isi kategori).
         $categoryGroups = ViolationCategory::where('status', 'active')
             ->whereNull('parent_id')
@@ -61,7 +63,6 @@ class DisciplineCaseController extends Controller
         $categories = ViolationCategory::where('status', 'active')->with('parent')->orderBy('name')->get();
         $classes = SchoolClass::where('academic_year_id', AcademicYear::where('is_active', true)->value('id'))
             ->orderBy('name')->get();
-        $reporters = User::whereNot('id', auth()->id())->orderBy('name')->get();
 
         $selectedStudent = null;
         if (old('student_id')) {
@@ -85,14 +86,18 @@ class DisciplineCaseController extends Controller
             $selectedGroupId = $oldSub?->parent_id ?? $oldSub?->id;
         }
 
-        return view('discipline-cases.create', compact('categories', 'categoryGroups', 'selectedGroupId', 'classes', 'reporters', 'selectedStudent'));
+        return view('discipline-cases.create', compact('categories', 'categoryGroups', 'selectedGroupId', 'classes', 'selectedStudent'));
     }
 
     /** Menyimpan pelaporan pelanggaran baru */
     public function store(Request $request)
     {
+        $this->authorize('create', DisciplineCase::class);
+
         $validated = $request->validate([
-            'student_id' => 'required|exists:students,id',
+            'student_id' => 'nullable|exists:students,id',
+            'student_ids' => 'nullable|array',
+            'student_ids.*' => 'exists:students,id',
             'violation_category_id' => ['required', 'exists:violation_categories,id', function ($attr, $value, $fail) {
                 // Kasus wajib menunjuk sub-kategori; kategori induk yang masih punya anak tidak boleh dipilih.
                 if (\App\Models\ViolationCategory::whereNull('parent_id')->whereKey($value)->whereHas('children')->exists()) {
@@ -117,56 +122,59 @@ class DisciplineCaseController extends Controller
                 ->withErrors(['notes' => 'Keterangan / kronologi wajib diisi.']);
         }
 
+        $studentIds = collect($validated['student_ids'] ?? [])
+            ->push($validated['student_id'] ?? null)
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($studentIds->isEmpty()) {
+            return back()->withInput()->with('error', 'Pilih minimal satu siswa pelanggar.');
+        }
+
         // Snapshot konteks saat kejadian: ambil dari enrollment siswa pada tahun kejadian.
         $incidentYear = AcademicYear::where('is_active', true)->first();
-        $student = Student::with(['enrollments.schoolClass'])->findOrFail($validated['student_id']);
-        $enrollment = $student->enrollments
-            ->firstWhere('academic_year_id', $incidentYear?->id)
-            ?? $student->enrollments->firstWhere('status', 'active')
-            ?? $student->enrollments->sortByDesc('id')->first();
-
-        // Kelas wajib untuk kasus resmi. Tanpa enrollment, izinkan kelas dipilih manual.
-        $classId = $validated['class_id'] ?? $enrollment?->class_id;
-        if (! $classId) {
-            return back()
-                ->withInput()
-                ->with('error', 'Siswa ini belum terdaftar di kelas pada tahun ajaran berjalan. '
-                    . 'Pilih kelas manual atau daftarkan siswa ke kelas terlebih dahulu.');
-        }
-
-        $academicYearId = $enrollment?->academic_year_id ?? $incidentYear?->id;
-
         $cat = ViolationCategory::find($validated['violation_category_id']);
-        // BK & Kesiswaan = verifikator; kasusnya langsung seeded di tahap
-        // terverifikasi (found dilewati). Guru biasa tetap found → menunggu BK.
-        $isVerifier = auth()->user()?->hasAnyRole(['bk', 'kesiswaan', 'admin']);
-        $case = DisciplineCase::create([
-            'case_number' => DisciplineCase::generateCaseNumber(),
-            'student_id' => $validated['student_id'],
-            'enrollment_id' => $enrollment?->id,
-            'class_id' => $classId,
-            'violation_category_id' => $validated['violation_category_id'],
-            'academic_year_id' => $academicYearId,
-            'reporter_id' => $validated['reporter_id'] ?? auth()->id(),
-            'location' => $validated['location'] ?? null,
-            'incident_date' => $validated['incident_date'] ?? now()->toDateString(),
-            'incident_time' => $validated['incident_time'] ?? null,
-            'description' => $description,
-            'status' => $isVerifier ? 'clarifying' : 'found',
-            'validator_id' => $isVerifier ? auth()->id() : null,
-            'validated_at' => $isVerifier ? now() : null,
-            'is_recurring' => $cat->is_recurring ?? false,
-        ]);
+        $createdCases = [];
 
-        if ($isVerifier) {
-            return redirect()
-                ->route('kasus-pelanggaran.index')
-                ->with('success', 'Laporan ' . $case->case_number . ' dicatat sebagai ' . $cat->code . ' — langsung terverifikasi (status: Klarifikasi).');
-        }
+        DB::transaction(function () use ($studentIds, $validated, $description, $incidentYear, $cat, &$createdCases) {
+            foreach ($studentIds as $sid) {
+                $student = Student::with(['enrollments.schoolClass'])->findOrFail($sid);
+                $enrollment = $student->enrollments
+                    ->firstWhere('academic_year_id', $incidentYear?->id)
+                    ?? $student->enrollments->firstWhere('status', 'active')
+                    ?? $student->enrollments->sortByDesc('id')->first();
+
+                // Kelas wajib untuk kasus resmi. Ambil dari enrollment atau manual.
+                $classId = $validated['class_id'] ?? $enrollment?->class_id;
+                $academicYearId = $enrollment?->academic_year_id ?? $incidentYear?->id;
+
+                $createdCases[] = DisciplineCase::create([
+                    'case_number' => DisciplineCase::generateCaseNumber(),
+                    'student_id' => $sid,
+                    'enrollment_id' => $enrollment?->id,
+                    'class_id' => $classId,
+                    'violation_category_id' => $validated['violation_category_id'],
+                    'academic_year_id' => $academicYearId,
+                    'reporter_id' => $validated['reporter_id'] ?? auth()->id(),
+                    'location' => $validated['location'] ?? null,
+                    'incident_date' => $validated['incident_date'] ?? now()->toDateString(),
+                    'incident_time' => $validated['incident_time'] ?? null,
+                    'description' => $description,
+                    'status' => 'found',
+                    'is_recurring' => $cat->is_recurring ?? false,
+                ]);
+            }
+        });
+
+        $count = count($createdCases);
+        $msg = $count > 1
+            ? "{$count} laporan pelanggaran berhasil dicatat secara kolektif (status: Temuan)."
+            : 'Laporan pelanggaran ' . $createdCases[0]->case_number . ' berhasil dicatat (status: Temuan).';
 
         return redirect()
             ->route('kasus-pelanggaran.index')
-            ->with('success', 'Laporan pelanggaran ' . $case->case_number . ' berhasil dicatat (status: found).');
+            ->with('success', $msg);
     }
 
     /** Menampilkan detail pelanggaran tertentu */
@@ -252,7 +260,7 @@ class DisciplineCaseController extends Controller
     }
 
     /**
-     * Update status kasus (found → clarifying → classifying → handling → monitoring → closed).
+     * Update status kasus (alur ringkas: found → handling → closed).
      * Transisi ke 'handling' membuat debit poin ke ledger.
      */
     public function updateStatus(Request $request, DisciplineCase $disciplineCase)
@@ -260,7 +268,7 @@ class DisciplineCaseController extends Controller
         $this->authorize('update', $disciplineCase);
 
         $validated = $request->validate([
-            'status' => 'required|in:clarifying,classifying,handling,monitoring,closed',
+            'status' => 'required|in:handling,closed,found,clarifying,classifying,monitoring',
             'notes' => 'nullable|string',
         ]);
 
@@ -306,14 +314,21 @@ class DisciplineCaseController extends Controller
             return redirect()->back()->with('error', 'Pilih minimal satu kasus terlebih dahulu.');
         }
 
-        $allowed = ['clarifying', 'classifying', 'handling', 'monitoring', 'closed'];
+        $allowed = ['handling', 'closed', 'clarifying', 'classifying', 'monitoring'];
         if (! in_array($newStatus, $allowed, true)) {
             return redirect()->back()->with('error', 'Tahap tujuan tidak dikenal.');
         }
 
-        // Urutan tahap — kasus hanya boleh bergerak ke depan.
-        $order = ['found' => 0, 'clarifying' => 1, 'classifying' => 2, 'handling' => 3, 'monitoring' => 4, 'closed' => 5];
-        $target = $order[$newStatus];
+        // Urutan tahap — kasus hanya boleh bergerak ke depan (alur ringkas: found -> handling -> closed).
+        $order = [
+            'found' => 0,
+            'clarifying' => 0,
+            'classifying' => 0,
+            'handling' => 1,
+            'monitoring' => 1,
+            'closed' => 2,
+        ];
+        $target = $order[$newStatus] ?? 0;
 
         $cases = DisciplineCase::with('violationCategory')->whereIn('id', $ids)->get();
         $advanceable = $cases->filter(fn ($case) => ($order[$case->status] ?? 99) < $target);
@@ -338,11 +353,11 @@ class DisciplineCaseController extends Controller
         });
 
         $labels = [
+            'handling' => 'Penanganan',
+            'closed' => 'Selesai',
             'clarifying' => 'Klarifikasi',
             'classifying' => 'Klasifikasi',
-            'handling' => 'Penanganan',
             'monitoring' => 'Monitoring',
-            'closed' => 'Selesai',
         ];
 
         $message = $advanceable->count() . ' kasus dimajukan ke ' . $labels[$newStatus] . '.';

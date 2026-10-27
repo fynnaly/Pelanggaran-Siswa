@@ -69,31 +69,27 @@ class ViolationCategory extends Model
     }
 
     /**
-     * Poin per batas toleransi pengulangan: [ke-I, ke-II, ke-III].
+     * Poin per tingkat toleransi: [ke-I, ke-II, ke-III].
      *
-     * Ke-I = points, ke-II = points + recurring_increment, ke-III =
-     * max_recurring_points (nilai persis, bukan plafon). Kategori non-berulang
-     * mengembalikan satu nilai saja; pelanggaran ke-4 dst. tetap memakai batas
-     * terakhir dari daftar ini.
-     *
-     * Contoh P1.1 Terlambat < 10 menit (5/10/15) → [5, 10, 15].
+     * Skala sekolah (S2/S3/S4/S5): 8 / 16 / 32 / 64. Pengulangan naik satu
+     * anak tangga, maksimal 3 tingkat; ke-4 dst. memakai nilai ke-III.
+     * Plafon 32 — nilai 64 hanya untuk zero tolerance (tidak bisa ditebus).
      */
     public function tierPoints(): array
     {
         $base = (int) $this->points;
 
-        if (! $this->is_recurring || ! $this->recurring_increment) {
+        if ($this->is_zero_tolerance || $base >= 64) {
             return [$base];
         }
 
-        $tiers = [$base, $base + (int) $this->recurring_increment];
+        $plafon = 32;
 
-        // Abaikan batas ke-III yang 0 / tidak naik (toleransi berhenti di ke-II).
-        if ($this->max_recurring_points !== null && (int) $this->max_recurring_points > end($tiers)) {
-            $tiers[] = (int) $this->max_recurring_points;
-        }
-
-        return $tiers;
+        return [
+            min($base * 1, $plafon),
+            min($base * 2, $plafon),
+            min($base * 4, $plafon),
+        ];
     }
 
     /**
@@ -108,6 +104,17 @@ class ViolationCategory extends Model
         return $tiers[min($index, count($tiers) - 1)];
     }
 
+    /** Sanksi dari daftar Bagian 40 dipetakan ke tingkat poin baru 8/16/32/64. */
+    public static function sanksiForPoints(int $points): string
+    {
+        return match (true) {
+            $points <= 8 => 'Teguran',
+            $points <= 16 => 'Teguran dan penugasan',
+            $points <= 32 => 'Pemanggilan orang tua atau skorsing',
+            default => 'Dikeluarkan dari sekolah / Intervensi Khusus',
+        };
+    }
+
     /**
      * Daftar prestasi pemulihan untuk kategori ini.
      * Sumber: redemption_rules (padanan kanonik per sub). Zero tolerance
@@ -115,7 +122,7 @@ class ViolationCategory extends Model
      */
     public function recoveryOptions(): array
     {
-        if ($this->is_zero_tolerance) {
+        if ($this->is_zero_tolerance || (int) $this->points >= 64) {
             return [];
         }
 
@@ -129,23 +136,7 @@ class ViolationCategory extends Model
             ])->filter(fn ($row) => $row['name'] !== null)->values()->all();
         }
 
-        $max = match ($this->severity) {
-            'ringan' => 10,
-            'sedang' => 20,
-            'berat'  => 1000,
-        };
-
-        return AchievementCategory::where('status', 'active')
-            ->whereNotNull('parent_id')
-            ->where('points', '<=', $max)
-            ->orderBy('points', 'desc')
-            ->limit(3)
-            ->get()
-            ->map(fn ($ach) => [
-                'code' => $ach->code,
-                'name' => $ach->name,
-                'poin' => $ach->points,
-            ])->all();
+        return [];
     }
 
     /**
@@ -155,21 +146,23 @@ class ViolationCategory extends Model
      */
     public function resolveSanksi(): string
     {
-        if ($this->is_zero_tolerance) {
+        if ($this->is_zero_tolerance || (int) $this->points >= 64) {
             return 'Zero tolerance — Program Pembinaan Intensif. Tidak bisa ditebus poin prestasi.';
         }
+
+        $baseSanksi = $this->sanksi ?: self::sanksiForPoints((int) $this->points);
 
         $options = $this->recoveryOptions();
 
         if ($options === []) {
-            return 'Tidak ada jalur pemulihan via prestasi. Poin tetap sampai ada kebijakan manual.';
+            return $baseSanksi;
         }
 
         $list = collect($options)
             ->map(fn ($row) => "{$row['code']} {$row['name']} (+{$row['poin']})")
             ->implode('; ');
 
-        return "Wajib raih prestasi: {$list}. Tanpa prestasi divalidasi, poin tertahan (tidak naik).";
+        return "{$baseSanksi}. Wajib raih prestasi: {$list}. Tanpa prestasi divalidasi, poin tertahan.";
     }
 
     /** Sub-kategori aktif = kandidat pemilihan pada form kasus. */

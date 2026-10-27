@@ -54,68 +54,69 @@ class PancawaluyaSeeder extends Seeder
     ];
 
     /**
-     * Sub pelanggaran TABEL 2: [kode dokumen, nama, poin ke-I, ke-II, ke-III].
-     * Nama dan poin diambil verbatim dari PDF.
+     * Sub pelanggaran TABEL 2: [induk, kode dokumen, nama, poin dasar (ke-I), is_zero_tolerance].
+     * Skala sekolah: 8 (ringan) / 16 (sedang) / 32 (berat) / 64 (sangat_berat, zero tolerance).
+     * Eskalasi 3 tier dihitung otomatis: base -> base*2 -> base*4 (plafon 32, ZT 64 flat).
      */
     private const VIOLATIONS = [
         // P1 Terlambat
-        ['P1', '1.1', 'Kurang dari 10 menit', 5, 10, 15],
-        ['P1', '1.2', 'Lebih dari 10 menit', 10, 15, 20],
-        ['P1', '1.3', 'Lebih dari 30 menit', 15, 20, 25],
+        ['P1', '1.1', 'Kurang dari 10 menit', 8, false],
+        ['P1', '1.2', 'Lebih dari 10 menit', 16, false],
+        ['P1', '1.3', 'Lebih dari 30 menit', 16, false],
         // P2 Kehadiran
-        ['P2', '2.1', 'Izin tanpa surat keterangan / telepon ke piket sekolah', 5, 10, 15],
-        ['P2', '2.2', 'Sakit tanpa surat keterangan dari dokter / orang tua/wali', 5, 10, 15],
-        ['P2', '2.3', 'Alpa, tanpa ada keterangan apapun', 5, 10, 15],
-        ['P2', '2.4', 'Tidak kembali setelah izin dari sekolah', 10, 15, 20],
-        ['P2', '2.5', 'Kembali setelah melebihi waktu yang ditentukan tanpa ada pemberitahuan', 10, 15, 20],
-        ['P2', '2.6', 'Keluar lingkungan sekolah pada saat pembelajaran berlangsung tanpa izin dari piket', 10, 15, 20],
-        ['P2', '2.7', 'Berada di kantin pada saat pembelajaran sedang berlangsung tanpa izin', 10, 15, 20],
-        ['P2', '2.8', 'Tidak masuk selama 2 (dua hari) berturut-turut tanpa ada keterangan', 10, 15, 20],
-        ['P2', '2.9', 'Memalsukan surat keterangan dokter atau surat dari orang tua', 10, 15, 20],
-        ['P2', '2.10', 'Izin tanpa surat keterangan / telepon ke piket sekolah', 10, 15, 20],
-        ['P2', '2.11', 'Sakit tanpa surat keterangan dari dokter / orang tua/wali', 15, 20, 25],
-        // P3 Seragam
-        ['P3', '3.1', 'Baju tidak dimasukan ke dalam celana atau rok.', 5, 10, 15],
-        ['P3', '3.2', 'Menggunakan rok pendek bagi putri.', 5, 10, 15],
-        ['P3', '3.3', 'Menggunakan kerudung bagi putri selain berwarna putih polos.', 5, 10, 15],
-        ['P3', '3.4', 'Menggunakan atribut tidak lengkap (badge OSIS, badge sekolah, nama peserta didik, dan lokasi sekolah)', 5, 10, 15],
-        ['P3', '3.5', 'Nama peserta didik tidak ditempel di dada depan sebelah kanan dengan dasar putih, tulisan hitam, dan bentuk persegi panjang.', 5, 10, 15],
-        ['P3', '3.6', 'Lokasi sekolah tidak ditempel di bagian tangan sebelah kanan dengan dasar putih, tulisan hitam, dan bentuk persegi panjang', 5, 10, 15],
-        ['P3', '3.7', 'Badge OSIS tidak ditempel di dada depan sebelah kiri.', 5, 10, 15],
-        ['P3', '3.8', 'Badge sekolah tidak ditempel di bagian tangan sebelah kiri.', 5, 10, 15],
-        ['P3', '3.9', 'Topi sekolah tidak sesuai dengan ketentuan.', 5, 10, 15],
-        ['P3', '3.10', 'Tidak menggunakan sabuk berwarna hitam.', 5, 10, 15],
-        ['P3', '3.11', 'Tidak menggunakan sepatu berwarna hitam dan tidak menggunakan kaos kaki.', 5, 10, 15],
-        ['P3', '3.12', 'Menggunakan perhiasan atau aksesoris yang berlebihan.', 5, 10, 15],
-        ['P3', '3.13', 'Menggunakan rompi, jaket, sweater selama di sekolah.', 5, 10, 15],
-        ['P3', '3.14', 'Mencoret, menggambar atau mewarnai seragam di luar ketentuan.', 10, 15, 20],
-        // P4 Kerapian dan Penampilan
-        ['P4', '4.1', 'Berkuku panjang dan dicat atau kutek.', 5, 10, 15],
-        ['P4', '4.2', 'Bertato/menggambari kulit tubuh dengan apapun.', 5, 10, 15],
-        ['P4', '4.3', 'Bercukur gundul atau plontos.', 5, 10, 15],
-        ['P4', '4.4', 'Mewarnai rambut.', 5, 10, 15],
-        ['P4', '4.5', 'Berambut panjang dan berkuncir bagi peserta didik laki-laki.', 5, 10, 15],
-        ['P4', '4.6', 'Menata rambut dengan model yang tidak sesuai sebagai pelajar.', 5, 10, 15],
-        ['P4', '4.7', 'Menggunakan perhiasan dan aksesoris', 5, 10, 15],
-        ['P4', '4.8', 'Merias wajah secara berlebihan.', 5, 10, 15],
-        ['P4', '4.9', 'Memakai softlens kecuali softlens kesehatan.', 5, 10, 15],
+        ['P2', '2.1', 'Izin tanpa surat keterangan / telepon ke piket sekolah', 8, false],
+        ['P2', '2.2', 'Sakit tanpa surat keterangan dari dokter / orang tua/wali', 8, false],
+        ['P2', '2.3', 'Alpa, tanpa ada keterangan apapun', 16, false],
+        ['P2', '2.4', 'Tidak kembali setelah izin dari sekolah', 16, false],
+        ['P2', '2.5', 'Kembali setelah melebihi waktu yang ditentukan tanpa ada pemberitahuan', 16, false],
+        ['P2', '2.6', 'Keluar lingkungan sekolah pada saat pembelajaran berlangsung tanpa izin dari piket', 16, false],
+        ['P2', '2.7', 'Berada di kantin pada saat pembelajaran sedang berlangsung tanpa izin', 16, false],
+        ['P2', '2.8', 'Tidak masuk selama 2 (dua hari) berturut-turut tanpa ada keterangan', 16, false],
+        ['P2', '2.9', 'Memalsukan surat keterangan dokter atau surat dari orang tua', 16, false],
+        ['P2', '2.10', 'Izin tanpa surat keterangan / telepon ke piket sekolah', 16, false],
+        ['P2', '2.11', 'Sakit tanpa surat keterangan dari dokter / orang tua/wali', 16, false],
+        // P3 Seragam (3.1-3.13 = 8, 3.14 = 16)
+        ['P3', '3.1', 'Baju tidak dimasukan ke dalam celana atau rok.', 8, false],
+        ['P3', '3.2', 'Menggunakan rok pendek bagi putri.', 8, false],
+        ['P3', '3.3', 'Menggunakan kerudung bagi putri selain berwarna putih polos.', 8, false],
+        ['P3', '3.4', 'Menggunakan atribut tidak lengkap (badge OSIS, badge sekolah, nama peserta didik, dan lokasi sekolah)', 8, false],
+        ['P3', '3.5', 'Nama peserta didik tidak ditempel di dada depan sebelah kanan dengan dasar putih, tulisan hitam, dan bentuk persegi panjang.', 8, false],
+        ['P3', '3.6', 'Lokasi sekolah tidak ditempel di bagian tangan sebelah kanan dengan dasar putih, tulisan hitam, dan bentuk persegi panjang', 8, false],
+        ['P3', '3.7', 'Badge OSIS tidak ditempel di dada depan sebelah kiri.', 8, false],
+        ['P3', '3.8', 'Badge sekolah tidak ditempel di bagian tangan sebelah kiri.', 8, false],
+        ['P3', '3.9', 'Topi sekolah tidak sesuai dengan ketentuan.', 8, false],
+        ['P3', '3.10', 'Tidak menggunakan sabuk berwarna hitam.', 8, false],
+        ['P3', '3.11', 'Tidak menggunakan sepatu berwarna hitam dan tidak menggunakan kaos kaki.', 8, false],
+        ['P3', '3.12', 'Menggunakan perhiasan atau aksesoris yang berlebihan.', 8, false],
+        ['P3', '3.13', 'Menggunakan rompi, jaket, sweater selama di sekolah.', 8, false],
+        ['P3', '3.14', 'Mencoret, menggambar atau mewarnai seragam di luar ketentuan.', 16, false],
+        // P4 Kerapian dan Penampilan (4.1-4.9 = 8)
+        ['P4', '4.1', 'Berkuku panjang dan dicat atau kutek.', 8, false],
+        ['P4', '4.2', 'Bertato/menggambari kulit tubuh dengan apapun.', 8, false],
+        ['P4', '4.3', 'Bercukur gundul atau plontos.', 8, false],
+        ['P4', '4.4', 'Mewarnai rambut.', 8, false],
+        ['P4', '4.5', 'Berambut panjang dan berkuncir bagi peserta didik laki-laki.', 8, false],
+        ['P4', '4.6', 'Menata rambut dengan model yang tidak sesuai sebagai pelajar.', 8, false],
+        ['P4', '4.7', 'Menggunakan perhiasan dan aksesoris', 8, false],
+        ['P4', '4.8', 'Merias wajah secara berlebihan.', 8, false],
+        ['P4', '4.9', 'Memakai softlens kecuali softlens kesehatan.', 8, false],
         // P5 Kedisiplinan
-        ['P5', '5.1', 'Menggunakan gawai tanpa sepengetahuan dan arahan dan bimbingan dari guru.', 10, 15, 20],
-        ['P5', '5.2', 'Makan dan minum ketika pembelajaran sedang berlangsung tanpa izin dari guru yang bersangkutan', 5, 10, 15],
-        ['P5', '5.3', 'Meminjam barang, nomor PIN / pasword orang lain tanpa izin pemilik', 10, 15, 20],
-        ['P5', '5.4', 'Terlambat pengumpulan tugas', 5, 10, 15],
-        ['P5', '5.5', 'Menyontek/melakukan kecurangan saat ujian', 20, 25, 30],
-        ['P5', '5.6', 'Menyebarkan rumor atau informasi bohong (hoaks).', 5, 10, 15],
-        ['P5', '5.7', 'Merokok, mengonsumsi minuman beralkohol, memakai dan mengedarkan narkotika, psikotropika, dan zat adiktif lainnya.', 10, 15, 20],
-        ['P5', '5.8', 'Pergaulan bebas dan berperilaku menyimpang.', 20, 25, 30],
-        ['P5', '5.9', 'Berkelahi atau melakukan tawuran.', 20, 25, 30],
-        ['P5', '5.10', 'Membuang sampah sembarangan dan merusak lingkungan.', 20, 25, 30],
-        ['P5', '5.11', 'Melakukan perbuatan vandalisme.', 20, 25, 30],
-        ['P5', '5.12', 'Melakukan perundungan baik fisik, verbal, dan digital.', 20, 25, 30],
-        ['P5', '5.13', 'Membawa barang-barang terlarang, membahayakan, dan mengancam keselamatan diri dan orang lain.', 20, 25, 30],
-        ['P5', '5.14', 'Membawa alat-alat yang dipergunakan untuk bermain judi.', 20, 25, 30],
-        ['P5', '5.15', 'Mengambil dan menyimpan barang milik orang lain tanpa izin dan tanpa hak.', 20, 25, 30],
-        ['P5', '5.16', 'Melanggar norma dan hukum yang berlaku di sekolah, masyarakat, dan negara', 20, 25, 30],
+        ['P5', '5.1', 'Menggunakan gawai tanpa sepengetahuan dan arahan dan bimbingan dari guru.', 16, false],
+        ['P5', '5.2', 'Makan dan minum ketika pembelajaran sedang berlangsung tanpa izin dari guru yang bersangkutan', 8, false],
+        ['P5', '5.3', 'Meminjam barang, nomor PIN / pasword orang lain tanpa izin pemilik', 16, false],
+        ['P5', '5.4', 'Terlambat pengumpulan tugas', 8, false],
+        ['P5', '5.5', 'Menyontek/melakukan kecurangan saat ujian', 64, true],
+        ['P5', '5.6', 'Menyebarkan rumor atau informasi bohong (hoaks).', 8, false],
+        ['P5', '5.7', 'Merokok, mengonsumsi minuman beralkohol, memakai dan mengedarkan narkotika, psikotropika, dan zat adiktif lainnya.', 64, true],
+        ['P5', '5.8', 'Pergaulan bebas dan berperilaku menyimpang.', 64, true],
+        ['P5', '5.9', 'Berkelahi atau melakukan tawuran.', 64, true],
+        ['P5', '5.10', 'Membuang sampah sembarangan dan merusak lingkungan.', 32, false],
+        ['P5', '5.11', 'Melakukan perbuatan vandalisme.', 32, false],
+        ['P5', '5.12', 'Melakukan perundungan baik fisik, verbal, dan digital.', 64, true],
+        ['P5', '5.13', 'Membawa barang-barang terlarang, membahayakan, dan mengancam keselamatan diri dan orang lain.', 64, true],
+        ['P5', '5.14', 'Membawa alat-alat yang dipergunakan untuk bermain judi.', 64, true],
+        ['P5', '5.15', 'Mengambil dan menyimpan barang milik orang lain tanpa izin dan tanpa hak.', 32, false],
+        ['P5', '5.16', 'Melanggar norma dan hukum yang berlaku di sekolah, masyarakat, dan negara', 64, true],
     ];
 
     /** Kategori induk penghargaan: kode → [nama, group_type]. */
@@ -269,23 +270,15 @@ class PancawaluyaSeeder extends Seeder
         ['P4.7', 'R4.2'], // Perhiasan/aksesoris -> R4.2
         ['P4.8', 'R4.2'], // Rias berlebihan -> R4.2 (cermin A.7)
         ['P4.9', 'R4.2'], // Softlens non-kesehatan -> R4.2 (cermin A.5)
-        // P5 Kedisiplinan
+        // P5 Kedisiplinan (Zero Tolerance P5.5, P5.7, P5.8, P5.9, P5.12, P5.13, P5.14, P5.16 tidak memiliki redemption rules)
         ['P5.1', 'R3.4'], // Gawai tanpa izin -> R3.4 aktif belajar
         ['P5.2', 'R3.4'], // Makan/minum saat belajar tanpa izin -> R3.4
         ['P5.3', 'R2.1'], // Pinjam barang/PIN tanpa izin -> R2.1 lapor temuan (integritas milik orang)
         ['P5.4', 'R3.4'], // Terlambat tugas -> R3.4
-        ['P5.5', 'R2.4'], // Nyontek -> R2.4 jujur ujian (cermin B.34, exact)
         ['P5.6', 'R2.2'], // Hoaks -> R2.2 jujur kesaksian (inti=ketidakjujuran)
-        ['P5.7', 'R4.3'], // Rokok/miras/narkoba -> R4.3 6 bln taat (komitmen jangka panjang)
-        ['P5.8', 'R5.2'], // Pergaulan bebas -> R5.2 aksi sosial
-        ['P5.9', 'R7.1'], // Tawuran -> R7.1 Bela Negara (anti-kekerasan)
         ['P5.10', 'R9.1'], // Buang sampah -> R9.1 (cermin B.7/B.4)
         ['P5.11', 'R9.1'], // Vandalisme -> R9.1 merawat sarana (fix: B.7->9.1, sebelumnya R4.2)
-        ['P5.12', 'R5.2'], // Bullying -> R5.2 aksi sosial (cermin B.25/Fani)
-        ['P5.13', 'R4.3'], // Barang terlarang -> R4.3 komitmen jangka panjang
-        ['P5.14', 'R10.5'], // Alat judi -> R10.5 tabungan (kelola keuangan benar vs judi)
         ['P5.15', 'R2.1'], // Ambil barang tanpa izin -> R2.1 lapor temuan
-        ['P5.16', 'R7.2'], // Langgar norma/hukum -> R7.2 Pancasila/UUD (taat norma)
     ];
 
     public function run(): void
@@ -311,10 +304,12 @@ class PancawaluyaSeeder extends Seeder
             );
         }
 
-        // 2. Sub pelanggaran — eskalasi poin dan sanksi diturunkan dari Tabel 2.
-        foreach (self::VIOLATIONS as [$parentCode, $docCode, $name, $p1, $p2, $p3]) {
-            // docCode sudah mengandung nomor induk ("1.1" di bawah P1) —
-            // kode DB = prefix induk saja: 1.1 -> P1.1, 5.16 -> P5.16.
+        // 2. Sub pelanggaran — eskalasi poin dan sanksi skala 8/16/32/64.
+        foreach (self::VIOLATIONS as [$parentCode, $docCode, $name, $p1, $isZeroTolerance]) {
+            $tiers = $isZeroTolerance || $p1 >= 64 ? [$p1] : [min($p1, 32), min($p1 * 2, 32), min($p1 * 4, 32)];
+            $p2 = $tiers[1] ?? $p1;
+            $p3 = $tiers[2] ?? $p2;
+
             ViolationCategory::updateOrCreate(
                 ['code' => "P{$docCode}"],
                 [
@@ -322,12 +317,13 @@ class PancawaluyaSeeder extends Seeder
                     'parent_id' => $vParents[$parentCode]->id,
                     'severity' => $this->severityOf($p1),
                     'points' => $p1,
-                    'is_recurring' => $p2 > $p1,
-                    'recurring_increment' => $p2 - $p1,
+                    'is_zero_tolerance' => $isZeroTolerance,
+                    'is_recurring' => ! $isZeroTolerance && $p2 > $p1,
+                    'recurring_increment' => ! $isZeroTolerance && $p2 > $p1 ? $p2 - $p1 : null,
                     'max_recurring_points' => $p3,
                     'group_type' => self::VIOLATION_PARENTS[$parentCode][1],
                     'sanksi' => $this->sanksiOf($p1),
-                    'description' => $this->violationDescription($docCode, $p1, $p2, $p3),
+                    'description' => $this->violationDescription($docCode, $p1, $p2, $p3, $isZeroTolerance),
                     'status' => 'active',
                 ]
             );
@@ -384,14 +380,12 @@ class PancawaluyaSeeder extends Seeder
         RedemptionRule::whereIn('achievement_category_id', $supersededIds)->delete();
 
         // 7. Pasangkan redemption kanonik (idempotent, poin = poin sub tujuan).
-        //    Replace semantics: bila tujuan berubah (mis. P5.11 R4.2 → R9.1),
-        //    rule lama ke tujuan tidak tercantum ikut dihapus — updateOrCreate
-        //    saja tidak membersihkannya (kuncinya pasangan id).
+        //    Kategori zero tolerance tidak memiliki jalur penebusan.
         $wanted = [];
         foreach (self::RULES as [$vCode, $aCode]) {
             $violation = ViolationCategory::where('code', $vCode)->first();
             $achievement = AchievementCategory::where('code', $aCode)->first();
-            if (! $violation || ! $achievement) {
+            if (! $violation || ! $achievement || $violation->is_zero_tolerance) {
                 continue;
             }
             $wanted[$violation->id][] = $achievement->id;
@@ -408,33 +402,39 @@ class PancawaluyaSeeder extends Seeder
                 ->whereNotIn('achievement_category_id', $achievementIds)
                 ->delete();
         }
+
+        // Hapus redemption rules yang tersisa untuk zero-tolerance
+        $ztIds = ViolationCategory::where('is_zero_tolerance', true)->pluck('id');
+        RedemptionRule::whereIn('violation_category_id', $ztIds)->delete();
     }
 
-    /** Tingkat dari poin ke-I (turunan Tabel 2, bukan label dokumen). */
+    /** Tingkat dari poin ke-I (skala 8/16/32/64). */
     private function severityOf(int $pointsFirst): string
     {
         return match (true) {
-            $pointsFirst <= 5 => 'ringan',
-            $pointsFirst <= 15 => 'sedang',
-            default => 'berat',
+            $pointsFirst <= 8 => 'ringan',
+            $pointsFirst <= 16 => 'sedang',
+            $pointsFirst <= 32 => 'berat',
+            default => 'sangat_berat',
         };
     }
 
-    /** Sanksi dari daftar Bagian 40 dipetakan ke tingkat poin. */
+    /** Sanksi dari daftar Bagian 40 dipetakan ke tingkat poin baru 8/16/32/64. */
     private function sanksiOf(int $pointsFirst): string
     {
-        return match (true) {
-            $pointsFirst <= 5 => 'Teguran',
-            $pointsFirst <= 15 => 'Teguran dan penugasan',
-            default => 'Pemanggilan orang tua atau skorsing',
-        };
+        return ViolationCategory::sanksiForPoints($pointsFirst);
     }
 
-    private function violationDescription(string $docCode, int $p1, int $p2, int $p3): string
+    private function violationDescription(string $docCode, int $p1, int $p2, int $p3, bool $isZeroTolerance = false): string
     {
-        $desc = "Pedoman Pancawaluya TABEL 2 — kode dokumen: {$docCode}. "
-            . "Poin pelanggaran ke-I/II/III: {$p1}/{$p2}/{$p3}. "
-            . "Sanksi ditetapkan dari daftar Bagian 40 sesuai tingkat poin.";
+        if ($isZeroTolerance) {
+            $desc = "Pedoman Pancawaluya TABEL 2 — kode dokumen: {$docCode}. "
+                . "Poin: {$p1} (Zero Tolerance — tidak ada eskalasi toleransi, tidak bisa ditebus).";
+        } else {
+            $desc = "Pedoman Pancawaluya TABEL 2 — kode dokumen: {$docCode}. "
+                . "Poin pelanggaran ke-I/II/III: {$p1}/{$p2}/{$p3}. "
+                . "Sanksi ditetapkan dari daftar Bagian 40 sesuai tingkat poin.";
+        }
 
         // Keterangan 4 Tabel 2 — Force Majeure, dicatat sebagai catatan kasus,
         // bukan sanksi kategori (berlaku bila terbukti, bukan otomatis).

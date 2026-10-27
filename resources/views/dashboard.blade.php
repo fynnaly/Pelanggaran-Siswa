@@ -48,7 +48,7 @@
                         $total = max($totalCases, 1);
                         $segs = [
                             ['label' => 'Ditemukan', 'count' => $totalCasesFound, 'bg' => 'var(--accent)'],
-                            ['label' => 'Divalidasi', 'count' => $totalCasesValidated, 'bg' => 'var(--primary)'],
+                            ['label' => 'Penanganan', 'count' => $totalCasesValidated, 'bg' => 'var(--primary)'],
                             ['label' => 'Selesai', 'count' => $totalCasesDone, 'bg' => 'var(--tertiary)'],
                             ['label' => 'Dibuang', 'count' => $totalCasesDismissed, 'bg' => 'var(--on-surface-muted)'],
                         ];

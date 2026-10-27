@@ -26,11 +26,11 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 
-# Local workspace artifacts
+# Local workspace
 /.hermes/
 /docs/
 /.worktrees/
-/check_mp*.php
+/pelanggaran_siswa
 .claude/
 CLAUDE.md
 .agents/

@@ -21,10 +21,7 @@
                     <select name="status" class="input" style="width:auto;min-width:150px" onchange="this.form.submit()">
                         <option value="">Semua Status</option>
                         <option value="found" {{ $status==='found'?'selected':'' }}>Temuan</option>
-                        <option value="clarifying" {{ $status==='clarifying'?'selected':'' }}>Klarifikasi</option>
-                        <option value="classifying" {{ $status==='classifying'?'selected':'' }}>Klasifikasi</option>
                         <option value="handling" {{ $status==='handling'?'selected':'' }}>Penanganan</option>
-                        <option value="monitoring" {{ $status==='monitoring'?'selected':'' }}>Monitoring</option>
                         <option value="closed" {{ $status==='closed'?'selected':'' }}>Selesai</option>
                         <option value="dismissed" {{ $status==='dismissed'?'selected':'' }}>Dibuang</option>
                     </select>
@@ -40,10 +37,7 @@
             <span class="text-sm text-muted" style="margin-right:var(--sp-xs)">Majukan ke:</span>
             <select name="status" class="input" style="width:auto;min-width:160px" required>
                 <option value="" disabled selected>Pilih tahap</option>
-                <option value="clarifying">Klarifikasi</option>
-                <option value="classifying">Klasifikasi</option>
                 <option value="handling">Penanganan — potong poin</option>
-                <option value="monitoring">Monitoring</option>
                 <option value="closed">Selesai</option>
             </select>
             <button type="submit" class="btn btn-primary btn-sm" id="bulkSubmit" disabled><i data-lucide="arrow-right" class="icon-sm"></i> Majukan</button>
@@ -68,10 +62,18 @@
                 </tr></thead>
                 <tbody>
                     @php
-                        // Peta tahap berikutnya — tombol aksi per baris memajukan 1 tahap
-                        // tanpa buka halaman detail. closed/dismissed tidak punya next.
-                        $nextStatus = ['found' => 'clarifying', 'clarifying' => 'classifying', 'classifying' => 'handling', 'handling' => 'monitoring', 'monitoring' => 'closed'];
-                        $nextLabels = ['clarifying' => 'Klarifikasi', 'classifying' => 'Klasifikasi', 'handling' => 'Penanganan', 'monitoring' => 'Monitoring', 'closed' => 'Selesai'];
+                        // ponytail: alur ringkas 1-klik (found -> handling -> closed). Kasus lama tetap dipetakan maju.
+                        $nextStatus = [
+                            'found' => 'handling',
+                            'clarifying' => 'handling',
+                            'classifying' => 'handling',
+                            'handling' => 'closed',
+                            'monitoring' => 'closed',
+                        ];
+                        $nextLabels = [
+                            'handling' => 'Penanganan',
+                            'closed' => 'Selesai',
+                        ];
                     @endphp
                     @forelse($cases as $idx => $case)
                         @php

@@ -30,7 +30,9 @@
                         <option value="ringan" {{ old('severity')==='ringan'?'selected':'' }}>Ringan</option>
                         <option value="sedang" {{ old('severity')==='sedang'?'selected':'' }}>Sedang</option>
                         <option value="berat" {{ old('severity')==='berat'?'selected':'' }}>Berat</option>
+                        <option value="sangat_berat" {{ old('severity')==='sangat_berat'?'selected':'' }}>Sangat Berat (Zero Tolerance)</option>
                     </select>
+                    <span class="help-text">Skala acuan sekolah: 8 (Ringan), 16 (Sedang), 32 (Berat), 64 (Sangat Berat / Zero Tolerance).</span>
                 </div>
                 <div class="field"><label class="field-label">Status <span class="text-danger">*</span></label>
                     <select name="status" class="field-input" required>

@@ -221,7 +221,30 @@ class StudentController extends Controller
      */
     public function search(Request $request)
     {
+        $classId = $request->input('class_id');
         $q = $request->input('q', '');
+
+        // Jika request membawa class_id, ambil seluruh siswa aktif pada kelas tersebut
+        if ($classId) {
+            $activeYearId = AcademicYear::where('is_active', true)->value('id');
+            $students = Student::with(['currentEnrollment.schoolClass'])
+                ->whereHas('enrollments', function ($query) use ($classId, $activeYearId) {
+                    $query->where('class_id', $classId)
+                        ->when($activeYearId, fn ($eq) => $eq->where('academic_year_id', $activeYearId));
+                })
+                ->where('status', 'active')
+                ->orderBy('full_name')
+                ->get()
+                ->map(fn ($s) => [
+                    'id' => $s->id,
+                    'full_name' => $s->full_name,
+                    'nis' => $s->nis,
+                    'class_id' => $s->currentEnrollment?->class_id,
+                    'kelas' => $s->currentEnrollment?->schoolClass?->name ?? '-',
+                ]);
+
+            return response()->json($students);
+        }
 
         if (strlen($q) < 2) {
             return response()->json([]);
@@ -241,6 +264,7 @@ class StudentController extends Controller
                 'id' => $s->id,
                 'full_name' => $s->full_name,
                 'nis' => $s->nis,
+                'class_id' => $s->currentEnrollment?->class_id,
                 'kelas' => $s->currentEnrollment?->schoolClass?->name ?? '-',
             ]);
 

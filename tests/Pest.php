@@ -1,5 +1,9 @@
 <?php
 
+putenv('DB_CONNECTION=sqlite');
+$_ENV['DB_CONNECTION'] = 'sqlite';
+$_SERVER['DB_CONNECTION'] = 'sqlite';
+
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
