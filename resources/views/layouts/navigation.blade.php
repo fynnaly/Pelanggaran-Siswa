@@ -4,41 +4,41 @@
             'label' => 'Data Referensi',
             'icon' => 'database',
             'items' => [
-                ['route' => 'users.index', 'label' => 'Pengguna', 'pattern' => 'users.*', 'icon' => ''],
-                ['route' => 'students.index', 'label' => 'Siswa', 'pattern' => 'students.*', 'icon' => ''],
-                ['route' => 'classes.index', 'label' => 'Kelas', 'pattern' => 'classes.*', 'icon' => ''],
-                ['route' => 'tahun-ajaran.index', 'label' => 'Tahun Ajaran', 'pattern' => 'tahun-ajaran.*', 'icon' => '' ],
+                ['route' => 'users.index', 'label' => 'Pengguna', 'pattern' => 'users.*', 'icon' => 'users'],
+                ['route' => 'students.index', 'label' => 'Siswa', 'pattern' => 'students.*', 'icon' => 'graduation-cap'],
+                ['route' => 'classes.index', 'label' => 'Kelas', 'pattern' => 'classes.*', 'icon' => 'school'],
+                ['route' => 'tahun-ajaran.index', 'label' => 'Tahun Ajaran', 'pattern' => 'tahun-ajaran.*', 'icon' => 'calendar'],
             ],
         ],
         [
             'label' => 'Pelanggaran',
             'icon' => 'shield-alert',
             'items' => [
-                ['route' => 'violation-categories.index', 'label' => 'Daftar Pelanggaran', 'pattern' => 'violation-categories.*', 'icon' => ''],
-                ['route' => 'kasus-pelanggaran.index', 'label' => 'Kasus', 'pattern' => 'kasus-pelanggaran.*', 'icon' => ''],
+                ['route' => 'violation-categories.index', 'label' => 'Daftar Pelanggaran', 'pattern' => 'violation-categories.*', 'icon' => 'list'],
+                ['route' => 'kasus-pelanggaran.index', 'label' => 'Kasus', 'pattern' => 'kasus-pelanggaran.*', 'icon' => 'alert-circle'],
             ],
         ],
         [
             'label' => 'Prestasi',
             'icon' => 'trophy',
             'items' => [
-                ['route' => 'achievement-categories.index', 'label' => 'Kategori', 'pattern' => 'achievement-categories.*', 'icon' => ''],
-                ['route' => 'achievement-records.index', 'label' => 'Rekam Prestasi', 'pattern' => 'achievement-records.*', 'icon' => ''],
+                ['route' => 'achievement-categories.index', 'label' => 'Kategori', 'pattern' => 'achievement-categories.*', 'icon' => 'tags'],
+                ['route' => 'achievement-records.index', 'label' => 'Rekam Prestasi', 'pattern' => 'achievement-records.*', 'icon' => 'award'],
             ],
         ],
         [
             'label' => 'Poin',
             'icon' => 'wallet',
             'items' => [
-                ['route' => 'monitor-poin.index', 'label' => 'Monitor Poin', 'pattern' => 'monitor-poin.*', 'icon' => ''],
-                ['route' => 'point-ledgers.index', 'label' => 'Riwayat Poin', 'pattern' => 'point-ledgers.*', 'icon' => ''],
+                ['route' => 'monitor-poin.index', 'label' => 'Monitor Poin', 'pattern' => 'monitor-poin.*', 'icon' => 'activity'],
+                ['route' => 'point-ledgers.index', 'label' => 'Riwayat Poin', 'pattern' => 'point-ledgers.*', 'icon' => 'history'],
             ],
         ],
         [
             'label' => 'Sistem',
             'icon' => 'settings',
             'items' => [
-                ['route' => 'settings.index', 'label' => 'Pengaturan', 'pattern' => 'settings.*', 'icon' => ''],
+                ['route' => 'settings.index', 'label' => 'Pengaturan', 'pattern' => 'settings.*', 'icon' => 'sliders'],
             ],
         ],
     ];
@@ -55,11 +55,14 @@
 ">
     {{-- Tanpa border-bottom & tanpa garis vertikal: strip atas menyatu dengan app-header
          (bg --neutral sama), garis vertikal pemisah baru digambar main (app.blade). --}}
-    <div style="padding:var(--sp-lg)">
-        <a href="{{ route('dashboard') }}" style="display:flex;align-items:center;gap:var(--sp-sm);text-decoration:none;color:var(--primary);font-size:1.125rem;font-weight:700">
-            <img src="{{ asset('image.ico') }}" alt="Logo" style="width:24px;height:24px;border-radius:4px">
-            <span>Pelanggaran Kuy</span>
-        </a>
+    <div class="sidebar-brand-wrap" style="padding:var(--sp-md) var(--sp-lg);border-bottom:1px solid var(--border)">
+        <button type="button" onclick="toggleSidebarCollapse()" class="sidebar-brand-toggle" style="display:flex;align-items:center;justify-content:space-between;width:100%;border:none;background:transparent;color:var(--primary);cursor:pointer;padding:4px 0;font-family:inherit;text-align:left;transition:all .15s" title="Klik untuk perkecil / perbesar sidebar">
+            <div style="display:flex;align-items:center;gap:var(--sp-sm);min-width:0">
+                <img src="{{ asset('image.ico') }}" alt="Logo" style="width:24px;height:24px;border-radius:4px;flex-shrink:0">
+                <span class="sidebar-brand-title" style="font-size:1.0625rem;font-weight:700;white-space:nowrap;letter-spacing:-0.01em;overflow:hidden;text-overflow:ellipsis">Pelanggaran Kuy</span>
+            </div>
+            <i data-lucide="panel-left-close" class="sidebar-toggle-icon sidebar-brand-title icon-sm" style="color:var(--on-surface-muted);flex-shrink:0"></i>
+        </button>
     </div>
 
     <nav style="flex:1;padding:var(--sp-sm)">
@@ -70,9 +73,9 @@
             font-size:.875rem;font-weight:600;text-decoration:none;
             margin-bottom:var(--sp-sm);transition:background .15s,color .15s;
             {{ $isActive('dashboard') ? 'background:var(--surface);color:var(--on-surface);' : 'color:var(--on-surface-muted);' }}
-        ">
+        " title="Dashboard">
             <i data-lucide="layout-dashboard" style="width:18px;height:18px;flex-shrink:0"></i>
-            Dashboard
+            <span class="nav-label">Dashboard</span>
         </a>
 
         @foreach($groups as $group)
@@ -84,9 +87,9 @@
                     font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
                     cursor:pointer;list-style:none;user-select:none;
                     {{ $open ? 'color:var(--on-surface);' : 'color:var(--on-surface-muted);' }}
-                ">
+                " title="{{ $group['label'] }}">
                     <i data-lucide="{{ $group['icon'] }}" style="width:16px;height:16px;flex-shrink:0"></i>
-                    <span style="flex:1">{{ $group['label'] }}</span>
+                    <span class="nav-label" style="flex:1">{{ $group['label'] }}</span>
                     <i data-lucide="chevron-down" class="navchev" style="width:14px;height:14px;flex-shrink:0;transition:transform .15s"></i>
                 </summary>
                 <div style="padding:4px 0 6px 0">
@@ -97,9 +100,9 @@
                             font-size:.875rem;font-weight:600;text-decoration:none;
                             margin-bottom:2px;transition:background .15s,color .15s;
                             {{ $isActive($item['pattern']) ? 'background:var(--surface);color:var(--on-surface);' : 'color:var(--on-surface-muted);' }}
-                        ">
+                        " title="{{ $item['label'] }}">
                             <i data-lucide="{{ $item['icon'] }}" style="width:18px;height:18px;flex-shrink:0"></i>
-                            {{ $item['label'] }}
+                            <span class="nav-label">{{ $item['label'] }}</span>
                         </a>
                     @endforeach
                 </div>
@@ -108,17 +111,17 @@
     </nav>
 
     <div style="padding:var(--sp-md);border-top:1px solid var(--border)">
-        <button onclick="toggleTheme()" style="
+        <button onclick="toggleTheme()" class="theme-toggle-btn sidebar-bottom-btn" style="
             display:flex;align-items:center;gap:var(--sp-sm);width:100%;
             padding:8px var(--sp-md);border-radius:var(--r-sm);border:none;
             background:transparent;color:var(--on-surface-muted);
             font-size:.875rem;font-weight:600;cursor:pointer;font-family:inherit;
             transition:background .15s;
-        " onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'">
+        " onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'" title="Ganti Tema">
             <i data-lucide="sun" class="icon-theme" style="width:18px;height:18px"></i>
-            <span class="theme-label">Mode Terang</span>
+            <span class="theme-label nav-label">Mode Terang</span>
         </button>
-        <div style="display:flex;align-items:center;gap:var(--sp-sm);padding:8px var(--sp-md);margin-top:var(--sp-xs)">
+        <div class="user-profile-row" style="display:flex;align-items:center;gap:var(--sp-sm);padding:8px var(--sp-md);margin-top:var(--sp-xs)">
             <div style="width:32px;height:32px;border-radius:var(--r-full);background:var(--primary);color:var(--on-primary);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0;overflow:hidden">
                 @if(Auth::user()?->avatar_path)
                     <img src="{{ asset('storage/'.Auth::user()->avatar_path) }}" alt="{{ Auth::user()->name }}" style="width:100%;height:100%;object-fit:cover">
@@ -126,18 +129,18 @@
                     {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 2)) }}
                 @endif
             </div>
-            <div style="flex:1;min-width:0">
+            <div class="user-info-text" style="flex:1;min-width:0">
                 <div style="font-size:.875rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ Auth::user()->name ?? 'User' }}</div>
                 <div style="font-size:.75rem;color:var(--on-surface-muted)">{{ Auth::user()->email ?? '' }}</div>
             </div>
         </div>
-        <a href="{{ route('profile.edit') }}" style="display:flex;align-items:center;gap:var(--sp-sm);padding:8px var(--sp-md);font-size:.875rem;color:var(--on-surface-muted);text-decoration:none;border-radius:var(--r-sm);margin-top:var(--sp-xs)">
-            <i data-lucide="settings" style="width:16px;height:16px"></i> Pengaturan
+        <a href="{{ route('profile.edit') }}" class="sidebar-bottom-btn" style="display:flex;align-items:center;gap:var(--sp-sm);padding:8px var(--sp-md);font-size:.875rem;color:var(--on-surface-muted);text-decoration:none;border-radius:var(--r-sm);margin-top:var(--sp-xs)" title="Pengaturan Akun">
+            <i data-lucide="settings" style="width:16px;height:16px"></i> <span class="nav-label">Pengaturan</span>
         </a>
         <form method="POST" action="{{ route('logout') }}">
             @csrf
-            <button type="submit" style="display:flex;align-items:center;gap:var(--sp-sm);width:100%;padding:8px var(--sp-md);font-size:.875rem;color:var(--danger);background:none;border:none;cursor:pointer;font-family:inherit;border-radius:var(--r-sm);margin-top:2px">
-                <i data-lucide="log-out" style="width:16px;height:16px"></i> Keluar
+            <button type="submit" class="sidebar-bottom-btn" style="display:flex;align-items:center;gap:var(--sp-sm);width:100%;padding:8px var(--sp-md);font-size:.875rem;color:var(--danger);background:none;border:none;cursor:pointer;font-family:inherit;border-radius:var(--r-sm);margin-top:2px" title="Keluar">
+                <i data-lucide="log-out" style="width:16px;height:16px"></i> <span class="nav-label">Keluar</span>
             </button>
         </form>
     </div>
@@ -290,8 +293,26 @@
             saved[key] = group.hasAttribute('open');  // hanya key sendiri
             writeNav(saved);
         });
+
+        var summary = group.querySelector('summary');
+        if (summary) {
+            summary.addEventListener('click', function(e) {
+                if (document.documentElement.classList.contains('sidebar-collapsed')) {
+                    if (typeof toggleSidebarCollapse === 'function') {
+                        toggleSidebarCollapse();
+                    }
+                    setTimeout(function() { group.setAttribute('open', ''); }, 50);
+                }
+            });
+        }
     });
     loadNavState();
+
+    if (document.documentElement.classList.contains('sidebar-collapsed')) {
+        document.querySelectorAll('.sidebar-toggle-icon').forEach(function(el) {
+            el.setAttribute('data-lucide', 'panel-left-open');
+        });
+    }
 })();
 
 (function() {

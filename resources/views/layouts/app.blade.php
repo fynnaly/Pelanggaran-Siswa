@@ -22,6 +22,10 @@
             } else {
                 document.documentElement.classList.add('light');
             }
+
+            if (localStorage.getItem('sidebar-collapsed') === 'true') {
+                document.documentElement.classList.add('sidebar-collapsed');
+            }
         })();
     </script>
 
@@ -124,10 +128,27 @@
            di bawah header (border-left main+footer) → corner bertemu persis, tanpa
            celah 1px di tema gelap maupun terang. */
         @media(min-width:1024px) {
-            .layout-root { display: grid; grid-template-columns: 256px minmax(0,1fr); grid-template-rows: auto 1fr; min-height: 100vh; }
-            .layout-root > .app-header { grid-column: 1 / -1; grid-row: 1; padding-left: calc(256px + var(--sp-lg)); }
+            .layout-root { display: grid; grid-template-columns: 256px minmax(0,1fr); grid-template-rows: auto 1fr; min-height: 100vh; transition: grid-template-columns .2s ease; }
+            .layout-root > .app-header { grid-column: 1 / -1; grid-row: 1; padding-left: calc(256px + var(--sp-lg)); transition: padding-left .2s ease; }
             .layout-root > .app-shell { grid-column: 2; grid-row: 2; margin-left: 0; min-height: 0; min-width: 0; }
             .app-shell > main { border-left: 1px solid var(--border); }
+
+            /* ── Mode Sidebar Perkecil (Collapsed) ── */
+            html.sidebar-collapsed .layout-root { grid-template-columns: 72px minmax(0,1fr) !important; }
+            html.sidebar-collapsed .layout-root > .app-header { padding-left: calc(72px + var(--sp-lg)) !important; }
+            html.sidebar-collapsed .sidebar { width: 72px !important; }
+            html.sidebar-collapsed .sidebar .sidebar-brand-title,
+            html.sidebar-collapsed .sidebar .nav-label,
+            html.sidebar-collapsed .sidebar .navchev,
+            html.sidebar-collapsed .sidebar .theme-label,
+            html.sidebar-collapsed .sidebar .user-info-text,
+            html.sidebar-collapsed .sidebar .nav-group > div { display: none !important; }
+            html.sidebar-collapsed .sidebar .sidebar-brand-wrap { padding: var(--sp-md) var(--sp-xs) !important; }
+            html.sidebar-collapsed .sidebar .sidebar-brand-toggle { justify-content: center !important; }
+            html.sidebar-collapsed .sidebar nav a { justify-content: center !important; padding: 10px 0 !important; }
+            html.sidebar-collapsed .sidebar nav details summary { justify-content: center !important; padding: 10px 0 !important; }
+            html.sidebar-collapsed .sidebar .sidebar-bottom-btn { justify-content: center !important; padding: 8px 0 !important; }
+            html.sidebar-collapsed .sidebar .user-profile-row { justify-content: center !important; padding: 8px 0 !important; }
         }
 
         /* ── Cards ── */
@@ -264,20 +285,16 @@
         .icon-lg{width:22px;height:22px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;flex-shrink:0}
         .card-form{max-width:640px;margin:0 auto}
 
-        /* ── Modal overlay ── */
+        /* ── Modal overlay: di tengah mutlak layar penuh, menutupi sidebar ── */
         .modal-overlay {
             position: fixed;
             inset: 0;
-            z-index: 1000;
+            z-index: 9999;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: var(--sp-md);
-        }
-        @media (min-width: 1024px) {
-            .modal-overlay {
-                padding-left: calc(256px + var(--sp-md));
-            }
+            margin: 0 !important;
         }
 
         /* ── Recovery recommendation tabs ── */
@@ -475,6 +492,15 @@
             if (!d) {
                 setTimeout(checkForceDarkNotice, 80);
             }
+        }
+
+        function toggleSidebarCollapse() {
+            const isCollapsed = document.documentElement.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('sidebar-collapsed', isCollapsed ? 'true' : 'false');
+            document.querySelectorAll('.sidebar-toggle-icon').forEach(el => {
+                el.setAttribute('data-lucide', isCollapsed ? 'panel-left-open' : 'panel-left-close');
+            });
+            if (window.lucide) lucide.createIcons();
         }
     </script>
 </body>
