@@ -13,8 +13,8 @@
     <div class="main-wrap">
         <x-prerequisite-modal
             :has-prerequisites="$hasPrerequisites"
-            title="Data Referensi Siswa Belum Lengkap"
-            message="Untuk mendaftarkan siswa baru, sistem memerlukan tahun ajaran aktif dan setidaknya satu rombel kelas untuk penempatan pendaftaran."
+            title="Data Referensi Belum Lengkap"
+            message="Pastikan Tahun Ajaran dan Kelas sudah tersedia sebelum mendaftarkan siswa baru."
             :prerequisites="$prerequisites"
         />
 

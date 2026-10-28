@@ -79,19 +79,19 @@ class AchievementRecordController extends Controller
 
         $prerequisites = [
             [
-                'label' => 'Tahun Ajaran Aktif',
+                'label' => 'Tahun Ajaran',
                 'ready' => $hasActiveYear,
                 'url' => route('tahun-ajaran.create'),
                 'action' => 'Buat Tahun Ajaran',
             ],
             [
-                'label' => 'Data Siswa Terdaftar',
+                'label' => 'Siswa',
                 'ready' => $hasStudents,
                 'url' => route('students.create'),
                 'action' => 'Tambah Siswa',
             ],
             [
-                'label' => 'Sub Kategori Prestasi',
+                'label' => 'Kategori Prestasi',
                 'ready' => $hasCategories,
                 'url' => route('achievement-categories.create'),
                 'action' => 'Tambah Kategori',

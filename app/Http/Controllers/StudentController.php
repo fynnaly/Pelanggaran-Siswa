@@ -90,13 +90,13 @@ class StudentController extends Controller
 
         $prerequisites = [
             [
-                'label' => 'Tahun Ajaran Aktif',
+                'label' => 'Tahun Ajaran',
                 'ready' => $hasActiveYear,
                 'url' => route('tahun-ajaran.create'),
                 'action' => 'Buat Tahun Ajaran',
             ],
             [
-                'label' => 'Rombongan Belajar (Kelas Aktif)',
+                'label' => 'Kelas',
                 'ready' => $hasClasses,
                 'url' => route('classes.create'),
                 'action' => 'Buat Kelas',

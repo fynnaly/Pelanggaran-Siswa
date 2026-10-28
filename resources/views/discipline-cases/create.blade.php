@@ -10,8 +10,8 @@
     <div class="main-wrap">
         <x-prerequisite-modal
             :has-prerequisites="$hasPrerequisites"
-            title="Data Referensi Kasus Belum Lengkap"
-            message="Untuk mencatat kasus pelanggaran baru, sistem memerlukan tahun ajaran aktif, data rombel kelas, siswa terdaftar, dan sub kategori pelanggaran."
+            title="Data Referensi Belum Lengkap"
+            message="Pastikan data Tahun Ajaran, Kelas, Siswa, dan Kategori Pelanggaran sudah tersedia sebelum mencatat kasus baru."
             :prerequisites="$prerequisites"
         />
 

@@ -95,13 +95,12 @@
                 <div style="padding:4px 0 6px 0">
                     @foreach($group['items'] as $item)
                         <a href="{{ route($item['route']) }}" style="
-                            display:flex;align-items:center;gap:var(--sp-sm);
-                            padding:9px var(--sp-md) 9px calc(var(--sp-md) + 20px);border-radius:var(--r-sm);
-                            font-size:.875rem;font-weight:600;text-decoration:none;
+                            display:block;
+                            padding:8px var(--sp-md) 8px calc(var(--sp-md) + 26px);border-radius:var(--r-sm);
+                            font-size:.875rem;font-weight:500;text-decoration:none;
                             margin-bottom:2px;transition:background .15s,color .15s;
-                            {{ $isActive($item['pattern']) ? 'background:var(--surface);color:var(--on-surface);' : 'color:var(--on-surface-muted);' }}
+                            {{ $isActive($item['pattern']) ? 'background:var(--surface);color:var(--on-surface);font-weight:600;' : 'color:var(--on-surface-muted);' }}
                         " title="{{ $item['label'] }}">
-                            <i data-lucide="{{ $item['icon'] }}" style="width:18px;height:18px;flex-shrink:0"></i>
                             <span class="nav-label">{{ $item['label'] }}</span>
                         </a>
                     @endforeach
@@ -227,13 +226,12 @@
                     <div style="padding:4px 0 6px 0">
                         @foreach($group['items'] as $item)
                             <a href="{{ route($item['route']) }}" @click="open = false; localStorage.setItem('sidebar-open', 'false')" style="
-                                display:flex;align-items:center;gap:var(--sp-sm);
-                                padding:9px var(--sp-md) 9px calc(var(--sp-md) + 20px);border-radius:var(--r-sm);
-                                font-size:.875rem;font-weight:600;text-decoration:none;
+                                display:block;
+                                padding:8px var(--sp-md) 8px calc(var(--sp-md) + 26px);border-radius:var(--r-sm);
+                                font-size:.875rem;font-weight:500;text-decoration:none;
                                 margin-bottom:2px;transition:background .15s;
-                                {{ $isActive($item['pattern']) ? 'background:var(--surface);color:var(--on-surface);' : 'color:var(--on-surface-muted);' }}
+                                {{ $isActive($item['pattern']) ? 'background:var(--surface);color:var(--on-surface);font-weight:600;' : 'color:var(--on-surface-muted);' }}
                             ">
-                                <i data-lucide="{{ $item['icon'] }}" style="width:18px;height:18px;flex-shrink:0"></i>
                                 {{ $item['label'] }}
                             </a>
                         @endforeach

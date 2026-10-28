@@ -69,10 +69,10 @@ class SchoolClassController extends Controller
         $hasPrerequisites = (bool) $activeYear;
         $prerequisites = [
             [
-                'label' => 'Tahun Ajaran Aktif',
+                'label' => 'Tahun Ajaran',
                 'ready' => (bool) $activeYear,
                 'url' => route('tahun-ajaran.create'),
-                'action' => 'Buat Tahun Ajaran Baru',
+                'action' => 'Buat Tahun Ajaran',
             ],
         ];
 

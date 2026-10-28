@@ -11,7 +11,7 @@
         <x-prerequisite-modal
             :has-prerequisites="$hasPrerequisites"
             title="Tahun Ajaran Belum Tersedia"
-            message="Data rombongan belajar (kelas) wajib terikat pada tahun ajaran aktif sebagai induk referensi akademik."
+            message="Pastikan Tahun Ajaran aktif sudah dibuat terlebih dahulu sebelum menambahkan data kelas."
             :prerequisites="$prerequisites"
         />
 

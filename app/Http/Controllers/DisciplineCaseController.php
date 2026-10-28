@@ -95,25 +95,25 @@ class DisciplineCaseController extends Controller
 
         $prerequisites = [
             [
-                'label' => 'Tahun Ajaran Aktif',
+                'label' => 'Tahun Ajaran',
                 'ready' => $hasActiveYear,
                 'url' => route('tahun-ajaran.create'),
                 'action' => 'Buat Tahun Ajaran',
             ],
             [
-                'label' => 'Rombongan Belajar (Kelas)',
+                'label' => 'Kelas',
                 'ready' => $hasClasses,
                 'url' => route('classes.create'),
                 'action' => 'Buat Kelas',
             ],
             [
-                'label' => 'Data Siswa Terdaftar',
+                'label' => 'Siswa',
                 'ready' => $hasStudents,
                 'url' => route('students.create'),
                 'action' => 'Tambah Siswa',
             ],
             [
-                'label' => 'Sub Kategori Pelanggaran',
+                'label' => 'Kategori Pelanggaran',
                 'ready' => $hasCategories,
                 'url' => route('violation-categories.create'),
                 'action' => 'Tambah Kategori',

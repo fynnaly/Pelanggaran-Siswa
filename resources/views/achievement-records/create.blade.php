@@ -10,8 +10,8 @@
     <div class="main-wrap">
         <x-prerequisite-modal
             :has-prerequisites="$hasPrerequisites"
-            title="Data Referensi Prestasi Belum Lengkap"
-            message="Untuk mencatat rekam prestasi siswa baru, sistem memerlukan tahun ajaran aktif, data siswa terdaftar, dan sub kategori prestasi."
+            title="Data Referensi Belum Lengkap"
+            message="Pastikan data Tahun Ajaran, Siswa, dan Kategori Prestasi sudah tersedia sebelum mencatat rekam prestasi."
             :prerequisites="$prerequisites"
         />
 

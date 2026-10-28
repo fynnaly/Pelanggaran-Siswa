@@ -153,9 +153,8 @@
                 </div>
             </div>
         </div>
-        </div>
 
-{{-- Distribusi Zona Poin --}}
+        {{-- Distribusi Zona Poin --}}
         <div class="section">
             <div class="card no-hover">
                 <h3 style="font-size:0.875rem;font-weight:600;margin-bottom:var(--sp-md)">Distribusi Zona Poin</h3>
@@ -183,11 +182,12 @@
                                 @endforeach
             </div>
         </div>
+
         {{-- Tren 30 Hari --}}
         <div class="section">
-            <div class="card no-hover">
+            <div class="card no-hover" style="overflow:hidden">
                 <h3 style="font-size:0.875rem;font-weight:600;margin-bottom:var(--sp-md)">Tren 30 Hari</h3>
-                <div style="height:200px;position:relative">
+                <div style="height:200px;position:relative;width:100%;min-width:0">
                     <canvas id="trendChart" 
                         data-labels="{{ json_encode($trendLabels) }}"
                         data-new="{{ json_encode($trendNew) }}"

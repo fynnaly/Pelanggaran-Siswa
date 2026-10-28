@@ -69,7 +69,7 @@
         .mono { font-family: ui-monospace, monospace; font-size: .8125rem; line-height: 1.5; }
 
         /* ── Layout ── */
-        .main-wrap { max-width: 1280px; margin: 0 auto; padding: var(--sp-xl) var(--sp-md); overflow-x: hidden; }
+        .main-wrap { max-width: 1280px; margin: 0 auto; padding: var(--sp-xl) var(--sp-lg); overflow-x: hidden; }
         .page-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:var(--sp-md); margin-bottom: var(--sp-xl); width:100%; }
         .page-header h1 { margin-bottom: var(--sp-xs); }
         .page-header > div:first-child{flex:1; min-width:200px;}
@@ -256,11 +256,11 @@
         .dark .skeleton { background: #1e293b; }
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
 
-        /* ── Page transition: fade-in halus saat pindah halaman ── */
+        /* ── Page transition: fade-in halus tanpa transform (agar position:fixed di dalam main tidak terperangkap) ── */
         @media (prefers-reduced-motion: no-preference) {
-            .app-shell > main { animation: page-in .18s ease-out both; }
+            .app-shell > main { animation: page-in .18s ease-out; }
         }
-        @keyframes page-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+        @keyframes page-in { from { opacity: 0; } to { opacity: 1; } }
 
         /* ── Action buttons in table ── */
         .action-cell { display: flex; gap: var(--sp-xs); }
