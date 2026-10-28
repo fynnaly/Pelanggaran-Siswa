@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="page-header">
             <div>
-                <h1><i data-lucide="wallet" class="icon"></i> Riwayat Poin</h1>
+                <h1>Riwayat Poin</h1>
                 <p class="text-sm text-muted" style="margin:0" data-live-count>Riwayat transaksi poin seluruh siswa</p>
             </div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">

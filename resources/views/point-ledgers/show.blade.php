@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="page-header">
             <div>
-                <h1><i data-lucide="book-open" class="icon"></i> Riwayat Poin Siswa</h1>
+                <h1>Riwayat Poin Siswa</h1>
                 <p class="text-sm text-muted" style="margin:0">{{ $student?->full_name ?? '-' }} ({{ $student?->currentEnrollment?->schoolClass?->name ?? '-' }})</p>
             </div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">

@@ -41,6 +41,10 @@ class DashboardController extends Controller
             ->where('students.status', 'active')
             ->pluck('point_ledgers.balance_after', 'point_ledgers.student_id');
 
+        $criticalStudentsCount = $latestBalances
+            ->filter(fn ($bal) => (int) $bal <= $intervensiMax)
+            ->count();
+
         $lowPointStudents = Student::query()
             ->where('status', 'active')
             ->whereIn('id', $latestBalances->keys()->all())
@@ -55,9 +59,9 @@ class DashboardController extends Controller
             ->take(5)
             ->values();
 
-        $recentCases = DisciplineCase::with(['student', 'violationCategory', 'reporter'])
+        $recentCases = DisciplineCase::with(['student.currentEnrollment.schoolClass', 'schoolClass', 'violationCategory'])
             ->latest('created_at')
-            ->limit(8)
+            ->limit(6)
             ->get();
 
         // Distribusi zona poin — pakai $latestBalances yang sudah ada (0 query tambahan).
@@ -110,6 +114,7 @@ class DashboardController extends Controller
             'totalCategories',
             'totalCategoriesActive',
             'activeAcademicYear',
+            'criticalStudentsCount',
             'lowPointStudents',
             'recentCases',
             'zoneCounts',
