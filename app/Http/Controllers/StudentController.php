@@ -76,14 +76,34 @@ class StudentController extends Controller
     /** Form tambah siswa — kirim daftar kelas dari controller (jangan query di Blade). */
     public function create()
     {
+        $activeYear = AcademicYear::where('is_active', true)->first();
         // Hanya kelas aktif — kelas arsip (nonaktif/tahun lama) tidak boleh dipakai mendaftar.
         $classes = SchoolClass::with('academicYear')
-            ->where('academic_year_id', AcademicYear::where('is_active', true)->value('id'))
+            ->when($activeYear, fn ($q) => $q->where('academic_year_id', $activeYear->id))
             ->where('status', 'active')
             ->orderBy('name')->get();
         $academicYears = AcademicYear::orderByDesc('start_date')->get();
 
-        return view('students.create', compact('classes', 'academicYears'));
+        $hasActiveYear = (bool) $activeYear;
+        $hasClasses = $classes->isNotEmpty();
+        $hasPrerequisites = $hasActiveYear && $hasClasses;
+
+        $prerequisites = [
+            [
+                'label' => 'Tahun Ajaran Aktif',
+                'ready' => $hasActiveYear,
+                'url' => route('tahun-ajaran.create'),
+                'action' => 'Buat Tahun Ajaran',
+            ],
+            [
+                'label' => 'Rombongan Belajar (Kelas Aktif)',
+                'ready' => $hasClasses,
+                'url' => route('classes.create'),
+                'action' => 'Buat Kelas',
+            ],
+        ];
+
+        return view('students.create', compact('classes', 'academicYears', 'hasPrerequisites', 'prerequisites'));
     }
 
     /** Simpan siswa baru + buat saldo awal 2000 (OPENING_BALANCE) sekali per tahun ajaran. */

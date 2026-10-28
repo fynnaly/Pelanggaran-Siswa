@@ -8,6 +8,13 @@
         </div>
     </x-slot>
     <div class="main-wrap">
+        <x-prerequisite-modal
+            :has-prerequisites="$hasPrerequisites"
+            title="Data Referensi Prestasi Belum Lengkap"
+            message="Untuk mencatat rekam prestasi siswa baru, sistem memerlukan tahun ajaran aktif, data siswa terdaftar, dan sub kategori prestasi."
+            :prerequisites="$prerequisites"
+        />
+
         <div class="card card-form" x-data="recordForm(@js($selectedStudent))">
             @if(session('success'))<div class="alert alert-success"><i data-lucide="check-circle" class="icon-sm"></i> {{ session('success') }}</div>@endif
             @if(session('error'))<div class="alert alert-error"><i data-lucide="alert-circle" class="icon-sm"></i> {{ session('error') }}</div>@endif

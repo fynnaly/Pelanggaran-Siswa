@@ -11,6 +11,13 @@
         </div>
     </x-slot>
     <div class="main-wrap">
+        <x-prerequisite-modal
+            :has-prerequisites="$hasPrerequisites"
+            title="Data Referensi Siswa Belum Lengkap"
+            message="Untuk mendaftarkan siswa baru, sistem memerlukan tahun ajaran aktif dan setidaknya satu rombel kelas untuk penempatan pendaftaran."
+            :prerequisites="$prerequisites"
+        />
+
         <div class="card card-form">
             @if($errors->any())<div class="alert alert-error" style="margin-bottom:var(--sp-lg)"><i data-lucide="alert-circle" class="icon-sm"></i> {{ $errors->first() }}</div>@endif
             <form action="{{ route('students.store') }}" method="POST">

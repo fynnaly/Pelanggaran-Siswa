@@ -8,6 +8,13 @@
         </div>
     </x-slot>
     <div class="main-wrap">
+        <x-prerequisite-modal
+            :has-prerequisites="$hasPrerequisites"
+            title="Data Referensi Kasus Belum Lengkap"
+            message="Untuk mencatat kasus pelanggaran baru, sistem memerlukan tahun ajaran aktif, data rombel kelas, siswa terdaftar, dan sub kategori pelanggaran."
+            :prerequisites="$prerequisites"
+        />
+
         <div class="card card-form" x-data="caseForm()">
             @if(session('success'))<div class="alert alert-success"><i data-lucide="check-circle" class="icon-sm"></i> {{ session('success') }}</div>@endif
             @if(session('error'))<div class="alert alert-error"><i data-lucide="alert-circle" class="icon-sm"></i> {{ session('error') }}</div>@endif

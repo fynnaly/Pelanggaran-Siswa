@@ -86,7 +86,41 @@ class DisciplineCaseController extends Controller
             $selectedGroupId = $oldSub?->parent_id ?? $oldSub?->id;
         }
 
-        return view('discipline-cases.create', compact('categories', 'categoryGroups', 'selectedGroupId', 'classes', 'selectedStudent'));
+        $activeYear = AcademicYear::where('is_active', true)->first();
+        $hasActiveYear = (bool) $activeYear;
+        $hasClasses = $classes->isNotEmpty();
+        $hasStudents = Student::where('status', 'active')->exists();
+        $hasCategories = ViolationCategory::where('status', 'active')->whereNotNull('parent_id')->exists();
+        $hasPrerequisites = $hasActiveYear && $hasClasses && $hasStudents && $hasCategories;
+
+        $prerequisites = [
+            [
+                'label' => 'Tahun Ajaran Aktif',
+                'ready' => $hasActiveYear,
+                'url' => route('tahun-ajaran.create'),
+                'action' => 'Buat Tahun Ajaran',
+            ],
+            [
+                'label' => 'Rombongan Belajar (Kelas)',
+                'ready' => $hasClasses,
+                'url' => route('classes.create'),
+                'action' => 'Buat Kelas',
+            ],
+            [
+                'label' => 'Data Siswa Terdaftar',
+                'ready' => $hasStudents,
+                'url' => route('students.create'),
+                'action' => 'Tambah Siswa',
+            ],
+            [
+                'label' => 'Sub Kategori Pelanggaran',
+                'ready' => $hasCategories,
+                'url' => route('violation-categories.create'),
+                'action' => 'Tambah Kategori',
+            ],
+        ];
+
+        return view('discipline-cases.create', compact('categories', 'categoryGroups', 'selectedGroupId', 'classes', 'selectedStudent', 'hasPrerequisites', 'prerequisites'));
     }
 
     /** Menyimpan pelaporan pelanggaran baru */

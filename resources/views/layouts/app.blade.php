@@ -264,6 +264,22 @@
         .icon-lg{width:22px;height:22px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;flex-shrink:0}
         .card-form{max-width:640px;margin:0 auto}
 
+        /* ── Modal overlay ── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--sp-md);
+        }
+        @media (min-width: 1024px) {
+            .modal-overlay {
+                padding-left: calc(256px + var(--sp-md));
+            }
+        }
+
         /* ── Recovery recommendation tabs ── */
         .recovery-tabs{display:flex;gap:var(--sp-sm);flex-wrap:wrap;margin-bottom:var(--sp-md)}
         .recovery-tab{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--r-sm);

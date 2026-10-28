@@ -8,6 +8,13 @@
         </div>
     </x-slot>
     <div class="main-wrap">
+        <x-prerequisite-modal
+            :has-prerequisites="$hasPrerequisites"
+            title="Tahun Ajaran Belum Tersedia"
+            message="Data rombongan belajar (kelas) wajib terikat pada tahun ajaran aktif sebagai induk referensi akademik."
+            :prerequisites="$prerequisites"
+        />
+
         <div class="card card-form">
             @if($errors->any())<div class="alert alert-error" style="margin-bottom:var(--sp-lg)"><i data-lucide="alert-circle" class="icon-sm"></i> {{ $errors->first() }}</div>@endif
             <form action="{{ route('classes.store') }}" method="POST">
@@ -35,11 +42,9 @@
                     <input type="text" name="major" value="{{ old('major') }}" class="field-input" placeholder="Contoh: RPL">
                 </div>
                 <div class="field"><label class="field-label">Status</label>
-                    <select name="status" class="field-input">
-                        <option value="active" {{ old('status', 'active')==='active'?'selected':'' }}>Aktif</option>
-                        <option value="inactive" {{ old('status')==='inactive'?'selected':'' }}>Nonaktif</option>
-                    </select>
-                    <span class="help-text">Kelas tahun berjalan = Aktif. Kelas tahun lalu (riwayat) = Nonaktif.</span>
+                    <input type="text" class="field-input cursor-not-allowed bg-slate-100 dark:bg-zinc-800 text-slate-500" value="Aktif" disabled style="background:var(--surface);cursor:not-allowed">
+                    <input type="hidden" name="status" value="active">
+                    <span class="help-text">Kelas baru otomatis terdaftar dalam status aktif</span>
                 </div>
                 <div class="field"><label class="field-label">Wali Kelas</label>
                     <select name="homeroom_teacher_id" class="field-input">
