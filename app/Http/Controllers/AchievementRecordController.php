@@ -71,7 +71,34 @@ class AchievementRecordController extends Controller
             }
         }
 
-        return view('achievement-records.create', compact('categories', 'selectedStudent', 'classes'));
+        $activeYear = AcademicYear::where('is_active', true)->first();
+        $hasActiveYear = (bool) $activeYear;
+        $hasStudents = Student::where('status', 'active')->exists();
+        $hasCategories = $categories->isNotEmpty();
+        $hasPrerequisites = $hasActiveYear && $hasStudents && $hasCategories;
+
+        $prerequisites = [
+            [
+                'label' => 'Tahun Ajaran',
+                'ready' => $hasActiveYear,
+                'url' => route('tahun-ajaran.create'),
+                'action' => 'Buat Tahun Ajaran',
+            ],
+            [
+                'label' => 'Siswa',
+                'ready' => $hasStudents,
+                'url' => route('students.create'),
+                'action' => 'Tambah Siswa',
+            ],
+            [
+                'label' => 'Kategori Prestasi',
+                'ready' => $hasCategories,
+                'url' => route('achievement-categories.create'),
+                'action' => 'Tambah Kategori',
+            ],
+        ];
+
+        return view('achievement-records.create', compact('categories', 'selectedStudent', 'classes', 'hasPrerequisites', 'prerequisites'));
     }
 
     /**

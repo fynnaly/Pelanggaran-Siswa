@@ -33,8 +33,6 @@ Thumbs.db
 /.worktrees/
 /pelanggaran_siswa
 docs/procedure
-
-# Local Agents
 .hermes/
 .claude/
 CLAUDE.md

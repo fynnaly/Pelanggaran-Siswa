@@ -25,10 +25,9 @@
                 </div>
                 <div class="field"><label class="field-label">Poin <span class="text-danger">*</span></label><input type="number" name="points" value="{{ old('points') }}" class="field-input" required min="1" placeholder="0"></div>
                 <div class="field"><label class="field-label">Status <span class="text-danger">*</span></label>
-                    <select name="status" class="field-input" required>
-                        <option value="active" {{ old('status', 'active') === 'active' ? 'selected' : '' }}>Aktif</option>
-                        <option value="draft" {{ old('status') === 'draft' ? 'selected' : '' }}>Draft</option>
-                    </select>
+                    <input type="text" class="field-input cursor-not-allowed bg-slate-100 dark:bg-zinc-800 text-slate-500" value="Aktif" disabled style="background:var(--surface);cursor:not-allowed">
+                    <input type="hidden" name="status" value="active">
+                    <span class="help-text">Kategori prestasi baru otomatis berstatus aktif</span>
                 </div>
                 <div style="display:flex;gap:var(--sp-sm);margin-top:var(--sp-lg)">
                     <a href="{{ route('achievement-categories.index') }}" class="btn btn-secondary" style="flex:1;justify-content:center">Batal</a>

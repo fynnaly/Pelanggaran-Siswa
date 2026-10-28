@@ -12,6 +12,17 @@
         </div>
     </x-slot>
     <div class="main-wrap">
+        {{-- Header Khusus Cetak Rekap (Print Only, Sesuai Format Monitoring Kesiswaan) --}}
+        <div class="print-only" style="display:none;margin-bottom:16px">
+            <div style="text-align:center;border-bottom:2px solid #000;padding-bottom:8px">
+                <h2 style="font-size:16px;font-weight:800;margin:0;text-transform:uppercase">FORMAT MONITORING POIN PROGRAM KESISWAAN</h2>
+                <div style="font-size:12px;font-weight:700">{{ \App\Models\Setting::get('school_name', 'SMK Baktinusantara 666') }}</div>
+                <div style="font-size:11px;color:#475569">
+                    Tahun Pelajaran: {{ $academicYears->firstWhere('id', $selectedYearId)?->name ?? 'Semua Tahun' }} &middot; Dicetak: {{ now()->translatedFormat('d F Y') }}
+                </div>
+            </div>
+        </div>
+
         @if(session('success'))<div class="alert alert-success"><i data-lucide="check-circle" class="icon-sm"></i> {{ session('success') }}</div>@endif
         @if(session('error'))<div class="alert alert-error"><i data-lucide="alert-circle" class="icon-sm"></i> {{ session('error') }}</div>@endif
         @if($errors->any())<div class="alert alert-error"><i data-lucide="alert-circle" class="icon-sm"></i> {{ $errors->first() }}</div>@endif
@@ -49,6 +60,11 @@
                         <option value="{{ $z['name'] }}" {{ request('zone')===$z['name']?'selected':'' }}>{{ $z['name'] }}</option>
                     @endforeach
                 </select>
+                @if(request()->filled('q') || request()->filled('year_id') || request()->filled('class_id') || request()->filled('zone'))
+                    <a href="{{ route('monitor-poin.index') }}" class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:4px">
+                        Reset Filter
+                    </a>
+                @endif
             </form>
         </div>
 
@@ -111,7 +127,33 @@
                     </tbody>
                 </table>
             </div>
-            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-wrap:wrap;margin-top:var(--sp-lg)">
+            <div class="print-only" style="display:none;margin-top:24px">
+                <div style="display:flex;justify-content:space-between;text-align:center;font-size:11px">
+                    <div style="width:35%">
+                        <div>Mengetahui,</div>
+                        <div style="font-weight:700">{{ \App\Models\Setting::get('signer_kepala_label', 'Kepala Sekolah') }}</div>
+                        <div style="height:50px"></div>
+                        <div style="font-weight:700;border-top:1px solid #000;padding-top:2px;display:inline-block;min-width:160px">
+                            {{ \App\Models\Setting::get('signer_kepala_nama') ?: '____________________' }}
+                        </div>
+                        @if(\App\Models\Setting::get('signer_kepala_nip'))
+                            <div>NIP. {{ \App\Models\Setting::get('signer_kepala_nip') }}</div>
+                        @endif
+                    </div>
+                    <div style="width:35%">
+                        <div>{{ now()->translatedFormat('d F Y') }}</div>
+                        <div style="font-weight:700">{{ \App\Models\Setting::get('signer_kesiswaan_label', 'Wakasek Kesiswaan') }}</div>
+                        <div style="height:50px"></div>
+                        <div style="font-weight:700;border-top:1px solid #000;padding-top:2px;display:inline-block;min-width:160px">
+                            {{ \App\Models\Setting::get('signer_kesiswaan_nama') ?: '____________________' }}
+                        </div>
+                        @if(\App\Models\Setting::get('signer_kesiswaan_nip'))
+                            <div>NIP. {{ \App\Models\Setting::get('signer_kesiswaan_nip') }}</div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+            <div class="no-print" style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-wrap:wrap;margin-top:var(--sp-lg)">
                 <span class="text-sm text-muted">Menampilkan {{ $paginated->firstItem() ?? 0 }}-{{ $paginated->lastItem() ?? 0 }} dari {{ $paginated->total() }}</span>
                 <div class="pagination" style="margin-top:0">{{ $paginated->links() }}</div>
             </div>
@@ -121,11 +163,14 @@
         @media print {
             .no-print, .app-header, aside, .sidebar, .sidebar-mobile, .sidebar-overlay, .mobile-topbar,
             .pagination, .action-cell { display:none !important; }
+            .print-only { display:block !important; }
             .app-shell { margin-left:0 !important; }
             .main-wrap { padding:0 !important; max-width:none !important; }
-            .table-wrap { border:1px solid #000 !important; border-radius:0 !important; }
+            .table-wrap { border:1px solid #000 !important; border-radius:0 !important; box-shadow:none !important; }
+            table { font-size:10px !important; }
+            th, td { padding:4px 6px !important; }
             a[href]:after { content:none !important; }
-            @page { size:A4 landscape; margin:12mm; }
+            @page { size:A4 landscape; margin:10mm; }
         }
     </style>
     <script>document.addEventListener('DOMContentLoaded',()=>{lucide.createIcons()})</script>

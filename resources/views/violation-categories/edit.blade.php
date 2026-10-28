@@ -8,7 +8,7 @@
             </div>
         </div>
     </x-slot>
-    <div class="main-wrap">
+    <div class="main-wrap" x-data="{ showToleranceTip: false }">
         <div class="card card-form">
             @if($errors->any())<div class="alert alert-error" style="margin-bottom:var(--sp-lg)"><i data-lucide="alert-circle" class="icon-sm"></i> {{ $errors->first() }}</div>@endif
             <form action="{{ route('violation-categories.update', $violationCategory) }}" method="POST">
@@ -38,7 +38,12 @@
                     $tiers = $violationCategory->tierPoints();
                 @endphp
                 <div class="field">
-                    <label class="field-label">Batas Toleransi Poin <span class="text-danger">*</span></label>
+                    <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+                        <label class="field-label" style="margin:0">Batas Toleransi Poin <span class="text-danger">*</span></label>
+                        <button type="button" @click="showToleranceTip = true; $nextTick(() => { if (window.lucide) lucide.createIcons(); })" class="btn btn-secondary" style="padding:2px 6px;border-radius:var(--r-full);line-height:1;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center" title="Bantuan aturan toleransi poin">
+                            <i data-lucide="info" style="width:12px;height:12px"></i>
+                        </button>
+                    </div>
                     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-sm)">
                         <div>
                             <input type="number" name="poin_ke_1" value="{{ old('poin_ke_1', $tiers[0] ?? 0) }}" class="field-input" required min="0" max="1000" placeholder="Ke-1">
@@ -53,8 +58,42 @@
                             <span class="help-text">Pelanggaran ke-3 (batas)</span>
                         </div>
                     </div>
-                    <span class="help-text">Tiga batas pengurangan poin saat pelanggaran diulang; pelanggaran ke-4 dan seterusnya tetap memakai poin ke-3. Kosongkan ke-2 dan ke-3 bila pelanggaran tidak berulang. Isi 0 atau kosongkan batas yang tidak dipakai — contoh: ke-3 = 0 → hanya 2 toleransi (ke-I + ke-II).</span>
+                    <span class="help-text">Poin debit per insiden berulang (Ke-1, Ke-2, batas Ke-3). Klik ikon (i) di atas untuk panduan lengkap.</span>
                 </div>
+
+                <!-- Modal Panduan Toleransi Poin -->
+                <template x-teleport="body">
+                    <div x-show="showToleranceTip" x-cloak class="modal-overlay" style="display:none">
+                        <div style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1001" @click="showToleranceTip = false"></div>
+                        <div x-transition style="background:var(--neutral);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--sp-lg);max-width:500px;width:100%;position:relative;z-index:1002;box-shadow:var(--sh-md);margin:auto">
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:var(--sp-md)">
+                                <div style="width:36px;height:36px;border-radius:var(--r-full);background:var(--bs);color:var(--bt);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                    <i data-lucide="info" class="icon-sm"></i>
+                                </div>
+                                <div>
+                                    <h3 style="font-size:1.125rem;font-weight:700;margin:0">Panduan Toleransi Poin</h3>
+                                    <span class="text-xs text-muted">Pedoman Pengulangan Pelanggaran Siswa</span>
+                                </div>
+                            </div>
+
+                            <div style="font-size:.875rem;line-height:1.6;color:var(--on-surface)">
+                                <p style="margin-top:0">Sekolah menerapkan sistem pembinaan bertingkat (eskalasi penalti). Semakin sering siswa mengulangi pelanggaran yang sama, poin pengurangan meningkat:</p>
+                                <ul style="padding-left:20px;margin:10px 0">
+                                    <li><strong>Pelanggaran Ke-1</strong>: Poin penalti saat pertama kali insiden terjadi (contoh: 8 poin).</li>
+                                    <li><strong>Pelanggaran Ke-2</strong>: Poin penalti jika siswa mengulangi lagi pada tahun berjalan (contoh: 16 poin).</li>
+                                    <li><strong>Pelanggaran Ke-3</strong>: Batas toleransi akhir (contoh: 32 poin). Kejadian ke-4 dan seterusnya tetap dikenakan poin ke-3 ini.</li>
+                                </ul>
+                                <div class="alert alert-info" style="font-size:.8125rem;margin:12px 0 0">
+                                    <strong>Catatan:</strong> Jika pelanggaran tidak memiliki sistem pengulangan (flat penalty), cukup isi <strong>Ke-1</strong> dan kosongkan kolom Ke-2 serta Ke-3.
+                                </div>
+                            </div>
+
+                            <div style="display:flex;justify-content:flex-end;margin-top:var(--sp-md)">
+                                <button type="button" class="btn btn-primary btn-sm" @click="showToleranceTip = false">Mengerti</button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
                 <div class="field">
                     <label class="field-label">Sanksi (otomatis dari daftar prestasi)</label>
                     <input type="text" class="field-input" value="{{ $violationCategory->resolveSanksi() }}" readonly style="background:var(--surface);color:var(--on-surface-muted)">

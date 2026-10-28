@@ -5,57 +5,80 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Sertifikat {{ $student->full_name }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary: #1e3a5f; --tertiary: #059669; --accent: #f59e0b;
-            --on-surface: #1e293b; --on-surface-muted: #64748b; --border: #e2e8f0;
-        }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Figtree', sans-serif; color: var(--on-surface); background: #f1f5f9; }
-        .page { width: 297mm; min-height: 210mm; margin: 0 auto; padding: 14mm; background: #fff; position: relative; overflow: hidden; }
-        .page::before { content:''; position:absolute; inset:0; border:2px solid var(--primary); pointer-events:none; }
-        .page::after { content:''; position:absolute; inset:6mm; border:1px solid var(--border); pointer-events:none; }
-        .inner { position:relative; z-index:1; padding: 10mm 12mm; height:100%; display:flex; flex-direction:column; }
-        .kop { display:flex; align-items:center; gap:12px; border-bottom:3px double var(--primary); padding-bottom:10px; margin-bottom:18px; }
-        .kop img { width:52px; height:52px; object-fit:contain; }
-        .kop-text h1 { font-size:18px; font-weight:800; color:var(--primary); letter-spacing:.02em; }
-        .kop-text p { font-size:11px; color:var(--on-surface-muted); }
-        .title { text-align:center; margin:14px 0 4px; }
-        .title h2 { font-size:22px; font-weight:800; color:var(--primary); letter-spacing:.14em; text-transform:uppercase; }
-        .title .sub { font-size:12px; color:var(--on-surface-muted); margin-top:2px; }
-        .award { text-align:center; margin:16px 0 20px; }
-        .award .badge { display:inline-block; padding:8px 22px; border-radius:999px; font-weight:800; font-size:14px; color:#fff; background:var(--primary); letter-spacing:.04em; }
-        .award .badge.luar { background:var(--tertiary); }
-        .award .badge { background:var(--primary); }
-        .body-text { font-size:13px; line-height:1.7; text-align:center; max-width:220mm; margin:0 auto 18px; }
-        .data { width:100%; max-width:200mm; margin:0 auto 22px; border-collapse:collapse; font-size:13px; }
-        .data td { padding:7px 10px; border-bottom:1px solid var(--border); }
-        .data td:first-child { width:38%; color:var(--on-surface-muted); font-weight:600; }
-        .data td:last-child { font-weight:700; }
-        .sign { display:flex; justify-content:space-between; margin-top:auto; padding:0 6mm; font-size:12px; text-align:center; }
-        .sign .col { width:32%; }
-        .sign .line { margin-top:56px; border-top:1px solid var(--on-surface); padding-top:4px; font-weight:600; }
-        .foot { text-align:center; font-size:10px; color:var(--on-surface-muted); margin-top:14px; }
-        .no-print { position:fixed; top:12px; right:12px; display:flex; gap:8px; z-index:10; }
-        .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 16px; border-radius:8px; border:1px solid var(--border); background:#fff; color:var(--on-surface); font:600 13px 'Figtree',sans-serif; cursor:pointer; text-decoration:none; }
-        .btn-primary { background:var(--tertiary); color:#fff; border-color:var(--tertiary); }
+        body { font-family: 'Figtree', sans-serif; color: #0f172a; background: #e2e8f0; -webkit-font-smoothing: antialiased; }
+        .font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+        /* Sheet container */
+        .cert-sheet { width: 297mm; min-height: 210mm; margin: 20px auto; background: #ffffff; box-shadow: 0 8px 30px rgba(15,23,42,0.12); box-sizing: border-box; }
+        .cert-outer-frame { height: 100%; border: 3px double #1e3a5f; padding: 4mm; box-sizing: border-box; background: #ffffff; }
+        .cert-inner-frame { min-height: calc(210mm - 8mm); border: 1px solid #cbd5e1; padding: 6mm 10mm; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
+
+        /* Kop Surat */
+        .cert-kop { display: flex; align-items: center; gap: 14px; border-bottom: 2px solid #1e3a5f; padding-bottom: 6px; margin-bottom: 6px; }
+        .cert-logo { width: 54px; height: 54px; object-fit: contain; flex-shrink: 0; }
+        .cert-kop-center { flex: 1; text-align: center; }
+        .cert-gov-title { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #475569; }
+        .cert-dept-title { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #475569; }
+        .cert-school-title { font-size: 17px; font-weight: 800; letter-spacing: 0.03em; color: #1e3a5f; text-transform: uppercase; margin: 1px 0; }
+        .cert-school-meta { font-size: 10px; color: #64748b; }
+
+        /* Judul Dokumen */
+        .cert-heading { text-align: center; margin: 4px 0 2px; }
+        .cert-title-text { font-size: 19px; font-weight: 800; letter-spacing: 0.12em; color: #1e3a5f; text-transform: uppercase; margin: 0; }
+        .cert-subtitle-text { font-size: 12px; font-weight: 600; color: #475569; margin-top: 1px; letter-spacing: 0.03em; }
+
+        /* Badge Zona */
+        .cert-badge-wrap { text-align: center; margin: 4px 0; }
+        .cert-badge { display: inline-block; padding: 3px 14px; border-radius: 9999px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+        /* Narasi */
+        .cert-narrative { font-size: 11.5px; line-height: 1.5; text-align: center; max-width: 240mm; margin: 0 auto 6px; color: #334155; }
+
+        /* Tabel Data */
+        .cert-data-table { width: 100%; max-width: 250mm; margin: 0 auto 6px; border-collapse: collapse; font-size: 11px; }
+        .cert-data-table td { padding: 4px 6px; border-bottom: 1px solid #f1f5f9; }
+        .dt-label { width: 18%; color: #64748b; font-weight: 600; }
+        .dt-sep { width: 2%; text-align: center; color: #94a3b8; }
+        .dt-value { width: 30%; color: #0f172a; }
+        .cert-subtext { font-size: 9.5px; color: #64748b; font-weight: normal; margin-left: 4px; }
+
+        /* Blok Tanda Tangan */
+        .cert-sign-grid { display: flex; justify-content: space-between; padding: 0 16mm; margin-top: auto; }
+        .cert-sign-col { width: 38%; text-align: center; font-size: 11px; color: #1e293b; }
+        .cert-sign-meta { font-size: 10.5px; color: #64748b; margin-bottom: 1px; }
+        .cert-sign-role { font-weight: 700; font-size: 11px; }
+        .cert-ttd-slot { height: 48px; display: flex; align-items: center; justify-content: center; }
+        .cert-ttd-img { max-height: 44px; object-fit: contain; }
+        .cert-sign-name { font-weight: 700; border-top: 1px solid #0f172a; padding-top: 3px; display: inline-block; min-width: 150px; font-size: 11px; }
+        .cert-sign-nip { font-size: 9.5px; color: #64748b; margin-top: 1px; }
+
+        /* Footer */
+        .cert-footer-line { text-align: center; font-size: 9px; color: #94a3b8; border-top: 1px dashed #e2e8f0; padding-top: 3px; margin-top: 4px; }
+
+        /* Tombol Aksi Layar */
+        .no-print { position: fixed; top: 14px; right: 14px; display: flex; gap: 8px; z-index: 100; }
+        .btn-ui { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; color: #0f172a; font: 600 12px 'Figtree', sans-serif; cursor: pointer; text-decoration: none; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .btn-ui-primary { background: #059669; color: #ffffff; border-color: #059669; }
+
+        /* Print Media — Pasti 1 Lembar A4 Landscape */
         @media print {
-            body { background:#fff; }
-            .no-print { display:none !important; }
-            .page { width:auto; min-height:auto; margin:0; padding:0; }
-            .page::before, .page::after { display:none; }
-            .inner { padding:12mm 14mm; }
-            @page { size:A4 landscape; margin:0; }
+            body { background: #ffffff !important; margin: 0 !important; padding: 0 !important; }
+            .no-print { display: none !important; }
+            .cert-sheet { width: 297mm !important; height: 210mm !important; max-height: 210mm !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; page-break-after: always; break-after: page; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .cert-outer-frame { border: 3px double #1e3a5f !important; padding: 4mm !important; height: 100% !important; }
+            .cert-inner-frame { border: 1px solid #cbd5e1 !important; height: calc(210mm - 8mm) !important; padding: 6mm 10mm !important; }
+            @page { size: A4 landscape; margin: 0; }
         }
     </style>
 </head>
 <body>
     <div class="no-print">
-        <a href="{{ route('monitor-poin.index') }}" class="btn"><i data-lucide="arrow-left" style="width:14px;height:14px"></i> Kembali</a>
-        <button class="btn btn-primary" onclick="window.print()"><i data-lucide="printer" style="width:14px;height:14px"></i> Cetak</button>
+        <a href="{{ route('monitor-poin.index') }}" class="btn-ui">Kembali</a>
+        <button class="btn-ui btn-ui-primary" onclick="window.print()">Cetak / Simpan PDF</button>
     </div>
     @include('monitor-poin._certificate')
-    <script src="{{ asset('vendor/lucide/lucide.min.js') }}" onload="lucide.createIcons()"></script>
 </body>
 </html>

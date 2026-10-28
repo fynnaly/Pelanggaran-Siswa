@@ -107,22 +107,6 @@
             .profile-sidebar .card > div { flex-direction: row !important; overflow-x: auto; padding-bottom: 2px; }
             .profile-tab-btn { white-space: nowrap; width: auto !important; }
         }
-
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: var(--sp-md);
-        }
-
-        @media (min-width: 1024px) {
-            .modal-overlay {
-                padding-left: calc(256px + var(--sp-md));
-            }
-        }
     </style>
     <script>document.addEventListener('DOMContentLoaded', () => { lucide.createIcons(); });</script>
 </x-app-layout>

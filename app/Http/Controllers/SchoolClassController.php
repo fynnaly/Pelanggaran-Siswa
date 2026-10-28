@@ -64,7 +64,19 @@ class SchoolClassController extends Controller
     {
         $academicYears = AcademicYear::orderBy('name', 'desc')->get();
         $users = User::whereHas('roles', fn ($q) => $q->where('name', 'guru'))->orderBy('name')->get();
-        return view('classes.create', compact('academicYears', 'users'));
+
+        $activeYear = $academicYears->firstWhere('is_active', true) ?? $academicYears->first();
+        $hasPrerequisites = (bool) $activeYear;
+        $prerequisites = [
+            [
+                'label' => 'Tahun Ajaran',
+                'ready' => (bool) $activeYear,
+                'url' => route('tahun-ajaran.create'),
+                'action' => 'Buat Tahun Ajaran',
+            ],
+        ];
+
+        return view('classes.create', compact('academicYears', 'users', 'hasPrerequisites', 'prerequisites'));
     }
 
     /** Menyimpan kelas baru ke database */

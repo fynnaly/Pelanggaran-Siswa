@@ -43,7 +43,7 @@
             }
 
             * { box-sizing: border-box; }
-            html, body { min-height: 100%; margin: 0; padding: 0; }
+            html, body { height: 100%; margin: 0; padding: 0; overflow-x: hidden; }
             body {
                 font-family: 'Figtree', sans-serif;
                 font-size: 0.875rem;
@@ -58,13 +58,16 @@
 
             .guest-wrap {
                 min-height: 100vh;
+                min-height: 100dvh;
+                height: 100dvh;
                 width: 100%;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                padding: var(--sp-xl) var(--sp-md);
+                padding: var(--sp-md);
                 position: relative;
+                overflow: hidden;
             }
 
             /* Floating top-right controls */
@@ -289,14 +292,39 @@
 
             .icon-sm { width: 16px; height: 16px; }
             @media (max-width: 480px) {
+                html, body {
+                    overflow: hidden !important;
+                    height: 100% !important;
+                }
+                .top-bar {
+                    top: 12px;
+                    right: 12px;
+                }
+                .guest-wrap {
+                    padding: 12px 16px;
+                    min-height: 100%;
+                    min-height: 100dvh;
+                    height: 100dvh;
+                    justify-content: center;
+                    overflow: hidden;
+                }
                 .guest-card {
-                    padding: var(--sp-lg);
+                    padding: 16px 12px;
                     border: none;
                     background: transparent;
                     box-shadow: none;
                 }
-                .guest-wrap {
-                    padding: var(--sp-md);
+                .brand-header {
+                    margin-bottom: 12px;
+                }
+                .field {
+                    margin-bottom: 10px;
+                }
+                .options-row {
+                    margin-bottom: 14px;
+                }
+                .guest-footer {
+                    padding-top: 10px;
                 }
             }
         </style>
