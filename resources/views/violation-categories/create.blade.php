@@ -66,8 +66,8 @@
                 <!-- Modal Panduan Toleransi Poin -->
                 <template x-teleport="body">
                     <div x-show="showToleranceTip" x-cloak class="modal-overlay" style="display:none">
-                        <div style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1001" @click="showToleranceTip = false"></div>
-                        <div x-transition style="background:var(--neutral);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--sp-lg);max-width:500px;width:100%;position:relative;z-index:1002;box-shadow:var(--sh-md);margin:auto">
+                        <div style="position:fixed;inset:0;z-index:1" @click="showToleranceTip = false"></div>
+                        <div x-transition style="background:var(--neutral);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--sp-lg);max-width:500px;width:100%;position:relative;z-index:2;box-shadow:var(--sh-md)">
                             <div style="display:flex;align-items:center;gap:10px;margin-bottom:var(--sp-md)">
                                 <div style="width:36px;height:36px;border-radius:var(--r-full);background:var(--bs);color:var(--bt);display:flex;align-items:center;justify-content:center;flex-shrink:0">
                                     <i data-lucide="info" class="icon-sm"></i>

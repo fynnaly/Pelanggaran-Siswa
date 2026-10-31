@@ -10,6 +10,7 @@ use App\Http\Controllers\StudentController;
 use App\Http\Controllers\SchoolClassController;
 use App\Http\Controllers\PointLedgerController;
 use App\Http\Controllers\DisciplineCaseController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\AchievementCategoryController;
 use App\Http\Controllers\AchievementRecordController;
 use App\Http\Controllers\StudentPointController;
@@ -102,6 +103,9 @@ Route::middleware('auth')->group(function () {
     Route::get('users/export', [UserController::class, 'export'])->name('users.export');
     Route::post('users/import', [UserController::class, 'import'])->name('users.import');
     Route::resource('users', UserController::class);
+
+    // Notifikasi — tandai semua sebagai dibaca
+    Route::put('/notifications/mark-read', [NotificationController::class, 'markRead'])->name('notifications.mark-read');
 });
 
 require __DIR__.'/auth.php';

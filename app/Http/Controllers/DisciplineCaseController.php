@@ -9,6 +9,8 @@ use App\Models\AcademicYear;
 use App\Models\SchoolClass;
 use App\Models\PointLedger;
 use App\Models\User;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\NewDisciplineCase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -205,6 +207,20 @@ class DisciplineCaseController extends Controller
         $msg = $count > 1
             ? "{$count} laporan pelanggaran berhasil dicatat secara kolektif (status: Temuan)."
             : 'Laporan pelanggaran ' . $createdCases[0]->case_number . ' berhasil dicatat (status: Temuan).';
+
+        // Notifikasi ke BK & Kesiswaan bila kasus jadi milik rumah sakit (bukan pengelola).
+        $createdUserId = $validated['reporter_id'] ?? auth()->id();
+        $bkAndKesiswaan = User::role(['bk', 'kesiswaan'])->get();
+        if ($bkAndKesiswaan->isNotEmpty() && !$bkAndKesiswaan->contains('id', $createdUserId)) {
+            $first = $createdCases[0];
+            Notification::send($bkAndKesiswaan, new NewDisciplineCase(
+                caseId: $first->id,
+                caseNumber: $first->case_number,
+                studentName: $first->student->full_name ?? 'Siswa',
+                violationCode: $first->violationCategory->code ?? '-',
+                violationName: $first->violationCategory->name ?? 'Kategori pelanggaran'
+            ));
+        }
 
         return redirect()
             ->route('kasus-pelanggaran.index')

@@ -1,507 +1,190 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" style="overflow-x:hidden">
+<html lang="en" dir="ltr" class="h-full bg-gray-50 dark:bg-gray-900">
+
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ config('app.name', 'Pelanggaran Kuy') }}</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/x-icon" href="{{ asset('image.ico') }}">
-
     <script>
-        (function() {
-            // Pertahankan scroll window + biarkan browser handle restore.
-            // 'manual' + save/restore via sessionStorage dilakukan di script bawah.
-            if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-
-            const s = localStorage.getItem('theme');
-            if (s === 'dark') {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.add('light');
-            }
-
-            if (localStorage.getItem('sidebar-collapsed') === 'true') {
-                document.documentElement.classList.add('sidebar-collapsed');
-            }
+        (function () {
+            if (localStorage.getItem('dir') === 'rtl') document.documentElement.setAttribute('dir', 'rtl');
         })();
     </script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    @include('layouts.head-meta')
+
+    <!-- Scripts -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <!-- Lucide Icons -->
+    <script src="{{ asset('vendor/lucide/lucide.min.js') }}"></script>
+    <script>
+        if (window.lucide) {
+            lucide.createIcons();
+            // Re-create icons when Alpine updates DOM
+            document.addEventListener('alpine:updated', () => lucide.createIcons());
+        }
+    </script>
+
+    <!-- Theme Store -->
     <style>
-        /* ── Design System Tokens ── */
-        :root {
-            --primary: #1e3a5f; --secondary: #64748b; --tertiary: #059669; --accent: #f59e0b;
-            --neutral: #ffffff; --surface: #f8fafc; --border: #e2e8f0; --danger: #dc2626;
-            --on-primary: #fff; --on-tertiary: #fff; --on-surface: #1e293b; --on-surface-muted: #64748b;
-            --glass-bg: rgba(255,255,255,.72); --glass-border: rgba(255,255,255,.55);
-            --glass-shadow: rgba(15,23,42,.06);
-            --bs: #dcfce7; --bt: #166534; --ws: #fef3c7; --wt: #92400e; --ds: #fee2e2; --dt: #991b1b;
-            --sh-sm: 0 1px 2px rgba(15,23,42,.06); --sh-md: 0 4px 12px rgba(15,23,42,.08);
-            --sh-g: 0 4px 16px rgba(15,23,42,.06);
-            --r-sm: 8px; --r-md: 12px; --r-lg: 20px; --r-full: 9999px;
-            --sp-xs: 4px; --sp-sm: 8px; --sp-md: 16px; --sp-lg: 24px; --sp-xl: 40px; --sp-2xl: 64px;
-        }
-        .dark {
-            --neutral: #1c1c1f; --surface: #111114; --border: #252830;
-            --on-surface: #e8eaed; --on-surface-muted: #8b919a; --primary: #5b8abf;
-            --glass-bg: rgba(30,32,40,.78); --glass-border: rgba(255,255,255,.08);
-            --glass-shadow: rgba(0,0,0,.4); --sh-g: 0 4px 16px rgba(0,0,0,.4);
-            --bs: #064e3b; --bt: #6ee7b7; --ws: #78350f; --wt: #fcd34d;
-            --ds: #7f1d1d; --dt: #fca5a5;
-        }
-
-        /* ── Base ── */
-        [x-cloak] { display: none !important; }
-        body { font-family: 'Figtree', sans-serif; font-size: 1rem; line-height: 1.6;
-               margin: 0; color: var(--on-surface); background: var(--surface); transition: background .2s, color .2s;
-               overflow-x: hidden; }
-        h1 { font-size: 2.25rem; font-weight: 700; line-height: 1.15; letter-spacing: -.01em; }
-        h2 { font-size: 1.5rem; font-weight: 600; line-height: 1.25; }
-        h3 { font-size: 1.125rem; font-weight: 600; line-height: 1.35; }
-        a { color: var(--tertiary); text-decoration: none; transition: color .15s; }
-
-        /* ── Utilities ── */
-        .label { font-size: .75rem; font-weight: 600; letter-spacing: .06em; line-height: 1.4; text-transform: uppercase; color: var(--on-surface-muted); }
-        .text-sm { font-size: .875rem; line-height: 1.5; }
-        .text-muted { color: var(--on-surface-muted); }
-        .mono { font-family: ui-monospace, monospace; font-size: .8125rem; line-height: 1.5; }
-
-        /* ── Layout ── */
-        .main-wrap { max-width: 1280px; margin: 0 auto; padding: var(--sp-xl) var(--sp-lg); overflow-x: hidden; }
-        .page-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:var(--sp-md); margin-bottom: var(--sp-xl); width:100%; }
-        .page-header h1 { margin-bottom: var(--sp-xs); }
-        .page-header > div:first-child{flex:1; min-width:200px;}
-
-        /* ── Mobile ── */
-        @media(max-width:639px){
-            .card{padding:var(--sp-md)!important}
-            .card-glass{padding:var(--sp-sm)!important}
-            .stat-value{font-size:1.5rem}
-            h1{font-size:1.5rem}
-            h2{font-size:1.125rem}
-            .page-header h1{margin-bottom:0}
-            .layout-2col{grid-template-columns:1fr!important}
-            .layout-2col > *{min-width:0}
-            .grid-4{grid-template-columns:repeat(2,1fr)!important}
-            .table-wrap{margin:0 calc(-1*var(--sp-sm));padding:0 var(--sp-xs);border-radius:0;overflow-x:auto;-webkit-overflow-scrolling:touch}
-            table{font-size:.8125rem;min-width:600px}
-            th,td{padding:8px 10px;font-size:.75rem}
-            .main-wrap{padding:var(--sp-md) var(--sp-sm)!important;overflow-x:hidden}
-            .input{width:100%!important;max-width:none!important}
-            .toolbar{flex-direction:column;align-items:stretch}
-            .toolbar form{width:100%;display:flex;flex-direction:column;gap:var(--sp-sm)}
-            .toolbar .btn{width:100%;justify-content:center}
-            .filter-group{justify-content:flex-start}
-            .page-header{flex-direction:column;align-items:stretch}
-            .page-header .btn{width:100%;justify-content:center}
-            .page-header > div:last-child{width:100%;display:flex;flex-wrap:wrap;gap:var(--sp-sm)}
-            .page-header > div:last-child .btn{flex:1;min-width:120px}
-            .grid-4,.grid-2{grid-template-columns:1fr!important}
-            .grid-4 > div,.grid-2 > div{width:100%!important;margin:0 auto}
-            .list-item{flex-wrap:wrap}
-        }
-        .main-wrap > .card { margin-left: auto; margin-right: auto; }
-        .breadcrumb { font-size: .875rem; color: var(--on-surface-muted); margin-bottom: var(--sp-sm); }
-        .section { margin-top: var(--sp-xl); }
-        .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-lg); flex-wrap: wrap; gap: var(--sp-sm); }
-        .grid { display: grid; gap: var(--sp-lg); }
-        .grid-4 { grid-template-columns: 1fr; }
-        .grid-2 { grid-template-columns: 1fr; }
-        @media(min-width:768px) { .grid-4 { grid-template-columns: repeat(2,1fr); } .grid-2 { grid-template-columns: 1fr 1fr; } }
-        @media(min-width:1280px) { .grid-4 { grid-template-columns: repeat(4,1fr); } }
-        .layout-2col { display: grid; gap: var(--sp-lg); grid-template-columns: 1fr; }
-        @media(min-width:1024px) { .layout-2col { grid-template-columns: 2fr 1fr; } }
-
-        /* ── Layout root: mobile = flow, desktop ≥1024 = grid 2 kolom ── */
-        .layout-root { min-height: 100vh; display: flex; flex-direction: column; }
-        .app-shell { overflow-x: hidden; display: flex; flex-direction: column; flex: 1; min-width: 0; }
-        .app-shell > main { flex: 1; min-width: 0; }
-        .app-header { background: var(--neutral); border-bottom: 1px solid var(--border); padding: var(--sp-md) var(--sp-lg); }
-        .app-header > div { display: flex; flex-direction: column; }
-        /* page-header punya margin-bottom:var(--sp-xl); di dalam app-header jadi gap ganda.
-           Nol-kan di sini. padding negatif invalid CSS, browser ignore. */
-        .app-header .page-header { margin-bottom: 0; }
-        /* Strip atas menyatu: header grid-column 1/-1 — background + border-bottom
-           membentang dari ujung kiri viewport (x=0). Garis vertikal sidebar hanya
-           di bawah header (border-left main+footer) → corner bertemu persis, tanpa
-           celah 1px di tema gelap maupun terang. */
-        @media(min-width:1024px) {
-            .layout-root { display: grid; grid-template-columns: 256px minmax(0,1fr); grid-template-rows: auto 1fr; min-height: 100vh; transition: grid-template-columns .2s ease; }
-            .layout-root > .app-header { grid-column: 1 / -1; grid-row: 1; padding-left: calc(256px + var(--sp-lg)); transition: padding-left .2s ease; }
-            .layout-root > .app-shell { grid-column: 2; grid-row: 2; margin-left: 0; min-height: 0; min-width: 0; }
-            .app-shell > main { border-left: 1px solid var(--border); }
-
-            /* ── Mode Sidebar Perkecil (Collapsed) ── */
-            html.sidebar-collapsed .layout-root { grid-template-columns: 72px minmax(0,1fr) !important; }
-            html.sidebar-collapsed .layout-root > .app-header { padding-left: calc(72px + var(--sp-lg)) !important; }
-            html.sidebar-collapsed .sidebar { width: 72px !important; }
-            html.sidebar-collapsed .sidebar .sidebar-brand-title,
-            html.sidebar-collapsed .sidebar .nav-label,
-            html.sidebar-collapsed .sidebar .navchev,
-            html.sidebar-collapsed .sidebar .theme-label,
-            html.sidebar-collapsed .sidebar .user-info-text,
-            html.sidebar-collapsed .sidebar .nav-group > div { display: none !important; }
-            html.sidebar-collapsed .sidebar .sidebar-brand-wrap { padding: var(--sp-md) var(--sp-xs) !important; }
-            html.sidebar-collapsed .sidebar .sidebar-brand-toggle { justify-content: center !important; }
-            html.sidebar-collapsed .sidebar nav a { justify-content: center !important; padding: 10px 0 !important; }
-            html.sidebar-collapsed .sidebar nav details summary { justify-content: center !important; padding: 10px 0 !important; }
-            html.sidebar-collapsed .sidebar .sidebar-bottom-btn { justify-content: center !important; padding: 8px 0 !important; }
-            html.sidebar-collapsed .sidebar .user-profile-row { justify-content: center !important; padding: 8px 0 !important; }
-        }
-
-        /* ── Cards ── */
-        .card { background: var(--neutral); border-radius: var(--r-lg); padding: var(--sp-lg); border: 1px solid var(--border); transition: box-shadow .2s; }
-        .card + .card { margin-top: var(--sp-lg); }
-
-        /* ── Detail tables (halaman show) ── */
-        .detail-table { width: 100%; border-collapse: collapse; }
-        .detail-table td, .detail-table th { padding: 8px 12px 8px 0; }
-        .detail-table .dl { color: var(--on-surface-muted); white-space: nowrap; }
-        .card-glass { background: var(--glass-bg); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-                       border: 1px solid var(--glass-border); border-radius: var(--r-lg); padding: var(--sp-md); box-shadow: var(--sh-g); }
-
-        /* ── Stats ── */
-        .stat-value { font-size: 2rem; font-weight: 700; line-height: 1.15; letter-spacing: -.01em; margin: var(--sp-sm) 0 var(--sp-xs); }
-        .stat-label { font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--on-surface-muted); }
-        .stat-change { font-size: .875rem; margin-top: var(--sp-xs); }
-        .stat-change.positive { color: var(--tertiary); }
-        .stat-change.negative { color: var(--danger); }
-
-        /* ── Buttons ── */
-        .btn { display: inline-flex; align-items: center; gap: var(--sp-sm); padding: 12px 20px; border-radius: var(--r-sm);
-               border: none; font-family: inherit; font-size: .875rem; font-weight: 600; cursor: pointer; transition: background .15s; }
-        .btn-primary { background: var(--tertiary); color: var(--on-tertiary); }
-        .btn-primary svg, .btn-primary i { stroke: var(--on-tertiary); color: var(--on-tertiary); }
-        .btn-secondary { background: var(--surface); color: var(--on-surface); border: 1px solid var(--border); }
-        .btn-danger { background: var(--danger); color: #fff; }
-        .btn-sm { padding: 8px 14px; font-size: .8125rem; }
-
-        /* ── Table ── */
-        .table-wrap { overflow-x: auto; border-radius: var(--r-lg); border: 1px solid var(--border); background: var(--neutral); -webkit-overflow-scrolling: touch; }
-        table { width: 100%; border-collapse: collapse; font-size: .875rem; }
-        th { text-align: left; padding: 12px 16px; font-size: .75rem; font-weight: 600; letter-spacing: .06em;
-             text-transform: uppercase; color: var(--on-surface-muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
-        td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-        tr:last-child td { border-bottom: none; }
-
-        /* ── Toolbar ── */
-        .toolbar { display: flex; flex-wrap: wrap; gap: var(--sp-sm); align-items: center; margin-bottom: var(--sp-lg); }
-        .filter-group { display: flex; gap: var(--sp-sm); flex-wrap: wrap; }
-
-        /* ── Input ── */
-        .input { width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: var(--r-sm); border: 1px solid var(--border);
-                 background: var(--neutral); color: var(--on-surface); font-family: inherit; font-size: .875rem;
-                 transition: border-color .15s, box-shadow .15s; }
-        .input:focus { outline: none; border-color: var(--tertiary); box-shadow: 0 0 0 3px rgba(5,150,105,.15); }
-        .input::placeholder { color: var(--on-surface-muted); }
-        select.input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-                       background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; cursor: pointer; }
-        .field { margin-bottom: var(--sp-lg); }
-        .field-label { display: block; font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; margin-bottom: var(--sp-xs); color: var(--on-surface-muted); }
-        .field-input { width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: var(--r-sm); border: 1px solid var(--border);
-                       background: var(--neutral); color: var(--on-surface); font-family: inherit; font-size: .875rem;
-                       transition: border-color .15s, box-shadow .15s; }
-        .field-input:focus { outline: none; border-color: var(--tertiary); box-shadow: 0 0 0 3px rgba(5,150,105,.15); }
-        .field-input::placeholder { color: var(--on-surface-muted); }
-        select.field-input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-                             background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; cursor: pointer; }
-        textarea.field-input { min-height: 120px; resize: vertical; line-height: 1.5; }
-        .help-text { font-size: .8125rem; color: var(--on-surface-muted); margin-top: var(--sp-xs); display: block; }
-        .text-danger { color: var(--danger); }
-
-        /* ── Badge ── */
-        .badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: var(--r-full); font-size: .75rem; font-weight: 600; letter-spacing: .04em; white-space: nowrap; }
-        .badge-success { background: var(--bs); color: var(--bt); }
-        .badge-warning { background: var(--ws); color: var(--wt); }
-        .badge-danger { background: var(--ds); color: var(--dt); }
-        .badge-info { background: #dbeafe; color: #1e40af; }
-        .dark .badge-info { background: rgba(59,130,246,.2); color: #93c5fd; }
-        .badge-neutral { background: var(--surface); color: var(--on-surface-muted); }
-
-        /* ── List (dashboard) ── */
-        .list-item { display: flex; align-items: center; gap: var(--sp-md); padding: var(--sp-md) 0; }
-        .list-item + .list-item { border-top: 1px solid var(--border); }
-        .list-avatar { width: 40px; height: 40px; border-radius: var(--r-full); flex-shrink: 0; background: var(--primary); color: var(--on-primary);
-                       display: flex; align-items: center; justify-content: center; font-size: .875rem; font-weight: 700; }
-        .list-info { flex: 1; min-width: 0; }
-        .list-name { font-weight: 600; font-size: .875rem; }
-        .list-meta { font-size: .8125rem; color: var(--on-surface-muted); }
-        .list-score { font-family: ui-monospace, monospace; font-size: .875rem; font-weight: 700; white-space: nowrap; }
-        .list-score.danger { color: var(--danger); }
-        .list-score.warning { color: var(--accent); }
-
-        /* ── Pagination ── */
-        .pagination { display: flex; align-items: center; justify-content: center; margin-top: var(--sp-lg); padding-inline: var(--sp-sm); }
-        .pg-nav { display: inline-flex; align-items: center; gap: var(--sp-xs); flex-wrap: wrap; justify-content: center; max-width: 100%; }
-        .pg-btn { min-width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;
-                  border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--neutral);
-                  color: var(--on-surface); font-size: .875rem; font-weight: 500; cursor: pointer;
-                  transition: background .15s, border-color .15s, color .15s; text-decoration: none; padding: 0 10px; }
-        .pg-btn.is-active { background: var(--primary); color: var(--on-primary); border-color: var(--primary); cursor: default; }
-        .pg-btn.is-disabled { opacity: .4; pointer-events: none; }
-        .pg-gap { padding: 0 4px; color: var(--on-surface-muted); }
-        @media(max-width:639px){
-            .pg-btn { min-width: 32px; height: 32px; font-size: .8125rem; padding: 0 8px; }
-            .pg-nav { gap: 2px; }
-            /* Sisakan hanya halaman aktif + tetangganya (‹ 4 5 6 ›) supaya tidak pernah wrap
-               atau mentok ke tepi layar. Panah ‹ › tetap ada untuk navigasi. */
-            .pg-num:not(.is-active):not(.is-near) { display: none; }
-            .pg-gap { display: none; }
-        }
-
-        /* ── Skeleton ── */
-        .skeleton { background: #e2e8f0; border-radius: var(--r-sm); animation: pulse 1.5s ease-in-out infinite; }
-        .dark .skeleton { background: #1e293b; }
-        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
-
-        /* ── Page transition: fade-in halus tanpa transform (agar position:fixed di dalam main tidak terperangkap) ── */
-        @media (prefers-reduced-motion: no-preference) {
-            .app-shell > main { animation: page-in .18s ease-out; }
-        }
-        @keyframes page-in { from { opacity: 0; } to { opacity: 1; } }
-
-        /* ── Action buttons in table ── */
-        .action-cell { display: flex; gap: var(--sp-xs); }
-        .action-btn { width: 32px; height: 32px; border-radius: var(--r-sm); border: 1px solid var(--border);
-                      background: var(--neutral); color: var(--on-surface-muted); cursor: pointer;
-                      display: flex; align-items: center; justify-content: center; font-size: .875rem; transition: all .15s; }
-
-        /* ── Checkbox ── */
-        .checkbox { width: 18px; height: 18px; border-radius: 4px; border: 1px solid var(--border); cursor: pointer; accent-color: var(--tertiary); }
-        .checkbox-input { width: 18px; height: 18px; border-radius: 4px; border: 1px solid var(--border); cursor: pointer; accent-color: var(--tertiary); }
-        .checkbox-row { display: flex; align-items: center; gap: var(--sp-sm); }
-
-        /* ── Flash messages ── */
-        .alert { display:flex; align-items:center; gap:8px; border-radius: var(--r-sm); padding: var(--sp-md); font-size: .875rem; margin-bottom: var(--sp-md); }
-        .alert-success { background: var(--bs); border: 1px solid var(--bt); color: var(--bt); }
-        .alert-warning { background: var(--ws); border: 1px solid var(--wt); color: var(--wt); }
-        .alert-error { background: var(--ds); border: 1px solid var(--dt); color: var(--dt); }
-
-        /* ── Icon (Lucide SVG inline, stroke-only) ── */
-        .icon{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;flex-shrink:0}
-        .icon-sm{width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;flex-shrink:0}
-        .icon-lg{width:22px;height:22px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;flex-shrink:0}
-        .card-form{max-width:640px;margin:0 auto}
-
-        /* ── Modal overlay: di tengah mutlak layar penuh, menutupi sidebar ── */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: var(--sp-md);
-            margin: 0 !important;
-        }
-
-        /* ── Recovery recommendation tabs ── */
-        .recovery-tabs{display:flex;gap:var(--sp-sm);flex-wrap:wrap;margin-bottom:var(--sp-md)}
-        .recovery-tab{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--r-sm);
-                       border:1px solid var(--border);cursor:pointer;font-size:.875rem;font-weight:600;
-                       transition:all .15s;background:var(--neutral);color:var(--on-surface)}
-        .recovery-tab.active-ringan{background:var(--bs);color:var(--bt);border-color:var(--bt)}
-        .recovery-tab.active-sedang{background:var(--ws);color:var(--wt);border-color:var(--wt)}
-        .recovery-tab.active-besar{background:var(--ds);color:var(--dt);border-color:var(--dt)}
-        .recovery-cards{display:grid;gap:var(--sp-sm)}
-        .recovery-card{display:flex;align-items:center;gap:var(--sp-md);padding:var(--sp-md);
-                        background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm)}
-        .recovery-card-icon{width:40px;height:40px;border-radius:var(--r-sm);background:var(--bs);color:var(--bt);
-                             display:flex;align-items:center;justify-content:center;flex-shrink:0}
-        .recovery-card-body{flex:1;min-width:0}
-        .recovery-card-title{font-weight:600;font-size:.875rem}
-        .recovery-empty{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);
-                         padding:var(--sp-md);text-align:center}
-
-        /* ── Hover: desktop only ── */
-        @media(min-width:768px){
-            a:hover{color:#047857}
-            .card:hover{box-shadow:var(--sh-md)}
-            .no-hover:hover{box-shadow:none!important}
-            .btn-primary:hover{background:#047857;color:var(--on-tertiary)}
-            .btn-primary:hover svg,.btn-primary:hover i{stroke:var(--on-tertiary)}
-            .btn-secondary:hover{background:var(--border)}
-            .btn-danger:hover{background:#b91c1c}
-            tr:hover td{background:var(--surface)}
-            .page-btn:hover:not(.active){background:var(--surface)}
-            .pg-btn:hover:not(.is-active){background:var(--surface);border-color:var(--on-surface-muted)}
-            .action-btn:hover{background:var(--surface);color:var(--on-surface);border-color:var(--on-surface-muted)}
-            .recovery-tab:hover{background:var(--surface)}
+        [x-cloak] {
+            display: none !important;
         }
     </style>
-</head>
-<body class="antialiased" style="font-family:'Figtree',sans-serif;background:var(--surface);color:var(--on-surface);overflow-x:hidden">
-    <div class="layout-root">
-        @include('layouts.navigation')
-
-        @isset($header)
-            <div class="app-header">
-                <div style="max-width:1280px;margin:0 auto;display:flex;align-items:center;gap:var(--sp-md);">
-                    {{ $header }}
-                </div>
-            </div>
-        @endisset
-
-        <div class="app-shell">
-            <main>
-                {{ $slot }}
-            </main>
-        </div>
-    </div>
-
-    <script src="{{ asset('vendor/lucide/lucide.min.js') }}" onload="lucide.createIcons()"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js" crossorigin="anonymous"></script>
+    <!-- Theme Store -->
     <script>
-        // ── Live filter (global) ─────────────────────────────────────────────
-        // Form GET dengan data-live="<selector region>" → search & select tanpa
-        // reload penuh: fetch halaman → DOMParser → copy isi region → swap.
-        // Input/toolbar/header asli tidak disentuh → fokus & kursor tetap utuh.
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('form[data-live]').forEach(form => {
-                const selector = form.getAttribute('data-live');
-                const region = document.querySelector(selector);
-                if (!region) return;
-
-                let timer = null, inflight = null;
-                const indexPath = new URL(form.action).pathname;
-
-                const buildUrl = () => {
-                    const url = new URL(form.action, location.origin);
-                    for (const [k, v] of new FormData(form)) v ? url.searchParams.set(k, v) : url.searchParams.delete(k);
-                    url.searchParams.delete('page'); // ganti filter = balik ke halaman 1
-                    return url;
-                };
-
-                const load = (url, push) => {
-                    inflight?.abort();
-                    inflight = new AbortController();
-                    fetch(url, { signal: inflight.signal, headers: { 'Accept': 'text/html' } })
-                        .then(r => r.ok ? r.text() : Promise.reject(r.status))
-                        .then(html => {
-                            const parsed = new DOMParser().parseFromString(html, 'text/html');
-                            const next = parsed.querySelector(selector);
-                            if (!next) { location.href = url; return; } // region tidak ada → navigasi biasa
-                            region.innerHTML = next.innerHTML;
-                            // angka di header ("N total kasus") ikut menyesuaikan
-                            const counts = parsed.querySelectorAll('[data-live-count]');
-                            const targets = document.querySelectorAll('[data-live-count]');
-                            counts.forEach((el, i) => { if (targets[i]) targets[i].textContent = el.textContent; });
-                            history[push ? 'pushState' : 'replaceState']({}, '', url);
-                            if (window.lucide) lucide.createIcons();
-                        })
-                        .catch(e => { if (e.name !== 'AbortError') console.error(e); });
-                };
-
-                // Ketik teks → debounce 300ms.
-                form.querySelectorAll('input[type="text"],input[type="search"]').forEach(inp => {
-                    inp.addEventListener('input', () => {
-                        clearTimeout(timer);
-                        timer = setTimeout(() => load(buildUrl(), false), 300);
-                    });
-                });
-
-                // Select filter → langsung ganti (intercept semua select; fallback onchange no-JS dilepas).
-                form.querySelectorAll('select').forEach(sel => {
-                    sel.removeAttribute('onchange');
-                    if (!sel.dataset.liveBound) {
-                        sel.dataset.liveBound = '1';
-                        sel.addEventListener('change', () => load(buildUrl(), false));
+        document.addEventListener('alpine:init', () => {
+            Alpine.store('theme', {
+                init() {
+                    const savedTheme = localStorage.getItem('theme');
+                    this.theme = savedTheme === 'dark' ? 'dark' : 'light';
+                    this.updateTheme();
+                },
+                theme: 'light',
+                resolvedTheme: 'light',
+                set(value) {
+                    value = value === 'dark' ? 'dark' : 'light';
+                    this.theme = value;
+                    localStorage.setItem('theme', value);
+                    this.updateTheme();
+                    window.dispatchEvent(new CustomEvent('theme-changed', { detail: value }));
+                },
+                toggle() {
+                    this.set(this.resolvedTheme === 'dark' ? 'light' : 'dark');
+                },
+                updateTheme() {
+                    const html = document.documentElement;
+                    const isDark = this.theme === 'dark';
+                    if (isDark) {
+                        html.classList.add('dark');
+                    } else {
+                        html.classList.remove('dark');
                     }
-                });
 
-                // Enter / tombol submit → tanpa reload.
-                form.addEventListener('submit', e => { e.preventDefault(); load(buildUrl(), false); });
-
-                // Sort & pagination di dalam region (path sama) → intercept.
-                region.addEventListener('click', e => {
-                    const link = e.target.closest('a[href]');
-                    if (!link) return;
-                    const url = new URL(link.href, location.origin);
-                    if (url.pathname !== indexPath) return; // detail/edit → biarkan browser
-                    e.preventDefault();
-                    load(url, true);
-                });
+                    this.resolvedTheme = isDark ? 'dark' : 'light';
+                    html.setAttribute('data-color-scheme', this.resolvedTheme);
+                    html.dataset['theme'] = this.resolvedTheme;
+                    html.style.colorScheme = this.resolvedTheme;
+                    if (document.body) {
+                        document.body.dataset['theme'] = this.resolvedTheme;
+                        document.body.style.colorScheme = this.resolvedTheme;
+                    }
+                }
             });
 
-            window.addEventListener('popstate', () => location.reload());
+            Alpine.store('sidebar', {
+                isExpanded: false,
+                isMobileOpen: false,
+                isHovered: false,
+
+                init() {
+                    const savedState = localStorage.getItem('sidebarExpanded');
+                    if (window.innerWidth >= 1280) {
+                        this.isExpanded = savedState === null ? true : savedState === 'true';
+                    } else {
+                        this.isExpanded = false;
+                    }
+                    this.isMobileOpen = false;
+
+                    window.addEventListener('resize', () => {
+                        this.handleResize();
+                    });
+                },
+
+                handleResize() {
+                    if (window.innerWidth < 1280) {
+                        if (this.isMobileOpen) {
+                             this.isMobileOpen = false;
+                        }
+                    } else {
+                        this.isMobileOpen = false;
+                        const savedState = localStorage.getItem('sidebarExpanded');
+                        this.isExpanded = savedState === null ? true : savedState === 'true';
+                    }
+                },
+
+                toggleExpanded() {
+                    this.isExpanded = !this.isExpanded;
+                    this.isMobileOpen = false;
+                    
+                    if (window.innerWidth >= 1280) {
+                        localStorage.setItem('sidebarExpanded', this.isExpanded);
+                    }
+                },
+
+                toggleMobileOpen() {
+                    this.isMobileOpen = !this.isMobileOpen;
+                },
+
+                setMobileOpen(val) {
+                    this.isMobileOpen = val;
+                },
+
+                setHovered(val) {
+                    if (window.innerWidth >= 1280 && !this.isExpanded) {
+                        this.isHovered = val;
+                    }
+                }
+            });
         });
     </script>
 
-    <!-- Probe Deteksi Force Dark Mode Browser -->
-    <div id="fd-probe" style="position:fixed;left:-9999px;top:-9999px;width:10px;height:10px;background-color:#ffffff;color:#000000;color-scheme:only light;pointer-events:none;z-index:-1" aria-hidden="true"></div>
+    <!-- Apply dark mode immediately to prevent flash -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            const isDark = savedTheme === 'dark';
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+                document.documentElement.setAttribute('data-color-scheme', 'dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.documentElement.setAttribute('data-color-scheme', 'light');
+            }
+        })();
+    </script>
+</head>
 
-    <!-- Modal Peringatan Force Dark Mode Browser -->
-    <div id="fd-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;padding:var(--sp-md)">
-        <div style="background:var(--neutral);border:1px solid var(--border);border-radius:var(--r-lg);max-width:440px;width:100%;padding:var(--sp-lg);box-shadow:var(--sh-md)">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:var(--sp-sm)">
-                <div style="width:36px;height:36px;border-radius:var(--r-full);background:var(--ws);color:var(--wt);display:flex;align-items:center;justify-content:center">
-                    <i data-lucide="moon" class="icon-sm"></i>
+<body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 min-h-screen">
+
+
+
+    <div class="min-h-screen xl:flex sidebar-expanded" x-data :class="{ 'sidebar-expanded': $store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen }">
+        @include('layouts.backdrop')
+        @include('layouts.sidebar')
+
+        {{-- Main content container with inline margin compensation --}}
+        <div class="flex-1 min-w-0 transition-all duration-300 ease-in-out"
+            :style="window.innerWidth >= 1280 ? 'margin-left: ' + (($store.sidebar.isExpanded || $store.sidebar.isHovered) ? '290px' : '90px') : ''">
+            <!-- app header start -->
+            @include('layouts.app-header')
+            <!-- app header end -->
+
+            @isset($header)
+                <div class="px-4 pt-6 mx-auto max-w-(--breakpoint-2xl) md:px-6">
+                    {{ $header }}
                 </div>
-                <div>
-                    <h3 style="font-size:1rem;font-weight:600;margin:0">Fitur Force Dark Browser Aktif</h3>
-                    <span class="text-xs text-muted">Deteksi tema peramban</span>
-                </div>
-            </div>
-            <p class="text-sm text-muted" style="margin-bottom:var(--sp-lg);line-height:1.5">
-                Browser Anda mengaktifkan fitur <strong>Force Dark Mode</strong> bawaan. Tampilan tema terang mungkin tetap tampak gelap atau mengalami pembalikan warna oleh browser.
-            </p>
-            <div style="display:flex;justify-content:flex-end;gap:var(--sp-sm)">
-                <button type="button" class="btn btn-primary btn-sm" onclick="closeForceDarkModal(true)">Mengerti</button>
+            @endisset
+
+            <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
+                @if (isset($slot) && trim($slot) !== '')
+                    {{ $slot }}
+                @else
+                    @yield('content')
+                @endif
             </div>
         </div>
+
     </div>
 
-    <script>
-        function checkForceDarkNotice() {
-            if (sessionStorage.getItem('fd_alert_dismissed')) return;
-            const probe = document.getElementById('fd-probe');
-            if (!probe) return;
-            const bg = window.getComputedStyle(probe).backgroundColor;
-            const match = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-            if (match) {
-                const r = parseInt(match[1], 10);
-                const g = parseInt(match[2], 10);
-                const b = parseInt(match[3], 10);
-                if (r < 180 && g < 180 && b < 180) {
-                    const m = document.getElementById('fd-modal');
-                    if (m) {
-                        m.style.display = 'flex';
-                        if (window.lucide) lucide.createIcons();
-                    }
-                }
-            }
-        }
-
-        function closeForceDarkModal(dismissSession) {
-            const m = document.getElementById('fd-modal');
-            if (m) m.style.display = 'none';
-            if (dismissSession) sessionStorage.setItem('fd_alert_dismissed', '1');
-        }
-
-        function toggleTheme() {
-            const h = document.documentElement;
-            const d = h.classList.toggle('dark');
-            h.classList.toggle('light', !d);
-            localStorage.setItem('theme', d ? 'dark' : 'light');
-            document.querySelectorAll('.icon-theme').forEach(el => {
-                el.setAttribute('data-lucide', d ? 'moon' : 'sun');
-            });
-            lucide.createIcons();
-            if (!d) {
-                setTimeout(checkForceDarkNotice, 80);
-            }
-        }
-
-        function toggleSidebarCollapse() {
-            const isCollapsed = document.documentElement.classList.toggle('sidebar-collapsed');
-            localStorage.setItem('sidebar-collapsed', isCollapsed ? 'true' : 'false');
-            document.querySelectorAll('.sidebar-toggle-icon').forEach(el => {
-                el.setAttribute('data-lucide', isCollapsed ? 'panel-left-open' : 'panel-left-close');
-            });
-            if (window.lucide) lucide.createIcons();
-        }
-    </script>
 </body>
+
+@stack('scripts')
+
 </html>

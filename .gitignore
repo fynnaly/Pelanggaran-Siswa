@@ -36,3 +36,9 @@ docs/procedure
 .hermes/
 .claude/
 CLAUDE.md
+/tail-app/
+/tail-resources/
+/tail-routes/
+/resources/views/components copy/
+resources/views/auth/temp-login.blade.php
+resources/views/layouts1/

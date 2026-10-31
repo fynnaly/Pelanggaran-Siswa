@@ -1,3 +1,288 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --primary: #465fff;
+    --secondary: #64748b;
+    --tertiary: #10b981;
+    --accent: #f59e0b;
+    --neutral: #ffffff;
+    --surface: #f8fafc;
+    --border: #e2e8f0;
+    --danger: #ef4444;
+    --on-primary: #fff;
+    --on-tertiary: #fff;
+    --on-surface: #1e293b;
+    --on-surface-muted: #64748b;
+    --bs: #dcfce7; --bt: #166534;
+    --ws: #fef3c7; --wt: #92400e;
+    --ds: #fee2e2; --dt: #991b1b;
+    --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-full: 9999px;
+    --sp-xs: 4px; --sp-sm: 8px; --sp-md: 16px; --sp-lg: 24px; --sp-xl: 32px;
+  }
+
+  .dark {
+    --neutral: #111827;
+    --surface: #0f172a;
+    --border: #1f2937;
+    --on-surface: #f3f4f6;
+    --on-surface-muted: #9ca3af;
+    --bs: #064e3b; --bt: #6ee7b7;
+    --ws: #78350f; --wt: #fcd34d;
+    --ds: #7f1d1d; --dt: #fca5a5;
+  }
+}
+
+@layer components {
+  /* ── Components Design System Bawaan Aplikasi ── */
+  .page-header {
+    @apply flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6;
+  }
+  .page-header h1 {
+    @apply text-2xl font-bold text-gray-800 dark:text-white tracking-tight;
+  }
+
+  .main-wrap {
+    @apply w-full space-y-6;
+  }
+
+  .toolbar {
+    @apply flex flex-wrap gap-3 items-center mb-6;
+  }
+  .filter-group {
+    @apply flex flex-wrap gap-3 items-center;
+  }
+
+  .card {
+    @apply bg-white dark:bg-gray-800/60 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm;
+  }
+  .card-glass {
+    @apply bg-white dark:bg-gray-800/60 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm;
+  }
+
+  .table-wrap {
+    @apply overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800/40 shadow-sm;
+  }
+  table {
+    @apply w-full text-left text-sm text-gray-600 dark:text-gray-300 border-collapse;
+  }
+  th {
+    @apply px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-white/5 whitespace-nowrap;
+  }
+  td {
+    @apply px-4 py-3.5 border-b border-gray-100 dark:border-gray-800/60 align-middle;
+  }
+  tr:last-child td {
+    @apply border-b-0;
+  }
+
+  .input, .field-input {
+    @apply w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-gray-800 dark:text-white placeholder:text-gray-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition;
+  }
+
+  .btn {
+    @apply inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition cursor-pointer shadow-sm;
+  }
+  .btn-primary {
+    @apply bg-brand-500 text-white hover:bg-brand-600 shadow-theme-xs;
+  }
+  .btn-secondary {
+    @apply border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700;
+  }
+  .btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700;
+  }
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+
+  /* ── Action Buttons & Cells in Data Tables ── */
+  .action-cell {
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap;
+  }
+
+  .action-btn {
+    @apply inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition cursor-pointer shrink-0;
+  }
+
+  .action-btn svg, .action-btn i {
+    @apply shrink-0;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium;
+  }
+  .badge-success {
+    @apply bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40;
+  }
+  .badge-warning {
+    @apply bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800/40;
+  }
+  .badge-danger {
+    @apply bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400 border border-red-200 dark:border-red-800/40;
+  }
+  .badge-info {
+    @apply bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border border-blue-200 dark:border-blue-800/40;
+  }
+  .badge-neutral {
+    @apply bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 border border-gray-200 dark:border-gray-700;
+  }
+
+  .alert {
+    @apply rounded-xl p-4 text-sm font-medium mb-4 flex items-center gap-3;
+  }
+  .alert-success {
+    @apply bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800;
+  }
+  .alert-warning {
+    @apply bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800;
+  }
+  .alert-error {
+    @apply bg-red-50 text-red-800 border border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800;
+  }
+
+  .pagination {
+    @apply flex items-center justify-center mt-6;
+  }
+  .pg-nav {
+    @apply inline-flex items-center gap-1.5;
+  }
+  .pg-btn {
+    @apply inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition;
+  }
+  .pg-btn.is-active {
+    @apply bg-brand-500 text-white border-brand-500 hover:bg-brand-600;
+  }
+  .pg-btn.is-disabled {
+    @apply opacity-40 pointer-events-none;
+  }
+
+  /* ── Form Components (legacy Pelanggaran-Siswa styles) ── */
+  .card-form {
+    @apply bg-white dark:bg-gray-800/60 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 sm:p-6 shadow-sm;
+  }
+
+  .field {
+    @apply mb-4 last:mb-0;
+  }
+
+  .field-label {
+    @apply block text-sm font-medium text-gray-800 dark:text-gray-200 mb-1.5;
+  }
+
+  .field-label .text-danger {
+    @apply text-red-600 dark:text-red-400;
+  }
+
+  .help-text {
+    @apply text-xs text-gray-500 dark:text-gray-400 mt-1;
+  }
+
+  .alert {
+    @apply rounded-xl p-4 text-sm font-medium mb-4 flex items-center gap-3;
+  }
+  .alert-success {
+    @apply bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800;
+  }
+  .alert-warning {
+    @apply bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800;
+  }
+  .alert-error {
+    @apply bg-red-50 text-red-800 border border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800;
+  }
+
+  .icon-sm {
+    @apply w-4 h-4;
+  }
+
+  .text-danger {
+    @apply text-red-600 dark:text-red-400;
+  }
+
+  .text-muted {
+    @apply text-gray-500 dark:text-gray-400;
+  }
+
+  .text-success {
+    @apply text-emerald-600 dark:text-emerald-400;
+  }
+
+  .text-warning {
+    @apply text-amber-600 dark:text-amber-400;
+  }
+
+  /* ── Modal overlay: di tengah mutlak layar penuh, menutupi sidebar ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    margin: 0 !important;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  .dark .modal-overlay {
+    background-color: rgba(0, 0, 0, 0.7);
+  }
+}
+
+@layer utilities {
+  .menu-item {
+    @apply relative flex items-center w-full gap-3 px-3 py-2.5 font-medium rounded-lg text-sm transition-colors;
+  }
+
+  .menu-item-active {
+    @apply bg-brand-50 text-brand-500 dark:bg-brand-500/[0.12] dark:text-brand-400 font-semibold;
+  }
+
+  .menu-item-inactive {
+    @apply text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5;
+  }
+
+  .menu-item-icon {
+    @apply text-gray-500 dark:text-gray-400 shrink-0;
+  }
+
+  .menu-item-icon-active {
+    @apply text-brand-500 dark:text-brand-400 shrink-0;
+  }
+
+  .menu-item-icon-inactive {
+    @apply text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 shrink-0;
+  }
+
+  .menu-dropdown-item {
+    @apply relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors;
+  }
+
+  .menu-dropdown-item-active {
+    @apply bg-brand-50 text-brand-500 dark:bg-brand-500/[0.12] dark:text-brand-400 font-semibold;
+  }
+
+  .menu-dropdown-item-inactive {
+    @apply text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/5;
+  }
+
+  .menu-dropdown-badge {
+    @apply block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider;
+  }
+
+  .menu-dropdown-badge-inactive {
+    @apply bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
