@@ -178,7 +178,6 @@
 
                 init() {
                     this.setupScrollPersistence();
-                    this.setupFastNavigation();
                 },
 
                 isOpen() {
@@ -195,56 +194,6 @@
                     try {
                         localStorage.setItem('sidebar_open_submenus', JSON.stringify(this.openSubmenus));
                     } catch (e) {}
-                },
-
-                setupFastNavigation() {
-                    const aside = this.$el;
-                    if (!aside) return;
-
-                    let startX = 0, startY = 0, startTime = 0;
-                    let downTarget = null;
-
-                    aside.addEventListener('pointerdown', (e) => {
-                        if (e.button !== 0) return;
-                        startX = e.clientX;
-                        startY = e.clientY;
-                        startTime = Date.now();
-                        downTarget = e.target;
-                    }, { capture: true, passive: true });
-
-                    aside.addEventListener('pointerup', (e) => {
-                        if (e.button !== 0) return;
-                        const duration = Date.now() - startTime;
-                        const dist = Math.hypot(e.clientX - startX, e.clientY - startY);
-
-                        if (duration < 500 && dist < 25) {
-                            const link = (e.target && e.target.closest ? e.target.closest('a[href]') : null) ||
-                                         (downTarget && downTarget.closest ? downTarget.closest('a[href]') : null);
-
-                            if (link) {
-                                const href = link.getAttribute('href');
-                                if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    window.location.href = href;
-                                    return;
-                                }
-                            }
-
-                            const btn = (e.target && e.target.closest ? e.target.closest('button[data-submenu-key]') : null) ||
-                                        (downTarget && downTarget.closest ? downTarget.closest('button[data-submenu-key]') : null);
-
-                            if (btn) {
-                                const key = btn.getAttribute('data-submenu-key');
-                                if (key) {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    this.toggleSubmenu(key);
-                                    return;
-                                }
-                            }
-                        }
-                    }, { capture: true });
                 },
 
                 setupScrollPersistence() {
