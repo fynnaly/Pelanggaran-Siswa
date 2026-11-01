@@ -4,9 +4,7 @@
             {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}
         </span>
 
-        <span class="me-1 block text-sm font-medium">{{ auth()->user()->name ?? 'Pengguna' }}</span>
-
-        <x-svg.chevron-down class="size-5 text-gray-500 duration-200 dark:text-gray-400" x-bind:class="open ? 'rotate-180' : 'rotate-0'" />
+        <span class="block text-sm font-medium">{{ auth()->user()->name ?? 'Pengguna' }}</span>
     </x-ui.dropdown-menu.trigger>
 
     <x-ui.dropdown-menu.content align="end" :side-offset="12" class="w-65 p-3">

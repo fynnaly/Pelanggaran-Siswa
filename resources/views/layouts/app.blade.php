@@ -78,20 +78,16 @@
                 }
             });
 
+            const savedSidebar = localStorage.getItem('sidebarExpanded');
+            const initialExpanded = window.innerWidth >= 1280 ? (savedSidebar === null ? true : savedSidebar === 'true') : false;
+
             Alpine.store('sidebar', {
-                isExpanded: false,
+                isExpanded: initialExpanded,
                 isMobileOpen: false,
                 isHovered: false,
 
                 init() {
-                    const savedState = localStorage.getItem('sidebarExpanded');
-                    if (window.innerWidth >= 1280) {
-                        this.isExpanded = savedState === null ? true : savedState === 'true';
-                    } else {
-                        this.isExpanded = false;
-                    }
-                    this.isMobileOpen = false;
-
+                    this.handleResize();
                     window.addEventListener('resize', () => {
                         this.handleResize();
                     });
@@ -114,7 +110,13 @@
                     this.isMobileOpen = false;
                     
                     if (window.innerWidth >= 1280) {
-                        localStorage.setItem('sidebarExpanded', this.isExpanded);
+                        localStorage.setItem('sidebarExpanded', this.isExpanded ? 'true' : 'false');
+                        localStorage.setItem('sidebar-collapsed', (!this.isExpanded) ? 'true' : 'false');
+                        if (!this.isExpanded) {
+                            document.documentElement.classList.add('sidebar-collapsed');
+                        } else {
+                            document.documentElement.classList.remove('sidebar-collapsed');
+                        }
                     }
                 },
 
@@ -149,9 +151,43 @@
             }
         })();
     </script>
+
+    <style>
+        .preload, .preload * {
+            -webkit-transition: none !important;
+            -moz-transition: none !important;
+            -ms-transition: none !important;
+            -o-transition: none !important;
+            transition: none !important;
+        }
+        @media (min-width: 1280px) {
+            html.sidebar-collapsed #sidebar {
+                width: 90px !important;
+            }
+            html.sidebar-collapsed .main-content-layout {
+                margin-left: 90px !important;
+            }
+        }
+    </style>
+    <script>
+        (function() {
+            try {
+                var s = localStorage.getItem('sidebarExpanded');
+                var c = localStorage.getItem('sidebar-collapsed');
+                if (s === 'false' || c === 'true') {
+                    document.documentElement.classList.add('sidebar-collapsed');
+                }
+            } catch(e) {}
+        })();
+        document.addEventListener('DOMContentLoaded', () => {
+            requestAnimationFrame(() => {
+                document.body.classList.remove('preload');
+            });
+        });
+    </script>
 </head>
 
-<body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 min-h-screen">
+<body class="preload bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 min-h-screen">
 
 
 
@@ -160,7 +196,7 @@
         @include('layouts.sidebar')
 
         {{-- Main content container with inline margin compensation --}}
-        <div class="flex-1 min-w-0 transition-all duration-300 ease-in-out"
+        <div class="main-content-layout flex-1 min-w-0 xl:ml-[290px] transition-all duration-300 ease-in-out"
             :style="window.innerWidth >= 1280 ? 'margin-left: ' + (($store.sidebar.isExpanded || $store.sidebar.isHovered) ? '290px' : '90px') : ''">
             <!-- app header start -->
             @include('layouts.app-header')

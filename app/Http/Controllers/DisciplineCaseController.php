@@ -92,7 +92,7 @@ class DisciplineCaseController extends Controller
         $hasActiveYear = (bool) $activeYear;
         $hasClasses = $classes->isNotEmpty();
         $hasStudents = Student::where('status', 'active')->exists();
-        $hasCategories = ViolationCategory::where('status', 'active')->whereNotNull('parent_id')->exists();
+        $hasCategories = ViolationCategory::where('status', 'active')->exists();
         $hasPrerequisites = $hasActiveYear && $hasClasses && $hasStudents && $hasCategories;
 
         $prerequisites = [
@@ -208,18 +208,24 @@ class DisciplineCaseController extends Controller
             ? "{$count} laporan pelanggaran berhasil dicatat secara kolektif (status: Temuan)."
             : 'Laporan pelanggaran ' . $createdCases[0]->case_number . ' berhasil dicatat (status: Temuan).';
 
-        // Notifikasi ke BK & Kesiswaan bila kasus jadi milik rumah sakit (bukan pengelola).
-        $createdUserId = $validated['reporter_id'] ?? auth()->id();
-        $bkAndKesiswaan = User::role(['bk', 'kesiswaan'])->get();
-        if ($bkAndKesiswaan->isNotEmpty() && !$bkAndKesiswaan->contains('id', $createdUserId)) {
-            $first = $createdCases[0];
-            Notification::send($bkAndKesiswaan, new NewDisciplineCase(
-                caseId: $first->id,
-                caseNumber: $first->case_number,
-                studentName: $first->student->full_name ?? 'Siswa',
-                violationCode: $first->violationCategory->code ?? '-',
-                violationName: $first->violationCategory->name ?? 'Kategori pelanggaran'
-            ));
+        // Notifikasi ke BK & Kesiswaan bila kasus dicatat
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('notifications')) {
+                $createdUserId = $validated['reporter_id'] ?? auth()->id();
+                $bkAndKesiswaan = User::role(['bk', 'kesiswaan'])->get();
+                if ($bkAndKesiswaan->isNotEmpty() && !$bkAndKesiswaan->contains('id', $createdUserId)) {
+                    $first = $createdCases[0];
+                    Notification::send($bkAndKesiswaan, new NewDisciplineCase(
+                        caseId: $first->id,
+                        caseNumber: $first->case_number,
+                        studentName: $first->student->full_name ?? 'Siswa',
+                        violationCode: $first->violationCategory->code ?? '-',
+                        violationName: $first->violationCategory->name ?? 'Kategori pelanggaran'
+                    ));
+                }
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Gagal kirim notifikasi kasus baru: ' . $e->getMessage());
         }
 
         return redirect()
