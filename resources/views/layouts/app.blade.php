@@ -169,6 +169,9 @@
             html.sidebar-collapsed .main-content-layout {
                 margin-left: 64px;
             }
+            html.sidebar-collapsed #sidebar:hover ~ .main-content-layout {
+                margin-left: 260px;
+            }
             html:not(.sidebar-collapsed) #sidebar {
                 width: 260px;
             }
