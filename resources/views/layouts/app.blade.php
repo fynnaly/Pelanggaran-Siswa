@@ -84,7 +84,6 @@
             Alpine.store('sidebar', {
                 isExpanded: initialExpanded,
                 isMobileOpen: false,
-                isHovered: false,
 
                 init() {
                     this.handleResize();
@@ -95,9 +94,7 @@
 
                 handleResize() {
                     if (window.innerWidth < 1280) {
-                        if (this.isMobileOpen) {
-                             this.isMobileOpen = false;
-                        }
+                        this.isMobileOpen = false;
                     } else {
                         this.isMobileOpen = false;
                         const savedState = localStorage.getItem('sidebarExpanded');
@@ -126,12 +123,6 @@
 
                 setMobileOpen(val) {
                     this.isMobileOpen = val;
-                },
-
-                setHovered(val) {
-                    if (window.innerWidth >= 1280 && !this.isExpanded) {
-                        this.isHovered = val;
-                    }
                 }
             });
         });
@@ -161,20 +152,17 @@
             transition: none !important;
         }
         @media (min-width: 1280px) {
-            html.sidebar-collapsed #sidebar:not(:hover) {
-                width: 90px;
-            }
-            html.sidebar-collapsed #sidebar:hover {
-                width: 290px;
+            html.sidebar-collapsed #sidebar {
+                width: 64px;
             }
             html.sidebar-collapsed .main-content-layout {
-                margin-left: 90px;
+                margin-left: 64px;
             }
             html:not(.sidebar-collapsed) #sidebar {
-                width: 290px;
+                width: 260px;
             }
             html:not(.sidebar-collapsed) .main-content-layout {
-                margin-left: 290px;
+                margin-left: 260px;
             }
         }
     </style>
@@ -204,9 +192,8 @@
         @include('layouts.backdrop')
         @include('layouts.sidebar')
 
-        {{-- Main content container with inline margin compensation --}}
-        <div class="main-content-layout flex-1 min-w-0 xl:ml-[290px] transition-all duration-300 ease-in-out"
-            :style="window.innerWidth >= 1280 ? 'margin-left: ' + ($store.sidebar.isExpanded ? '290px' : '90px') : ''">
+        {{-- Main content container --}}
+        <div class="main-content-layout flex-1 min-w-0 transition-[margin-left] duration-200 ease-in-out">
             <!-- app header start -->
             @include('layouts.app-header')
             <!-- app header end -->

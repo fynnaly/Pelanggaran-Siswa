@@ -19,11 +19,10 @@
 @endphp
 
 <aside id="sidebar"
-    class="fixed flex flex-col mt-0 top-0 start-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200"
+    class="fixed flex flex-col mt-0 top-0 start-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-[width] duration-200 ease-in-out z-110 border-r border-gray-200"
     :class="{
-        'w-[290px]': $store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen,
-        'w-[90px]': !$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen,
-        'shadow-2xl': !$store.sidebar.isExpanded && $store.sidebar.isHovered,
+        'w-[260px]': $store.sidebar.isExpanded || $store.sidebar.isMobileOpen,
+        'w-[64px]': !$store.sidebar.isExpanded && !$store.sidebar.isMobileOpen,
         'translate-x-0': $store.sidebar.isMobileOpen,
         'max-xl:-translate-x-full': !$store.sidebar.isMobileOpen
     }"
@@ -40,44 +39,6 @@
         })(),
         init() {
             this.setupScrollPersistence();
-            this.setupFastNavigation();
-        },
-        setupFastNavigation() {
-            const sidebar = document.getElementById('sidebar');
-            if (!sidebar) return;
-
-            let pointerStartX = 0;
-            let pointerStartY = 0;
-            let pointerTargetAnchor = null;
-            let pointerStartTime = 0;
-
-            sidebar.addEventListener('pointerdown', (e) => {
-                if (e.button !== 0) return;
-                pointerTargetAnchor = e.target.closest('a[href]');
-                pointerStartX = e.clientX;
-                pointerStartY = e.clientY;
-                pointerStartTime = Date.now();
-            }, { passive: true });
-
-            sidebar.addEventListener('pointerup', (e) => {
-                if (e.button !== 0 || !pointerTargetAnchor) return;
-                const duration = Date.now() - pointerStartTime;
-                const deltaX = Math.abs(e.clientX - pointerStartX);
-                const deltaY = Math.abs(e.clientY - pointerStartY);
-
-                if (duration < 450 && deltaX < 20 && deltaY < 20) {
-                    const anchor = pointerTargetAnchor;
-                    pointerTargetAnchor = null;
-                    const href = anchor.getAttribute('href');
-                    if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
-                    if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || anchor.target === '_blank') return;
-
-                    if (anchor.href && anchor.href !== window.location.href) {
-                        window.location.href = anchor.href;
-                    }
-                }
-                pointerTargetAnchor = null;
-            }, { passive: true });
         },
         toggleSubmenu(groupIndex, itemIndex) {
             const key = groupIndex + '-' + itemIndex;
@@ -101,52 +62,52 @@
                 sessionStorage.setItem('sidebar_scroll_top', container.scrollTop);
             });
         },
-        isSubmenuOpen(groupIndex, itemIndex) {
-            const key = groupIndex + '-' + itemIndex;
-            return !!this.openSubmenus[key];
-        },
         isActive(path) {
             return window.location.pathname === path || '{{ $currentPath }}' === path.replace(/^\//, '');
+        },
+        isGroupActive(subItems) {
+            if (!subItems) return false;
+            return subItems.some(sub => this.isActive(sub.path));
         }
-    }"
-    @mouseenter="if (!$store.sidebar.isExpanded) $store.sidebar.setHovered(true)"
-    @mouseleave="$store.sidebar.setHovered(false)">
+    }">
 
-    <!-- Logo & Brand Section -->
-    <div class="py-5 flex items-center border-b border-gray-100 dark:border-gray-800/80 transition-all"
-        :class="($store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen) ? 'px-5 justify-start' : 'px-3 justify-center'">
-        <a href="/" class="flex items-center gap-3 min-w-0" :class="($store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen) ? '' : 'justify-center'">
+    <!-- Logo & Brand Header Section (Cloudflare Style) -->
+    <div class="h-16 flex items-center border-b border-gray-100 dark:border-gray-800 shrink-0"
+        :class="($store.sidebar.isExpanded || $store.sidebar.isMobileOpen) ? 'px-4 justify-between' : 'px-2 justify-center'">
+        
+        <a href="/" class="flex items-center gap-3 min-w-0" :class="($store.sidebar.isExpanded || $store.sidebar.isMobileOpen) ? '' : 'justify-center'">
             <img class="h-8 w-8 shrink-0 rounded-lg" src="/image.ico" alt="Logo" />
-            <div x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen" class="overflow-hidden">
+            <div x-show="$store.sidebar.isExpanded || $store.sidebar.isMobileOpen" class="overflow-hidden">
                 <span class="block font-bold text-gray-800 dark:text-white text-base leading-tight truncate">Pelanggaran Kuy</span>
             </div>
         </a>
+
+        <!-- Cloudflare Sidebar Toggle Trigger Button -->
+        <button type="button" @click.stop="$store.sidebar.toggleExpanded()"
+            x-show="$store.sidebar.isExpanded || $store.sidebar.isMobileOpen"
+            class="hidden xl:inline-flex p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800 transition cursor-pointer"
+            title="Kecilkan sidebar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+                <path d="M9 3v18"></path>
+            </svg>
+        </button>
     </div>
 
-    <!-- Navigation Menu Content (TailAdmin Exact Styling) -->
+    <!-- Navigation Menu Content Container -->
     <div x-ref="menuContainer" id="sidebarMenuContainer"
-        class="flex-1 flex flex-col justify-between overflow-y-auto overflow-x-hidden no-scrollbar py-6 transition-all"
-        :class="($store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen) ? 'px-5' : 'px-3'">
-        <script>
-            (function() {
-                try {
-                    var el = document.getElementById('sidebarMenuContainer');
-                    var pos = sessionStorage.getItem('sidebar_scroll_top');
-                    if (el && pos) el.scrollTop = parseInt(pos, 10);
-                } catch (e) {}
-            })();
-        </script>
+        class="flex-1 flex flex-col justify-between overflow-y-auto overflow-x-hidden no-scrollbar py-4"
+        :class="($store.sidebar.isExpanded || $store.sidebar.isMobileOpen) ? 'px-3' : 'px-2'">
+        
         <nav class="space-y-6">
             @foreach ($menuGroups as $groupIndex => $menuGroup)
-                <div class="flex flex-col gap-2">
+                <div class="flex flex-col gap-1.5">
                     <!-- Menu Group Label -->
-                    <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1"
-                        :class="($store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen) ? 'text-left' : 'text-center'">
-                        <span x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen">
-                            {{ $menuGroup['title'] }}
-                        </span>
-                        <div x-show="!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen" class="w-6 h-0.5 mx-auto bg-gray-200 dark:bg-gray-800 rounded my-1.5"></div>
+                    <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 px-3 mb-1"
+                        x-show="$store.sidebar.isExpanded || $store.sidebar.isMobileOpen">
+                        {{ $menuGroup['title'] }}
                     </div>
+                    <div x-show="!$store.sidebar.isExpanded && !$store.sidebar.isMobileOpen" class="w-6 h-px mx-auto bg-gray-200 dark:bg-gray-800 my-1.5"></div>
 
                     <!-- Menu List -->
                     <ul class="flex flex-col gap-1">
@@ -154,76 +115,84 @@
                             @php $menuKey = "{$groupIndex}-{$itemIndex}"; @endphp
                             <li class="relative">
                                 @if (isset($item['subItems']))
-                                    <!-- Collapsible Menu Trigger -->
-                                    <button type="button" @click="toggleSubmenu({{ $groupIndex }}, {{ $itemIndex }})"
-                                        class="menu-item cursor-pointer group"
-                                        :class="[
-                                            openSubmenus['{{ $menuKey }}'] ? 'menu-item-active' : 'menu-item-inactive',
-                                            ($store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen) ? 'px-3 justify-start' : 'px-0 justify-center'
-                                        ]"
-                                        title="{{ $item['name'] }}">
-                                        <span class="shrink-0 size-5 flex items-center justify-center pointer-events-none"
-                                            :class="openSubmenus['{{ $menuKey }}'] ? 'menu-item-icon-active' : 'menu-item-icon-inactive'">
-                                            {!! MenuHelper::getIconSvg($item['icon']) !!}
-                                        </span>
+                                    <!-- EXPANDED MODE: Collapsible Menu Trigger & Accordion -->
+                                    <div x-show="$store.sidebar.isExpanded || $store.sidebar.isMobileOpen">
+                                        <button type="button" @click="toggleSubmenu({{ $groupIndex }}, {{ $itemIndex }})"
+                                            class="menu-item cursor-pointer group flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                                            :class="isGroupActive(@js($item['subItems'])) || openSubmenus['{{ $menuKey }}'] ?
+                                                'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400' :
+                                                'text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white'"
+                                            title="{{ $item['name'] }}">
+                                            <div class="flex items-center gap-3 min-w-0">
+                                                <span class="shrink-0 size-5 flex items-center justify-center pointer-events-none">
+                                                    {!! MenuHelper::getIconSvg($item['icon']) !!}
+                                                </span>
+                                                <span class="truncate pointer-events-none select-none">{{ $item['name'] }}</span>
+                                            </div>
 
-                                        <span x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
-                                            class="flex-1 text-left truncate pointer-events-none select-none">
-                                            {{ $item['name'] }}
-                                        </span>
+                                            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"
+                                                class="shrink-0 transition-transform duration-200 pointer-events-none"
+                                                :class="openSubmenus['{{ $menuKey }}'] ? 'rotate-180 text-brand-600 dark:text-brand-400' : 'text-gray-400'">
+                                                <path d="M4.792 7.396L10 12.604l5.208-5.208" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </button>
 
-                                        <!-- Chevron Down Icon with explicit path direction swap -->
-                                        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"
-                                            x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
-                                            class="ms-auto size-4.5 shrink-0 pointer-events-none"
-                                            :class="openSubmenus['{{ $menuKey }}'] ? 'text-brand-500' : 'text-gray-400'">
-                                            <!-- Path saat terbuka (panah mengarah ke atas) -->
-                                            <path x-show="openSubmenus['{{ $menuKey }}']"
-                                                d="M4.792 12.604L10 7.396l5.208 5.208" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                            <!-- Path saat tertutup (panah mengarah ke bawah) -->
-                                            <path x-show="!openSubmenus['{{ $menuKey }}']"
-                                                d="M4.792 7.396L10 12.604l5.208-5.208" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                        </svg>
-                                    </button>
-
-                                    <!-- Collapsible Panel Content (TailAdmin Native Tree Hierarchy) -->
-                                    <div x-show="openSubmenus['{{ $menuKey }}'] && ($store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen)"
-                                        class="overflow-hidden">
-                                        <div class="my-2 ml-7 pl-3 border-l-2 border-slate-300 dark:border-slate-700">
-                                            <ul class="flex flex-col gap-1">
-                                                @foreach ($item['subItems'] as $subItem)
-                                                    <li>
-                                                        <a href="{{ $subItem['path'] }}"
-                                                            class="group relative flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-colors"
-                                                            :class="isActive('{{ $subItem['path'] }}') ?
-                                                                'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400' :
-                                                                'text-gray-900 hover:text-brand-600 hover:bg-gray-100 dark:text-gray-100 dark:hover:text-white dark:hover:bg-white/5'">
-                                                            <span class="block truncate pointer-events-none select-none">{{ $subItem['name'] }}</span>
-                                                        </a>
-                                                    </li>
-                                                @endforeach
-                                            </ul>
+                                        <!-- Collapsible Panel Content (Tree Hierarchy) -->
+                                        <div x-show="openSubmenus['{{ $menuKey }}']" class="mt-1 ml-5 pl-3 border-l border-gray-200 dark:border-gray-800 space-y-1">
+                                            @foreach ($item['subItems'] as $subItem)
+                                                <a href="{{ $subItem['path'] }}"
+                                                    class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                                                    :class="isActive('{{ $subItem['path'] }}') ?
+                                                        'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400 font-semibold' :
+                                                        'text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/5'">
+                                                    <span class="truncate pointer-events-none select-none">{{ $subItem['name'] }}</span>
+                                                </a>
+                                            @endforeach
                                         </div>
                                     </div>
-                                @else
-                                    <!-- Standalone Item -->
-                                    <a href="{{ $item['path'] }}"
-                                        class="menu-item group"
-                                        :class="[
-                                            isActive('{{ $item['path'] }}') ? 'menu-item-active' : 'menu-item-inactive',
-                                            ($store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen) ? 'px-3 justify-start' : 'px-0 justify-center'
-                                        ]"
-                                        title="{{ $item['name'] }}">
-                                        <span class="shrink-0 size-5 flex items-center justify-center pointer-events-none"
-                                            :class="isActive('{{ $item['path'] }}') ? 'menu-item-icon-active' : 'menu-item-icon-inactive'">
-                                            {!! MenuHelper::getIconSvg($item['icon']) !!}
-                                        </span>
 
-                                        <span x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
-                                            class="flex-1 text-left truncate pointer-events-none select-none">
-                                            {{ $item['name'] }}
-                                        </span>
-                                    </a>
+                                    <!-- COLLAPSED MODE: Direct Link ke Sub-item Pertama -->
+                                    <div x-show="!$store.sidebar.isExpanded && !$store.sidebar.isMobileOpen">
+                                        <a href="{{ $item['subItems'][0]['path'] }}"
+                                            class="flex items-center justify-center size-10 mx-auto rounded-lg transition-colors"
+                                            :class="isGroupActive(@js($item['subItems'])) ?
+                                                'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400' :
+                                                'text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/5'"
+                                            title="{{ $item['name'] }}">
+                                            <span class="shrink-0 size-5 flex items-center justify-center pointer-events-none">
+                                                {!! MenuHelper::getIconSvg($item['icon']) !!}
+                                            </span>
+                                        </a>
+                                    </div>
+                                @else
+                                    <!-- Standalone Item (Dashboard, Settings, etc.) -->
+                                    <div x-show="$store.sidebar.isExpanded || $store.sidebar.isMobileOpen">
+                                        <a href="{{ $item['path'] }}"
+                                            class="menu-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors w-full"
+                                            :class="isActive('{{ $item['path'] }}') ?
+                                                'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400 font-semibold' :
+                                                'text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white'"
+                                            title="{{ $item['name'] }}">
+                                            <span class="shrink-0 size-5 flex items-center justify-center pointer-events-none">
+                                                {!! MenuHelper::getIconSvg($item['icon']) !!}
+                                            </span>
+                                            <span class="truncate pointer-events-none select-none">{{ $item['name'] }}</span>
+                                        </a>
+                                    </div>
+
+                                    <!-- Standalone Item saat Collapsed -->
+                                    <div x-show="!$store.sidebar.isExpanded && !$store.sidebar.isMobileOpen">
+                                        <a href="{{ $item['path'] }}"
+                                            class="flex items-center justify-center size-10 mx-auto rounded-lg transition-colors"
+                                            :class="isActive('{{ $item['path'] }}') ?
+                                                'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400' :
+                                                'text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/5'"
+                                            title="{{ $item['name'] }}">
+                                            <span class="shrink-0 size-5 flex items-center justify-center pointer-events-none">
+                                                {!! MenuHelper::getIconSvg($item['icon']) !!}
+                                            </span>
+                                        </a>
+                                    </div>
                                 @endif
                             </li>
                         @endforeach
@@ -233,12 +202,55 @@
         </nav>
     </div>
 
-    <!-- Bottom User Profile & Actions Footer -->
-    <div class="py-4 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-2 transition-all"
-        :class="($store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen) ? 'px-4' : 'px-2 items-center'">
-        <div class="flex items-center gap-3 px-2 py-1.5"
-            :class="($store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen) ? '' : 'justify-center px-0'">
-            <div class="size-8 rounded-full bg-brand-500 text-white flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden"
+    <!-- Bottom User Profile & Actions Footer Section -->
+    <div class="p-3 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-2 shrink-0">
+        <!-- Expanded Profile View -->
+        <div x-show="$store.sidebar.isExpanded || $store.sidebar.isMobileOpen" class="flex flex-col gap-2">
+            <div class="flex items-center gap-3 px-2 py-1.5">
+                <div class="size-8 rounded-full bg-brand-500 text-white flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden"
+                    title="{{ Auth::user()->name ?? 'User' }}">
+                    @if(Auth::user()?->avatar_path)
+                        <img src="{{ asset('storage/'.Auth::user()->avatar_path) }}" alt="{{ Auth::user()->name }}" class="w-full h-full object-cover">
+                    @else
+                        {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 2)) }}
+                    @endif
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm font-semibold text-gray-800 dark:text-white truncate">{{ Auth::user()->name ?? 'User' }}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ Auth::user()->email ?? '' }}</div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-1 pt-1 border-t border-gray-100 dark:border-gray-800/60">
+                <a href="{{ route('profile.edit') }}"
+                    class="flex-1 flex items-center justify-center gap-2 py-1.5 px-2 rounded-lg text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition"
+                    title="Pengaturan Akun">
+                    <svg class="size-4 shrink-0 text-gray-500 dark:text-gray-400 pointer-events-none" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                    </svg>
+                    <span>Profil</span>
+                </a>
+
+                <form method="POST" action="{{ route('logout') }}" class="m-0 flex-1">
+                    @csrf
+                    <button type="submit"
+                        class="w-full flex items-center justify-center gap-2 py-1.5 px-2 rounded-lg text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition cursor-pointer"
+                        title="Keluar">
+                        <svg class="size-4 shrink-0 text-red-600 dark:text-red-400 pointer-events-none" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <polyline points="16 17 21 12 16 7"/>
+                            <line x1="21" x2="9" y1="12" y2="12"/>
+                        </svg>
+                        <span>Keluar</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Collapsed Profile View -->
+        <div x-show="!$store.sidebar.isExpanded && !$store.sidebar.isMobileOpen" class="flex flex-col items-center gap-2">
+            <div class="size-9 rounded-full bg-brand-500 text-white flex items-center justify-center text-xs font-bold overflow-hidden"
                 title="{{ Auth::user()->name ?? 'User' }}">
                 @if(Auth::user()?->avatar_path)
                     <img src="{{ asset('storage/'.Auth::user()->avatar_path) }}" alt="{{ Auth::user()->name }}" class="w-full h-full object-cover">
@@ -246,36 +258,28 @@
                     {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 2)) }}
                 @endif
             </div>
-            <div x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen" class="flex-1 min-w-0">
-                <div class="text-sm font-semibold text-gray-800 dark:text-white truncate">{{ Auth::user()->name ?? 'User' }}</div>
-                <div class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ Auth::user()->email ?? '' }}</div>
-            </div>
-        </div>
 
-        <a href="{{ route('profile.edit') }}"
-            class="flex items-center gap-3 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition"
-            :class="($store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen) ? 'px-3 py-2' : 'p-2 justify-center'"
-            title="Pengaturan Akun">
-            <svg class="size-5 shrink-0 text-gray-500 dark:text-gray-400 pointer-events-none" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-                <circle cx="12" cy="12" r="3"/>
-            </svg>
-            <span x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen" class="truncate pointer-events-none select-none">Pengaturan Akun</span>
-        </a>
-
-        <form method="POST" action="{{ route('logout') }}" class="m-0" :class="($store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen) ? 'w-full' : ''">
-            @csrf
-            <button type="submit"
-                class="flex items-center gap-3 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition cursor-pointer"
-                :class="($store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen) ? 'w-full px-3 py-2' : 'p-2 justify-center'"
-                title="Keluar">
-                <svg class="size-5 shrink-0 text-red-600 dark:text-red-400" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                    <polyline points="16 17 21 12 16 7"/>
-                    <line x1="21" x2="9" y1="12" y2="12"/>
+            <a href="{{ route('profile.edit') }}"
+                class="flex items-center justify-center size-9 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/5 transition"
+                title="Pengaturan Akun">
+                <svg class="size-4.5 shrink-0 pointer-events-none" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
                 </svg>
-                <span x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen" class="truncate">Keluar</span>
-            </button>
-        </form>
+            </a>
+
+            <form method="POST" action="{{ route('logout') }}" class="m-0">
+                @csrf
+                <button type="submit"
+                    class="flex items-center justify-center size-9 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition cursor-pointer"
+                    title="Keluar">
+                    <svg class="size-4.5 shrink-0 pointer-events-none" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" x2="9" y1="12" y2="12"/>
+                    </svg>
+                </button>
+            </form>
+        </div>
     </div>
 </aside>
