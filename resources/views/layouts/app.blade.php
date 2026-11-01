@@ -129,8 +129,9 @@
                 },
 
                 setHovered(val) {
-                    // Hover-expand dinonaktifkan agar perilaku konsisten dengan preferensi toggle eksplisit
-                    this.isHovered = false;
+                    if (window.innerWidth >= 1280 && !this.isExpanded) {
+                        this.isHovered = val;
+                    }
                 }
             });
         });
@@ -160,8 +161,11 @@
             transition: none !important;
         }
         @media (min-width: 1280px) {
-            html.sidebar-collapsed #sidebar {
+            html.sidebar-collapsed #sidebar:not(:hover) {
                 width: 90px;
+            }
+            html.sidebar-collapsed #sidebar:hover {
+                width: 290px;
             }
             html.sidebar-collapsed .main-content-layout {
                 margin-left: 90px;

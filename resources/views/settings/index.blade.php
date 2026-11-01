@@ -20,7 +20,7 @@
     </x-slot>
 
     <div class="main-wrap" x-data="{ isEditing: false }" @toggle-settings-edit.window="isEditing = $event.detail; if (!isEditing) { document.getElementById('settingsForm')?.reset(); }">
-        <div class="card card-form" style="max-width:840px">
+        <div class="card card-form w-full">
             @if(session('success'))<div class="alert alert-success"><i data-lucide="check-circle" class="icon-sm"></i> {{ session('success') }}</div>@endif
             @if($errors->any())<div class="alert alert-error"><i data-lucide="alert-circle" class="icon-sm"></i> {{ $errors->first() }}</div>@endif
 
