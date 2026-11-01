@@ -1,21 +1,8 @@
 @php
     use App\Helpers\MenuHelper;
+    use Illuminate\Support\Str;
     $menuGroups = MenuHelper::getMenuGroups();
     $currentPath = request()->path();
-
-    $initialSubmenus = [];
-    foreach ($menuGroups as $groupIndex => $menuGroup) {
-        foreach ($menuGroup['items'] as $itemIndex => $item) {
-            if (isset($item['subItems'])) {
-                foreach ($item['subItems'] as $subItem) {
-                    $cleanPath = ltrim($subItem['path'], '/');
-                    if ($currentPath === $cleanPath || request()->is($cleanPath . '*')) {
-                        $initialSubmenus["{$groupIndex}-{$itemIndex}"] = true;
-                    }
-                }
-            }
-        }
-    }
 @endphp
 
 <aside id="sidebar"
@@ -31,14 +18,16 @@
     @mouseleave="$store.sidebar.setHovered(false)"
     x-data="{
         openSubmenus: (() => {
-            const defaults = @js($initialSubmenus);
             try {
                 const raw = localStorage.getItem('sidebar_open_submenus');
-                if (raw !== null) {
-                    return JSON.parse(raw);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (typeof parsed === 'object' && parsed !== null) {
+                        return parsed;
+                    }
                 }
             } catch (e) {}
-            return defaults;
+            return {};
         })(),
         init() {
             this.setupScrollPersistence();
@@ -46,8 +35,10 @@
         isOpen() {
             return this.$store.sidebar.isExpanded || this.$store.sidebar.isHovered || this.$store.sidebar.isMobileOpen;
         },
-        toggleSubmenu(groupIndex, itemIndex) {
-            const key = groupIndex + '-' + itemIndex;
+        isSubmenuOpen(key) {
+            return !!this.openSubmenus[key];
+        },
+        toggleSubmenu(key) {
             this.openSubmenus[key] = !this.openSubmenus[key];
             this.openSubmenus = Object.assign({}, this.openSubmenus);
             try {
@@ -105,13 +96,15 @@
                     <!-- Menu List -->
                     <ul class="flex flex-col gap-1">
                         @foreach ($menuGroup['items'] as $itemIndex => $item)
-                            @php $menuKey = "{$groupIndex}-{$itemIndex}"; @endphp
+                            @php
+                                $menuKey = Str::slug($item['name']);
+                            @endphp
                             <li class="relative">
                                 @if (isset($item['subItems']))
                                     <!-- Accordion Submenu Trigger -->
-                                    <button type="button" @click="toggleSubmenu({{ $groupIndex }}, {{ $itemIndex }})"
+                                    <button type="button" @click="toggleSubmenu('{{ $menuKey }}')"
                                         class="menu-item cursor-pointer group flex items-center justify-between w-full h-10 px-3 rounded-lg text-sm font-medium transition-colors"
-                                        :class="isGroupActive(@js($item['subItems'])) || openSubmenus['{{ $menuKey }}'] ?
+                                        :class="isGroupActive(@js($item['subItems'])) || isSubmenuOpen('{{ $menuKey }}') ?
                                             'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400' :
                                             'text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white'"
                                         title="{{ $item['name'] }}">
@@ -129,15 +122,15 @@
                                         <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"
                                             class="shrink-0 transition-transform duration-200 pointer-events-none"
                                             :class="[
-                                                openSubmenus['{{ $menuKey }}'] ? 'rotate-180 text-brand-600 dark:text-brand-400' : 'text-gray-400',
+                                                isSubmenuOpen('{{ $menuKey }}') ? 'rotate-180 text-brand-600 dark:text-brand-400' : 'text-gray-400',
                                                 isOpen() ? 'block' : 'hidden'
                                             ]">
                                             <path d="M4.792 7.396L10 12.604l5.208-5.208" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
                                         </svg>
                                     </button>
 
-                                    <!-- Submenu Content (Hanya tampil saat expanded/hover) -->
-                                    <div x-show="openSubmenus['{{ $menuKey }}'] && isOpen()"
+                                    <!-- Submenu Content (Hanya tampil saat submenu terbuka & sidebar open) -->
+                                    <div x-show="isSubmenuOpen('{{ $menuKey }}') && isOpen()"
                                         class="mt-1 ml-5 pl-3 border-l border-gray-200 dark:border-gray-800 space-y-1">
                                         @foreach ($item['subItems'] as $subItem)
                                             <a href="{{ $subItem['path'] }}"
