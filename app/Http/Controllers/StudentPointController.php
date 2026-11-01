@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\ScopesWaliKelas;
 use App\Models\AcademicYear;
 use App\Models\SchoolClass;
 use App\Models\Student;
+use App\Support\Xlsx;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use ZipArchive;
@@ -42,7 +43,7 @@ class StudentPointController extends Controller
     }
 
     /**
-     * Export CSV native — ikut pola students/users (tanpa library, ext-gd kills maatwebsite).
+     * Export XLSX native — format ber-style seperti template.
      * Filter aktif (q/kelas/zona/tahun) ikut diterapkan, semua baris tanpa paginasi.
      */
     public function export()
@@ -50,28 +51,29 @@ class StudentPointController extends Controller
         [$students] = $this->filteredStudents();
         $students = $this->sortStudents($students, 'poin', 'desc');
 
-        $filename = 'monitor-poin-' . now()->format('Ymd-His') . '.csv';
+        $rows = [
+            ['No', 'NISN', 'NIS', 'Nama', 'Kelas', 'Tahun Ajaran', 'Saldo Poin', 'Zona Pembinaan'],
+        ];
 
-        return response()->streamDownload(function () use ($students) {
-            $out = fopen('php://output', 'w');
-            // BOM agar Excel Windows baca UTF-8 dengan benar
-            fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
-            fputcsv($out, ['No', 'NISN', 'NIS', 'Nama', 'Kelas', 'Tahun Ajaran', 'Saldo Poin', 'Zona Pembinaan'], ',', '"', '\\');
+        foreach ($students as $i => $s) {
+            $rows[] = [
+                $i + 1,
+                $s->nisn,
+                $s->nis,
+                $s->full_name,
+                $s->class_name,
+                $s->academic_year_name,
+                (string) $s->current_balance,
+                $s->zone['name'],
+            ];
+        }
 
-            foreach ($students as $i => $s) {
-                fputcsv($out, [
-                    $i + 1,
-                    $s->nisn,
-                    $s->nis,
-                    $s->full_name,
-                    $s->class_name,
-                    $s->academic_year_name,
-                    $s->current_balance,
-                    $s->zone['name'],
-                ], ',', '"', '\\');
-            }
-            fclose($out);
-        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+        $path = Xlsx::write($rows, 'Monitor Poin', true);
+        $filename = 'monitor-poin-' . now()->format('Ymd-His') . '.xlsx';
+
+        return response()->download($path, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend(true);
     }
 
     /** Query + filter (q, kelas, zona, tahun ajaran) — dipakai index & export.

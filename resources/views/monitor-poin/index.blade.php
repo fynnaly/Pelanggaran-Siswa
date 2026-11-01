@@ -6,7 +6,7 @@
                 <p class="text-muted text-sm" data-live-count>{{ $paginated->total() }} siswa &middot; tahun ajaran aktif</p>
             </div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap" class="no-print">
-                <a href="{{ route('monitor-poin.export') }}?{{ http_build_query(request()->only(['q','year_id','class_id','zone'])) }}" class="btn btn-secondary btn-sm"><i data-lucide="download" class="icon-sm"></i> Export CSV</a>
+                <a href="{{ route('monitor-poin.export') }}?{{ http_build_query(request()->only(['q','year_id','class_id','zone'])) }}" class="btn btn-secondary btn-sm"><i data-lucide="download" class="icon-sm"></i> Export</a>
                 <button type="button" onclick="window.print()" class="btn btn-secondary btn-sm"><i data-lucide="printer" class="icon-sm"></i> Cetak Rekap</button>
             </div>
         </div>

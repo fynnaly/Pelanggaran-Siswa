@@ -320,7 +320,7 @@ class StudentController extends Controller
         ])->deleteFileAfterSend(true);
     }
 
-    /** Export daftar siswa ke CSV (paginate 5000, include poin terkini) */
+    /** Export daftar siswa ke XLSX (paginate 5000, include poin terkini) */
     public function export()
     {
         $students = Student::with(['currentEnrollment.schoolClass', 'currentEnrollment.academicYear', 'pointLedgers' => fn ($q) => $q->orderByDesc('id')])
@@ -328,32 +328,34 @@ class StudentController extends Controller
             ->limit(5000)
             ->get();
 
-        $filename = 'siswa-' . now()->format('Ymd-His') . '.csv';
+        $rows = [
+            ['NISN', 'NIS', 'Nama Lengkap', 'Jenis Kelamin', 'Telepon', 'Alamat', 'Nama Orang Tua', 'No. HP Orang Tua', 'Kelas', 'Tahun Ajaran', 'Status', 'Poin Saat Ini'],
+        ];
 
-        return response()->streamDownload(function () use ($students) {
-            $out = fopen('php://output', 'w');
-            fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
-            fputcsv($out, ['NISN', 'NIS', 'Nama Lengkap', 'Jenis Kelamin', 'Telepon', 'Alamat', 'Nama Orang Tua', 'No. HP Orang Tua', 'Kelas', 'Tahun Ajaran', 'Status', 'Poin Saat Ini']);
+        foreach ($students as $s) {
+            $poin = $s->pointLedgers->first()?->balance_after ?? 2000;
+            $rows[] = [
+                $s->nisn,
+                $s->nis,
+                $s->full_name,
+                $s->gender === 'L' ? 'Laki-laki' : 'Perempuan',
+                $s->phone ?? '',
+                $s->address ?? '',
+                $s->parent_name ?? '',
+                $s->parent_phone ?? '',
+                $s->currentEnrollment?->schoolClass?->name ?? '-',
+                $s->currentEnrollment?->academicYear?->name ?? '-',
+                $s->status,
+                (string) $poin,
+            ];
+        }
 
-            foreach ($students as $s) {
-                $poin = $s->pointLedgers->first()?->balance_after ?? 2000;
-                fputcsv($out, [
-                    $s->nisn,
-                    $s->nis,
-                    $s->full_name,
-                    $s->gender === 'L' ? 'Laki-laki' : 'Perempuan',
-                    $s->phone ?? '',
-                    $s->address ?? '',
-                    $s->parent_name ?? '',
-                    $s->parent_phone ?? '',
-                    $s->currentEnrollment?->schoolClass?->name ?? '-',
-                    $s->currentEnrollment?->academicYear?->name ?? '-',
-                    $s->status,
-                    $poin,
-                ]);
-            }
-            fclose($out);
-        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+        $path = Xlsx::write($rows, 'Daftar Siswa', true);
+        $filename = 'siswa-' . now()->format('Ymd-His') . '.xlsx';
+
+        return response()->download($path, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend(true);
     }
 
     /**

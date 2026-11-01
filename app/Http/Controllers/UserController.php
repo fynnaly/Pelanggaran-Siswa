@@ -251,7 +251,7 @@ class UserController extends Controller
         }, 'template-pengguna.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
-    /** Export pengguna ke CSV */
+    /** Export pengguna ke XLSX dengan styling header */
     public function export()
     {
         $users = User::with(['roles', 'student.currentEnrollment.schoolClass'])
@@ -259,21 +259,23 @@ class UserController extends Controller
             ->limit(5000)
             ->get();
 
-        $filename = 'pengguna-' . now()->format('Ymd-His') . '.csv';
+        $rows = [
+            ['Nama', 'Email', 'Role', 'Identitas Siswa', 'Kelas'],
+        ];
 
-        return response()->streamDownload(function () use ($users) {
-            $out = fopen('php://output', 'w');
-            fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
-            fputcsv($out, ['Nama', 'Email', 'Role', 'Identitas Siswa', 'Kelas']);
+        foreach ($users as $u) {
+            $role = $u->roles->first()?->name ?? '-';
+            $studentInfo = $u->student ? $u->student->nisn . ' - ' . $u->student->full_name : '-';
+            $kelas = $u->student?->currentEnrollment?->schoolClass?->name ?? '-';
+            $rows[] = [$u->name, $u->email, $role, $studentInfo, $kelas];
+        }
 
-            foreach ($users as $u) {
-                $role = $u->roles->first()?->name ?? '-';
-                $studentInfo = $u->student ? $u->student->nisn . ' - ' . $u->student->full_name : '-';
-                $kelas = $u->student?->currentEnrollment?->schoolClass?->name ?? '-';
-                fputcsv($out, [$u->name, $u->email, $role, $studentInfo, $kelas]);
-            }
-            fclose($out);
-        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+        $path = Xlsx::write($rows, 'Daftar Pengguna', true);
+        $filename = 'pengguna-' . now()->format('Ymd-His') . '.xlsx';
+
+        return response()->download($path, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend(true);
     }
 
     /**
