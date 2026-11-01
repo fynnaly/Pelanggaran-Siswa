@@ -129,9 +129,8 @@
                 },
 
                 setHovered(val) {
-                    if (window.innerWidth >= 1280 && !this.isExpanded) {
-                        this.isHovered = val;
-                    }
+                    // Hover-expand dinonaktifkan agar perilaku konsisten dengan preferensi toggle eksplisit
+                    this.isHovered = false;
                 }
             });
         });
@@ -162,10 +161,16 @@
         }
         @media (min-width: 1280px) {
             html.sidebar-collapsed #sidebar {
-                width: 90px !important;
+                width: 90px;
             }
             html.sidebar-collapsed .main-content-layout {
-                margin-left: 90px !important;
+                margin-left: 90px;
+            }
+            html:not(.sidebar-collapsed) #sidebar {
+                width: 290px;
+            }
+            html:not(.sidebar-collapsed) .main-content-layout {
+                margin-left: 290px;
             }
         }
     </style>
@@ -191,13 +196,13 @@
 
 
 
-    <div class="min-h-screen xl:flex sidebar-expanded" x-data :class="{ 'sidebar-expanded': $store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen }">
+    <div class="min-h-screen xl:flex" x-data :class="{ 'sidebar-expanded': $store.sidebar.isExpanded || $store.sidebar.isMobileOpen }">
         @include('layouts.backdrop')
         @include('layouts.sidebar')
 
         {{-- Main content container with inline margin compensation --}}
         <div class="main-content-layout flex-1 min-w-0 xl:ml-[290px] transition-all duration-300 ease-in-out"
-            :style="window.innerWidth >= 1280 ? 'margin-left: ' + (($store.sidebar.isExpanded || $store.sidebar.isHovered) ? '290px' : '90px') : ''">
+            :style="window.innerWidth >= 1280 ? 'margin-left: ' + ($store.sidebar.isExpanded ? '290px' : '90px') : ''">
             <!-- app header start -->
             @include('layouts.app-header')
             <!-- app header end -->
