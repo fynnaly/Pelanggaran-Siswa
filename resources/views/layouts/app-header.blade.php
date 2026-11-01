@@ -39,13 +39,13 @@
             <!-- Search (desktop only) -->
             <div class="hidden xl:block" x-data="{}"
                 @keydown.window="if (($event.metaKey || $event.ctrlKey) && $event.key.toLowerCase() === 'k') { $event.preventDefault(); $refs.searchInput?.focus(); }">
-                <form @submit.prevent>
+                <form action="{{ route('students.index') }}" method="GET">
                     <x-ui.field class="xl:w-107.5">
                         <x-ui.input-group class="border-gray-200 bg-transparent dark:border-gray-800 dark:bg-white/5">
                             <x-ui.input-group.addon align="inline-start">
                                 <x-svg.search class="size-5 text-gray-500 dark:text-gray-400" />
                             </x-ui.input-group.addon>
-                            <x-ui.input-group.input x-ref="searchInput" type="text" placeholder="Cari siswa, NISN, atau kasus (Ctrl+K)..."
+                            <x-ui.input-group.input x-ref="searchInput" name="q" value="{{ request('q') }}" type="text" placeholder="Cari siswa, NISN, atau kelas (Ctrl+K)..."
                                 class="text-gray-800 placeholder:text-gray-400 dark:text-white/90 dark:placeholder:text-white/30" />
                         </x-ui.input-group>
                     </x-ui.field>
