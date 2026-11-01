@@ -16,63 +16,13 @@
     }"
     @mouseenter="$store.sidebar.setHovered(true)"
     @mouseleave="$store.sidebar.setHovered(false)"
-    x-data="{
-        openSubmenus: (() => {
-            try {
-                const raw = localStorage.getItem('sidebar_open_submenus');
-                if (raw) {
-                    const parsed = JSON.parse(raw);
-                    if (typeof parsed === 'object' && parsed !== null) {
-                        return parsed;
-                    }
-                }
-            } catch (e) {}
-            return {};
-        })(),
-        init() {
-            this.setupScrollPersistence();
-        },
-        isOpen() {
-            return this.$store.sidebar.isExpanded || this.$store.sidebar.isHovered || this.$store.sidebar.isMobileOpen;
-        },
-        isSubmenuOpen(key) {
-            return !!this.openSubmenus[key];
-        },
-        toggleSubmenu(key) {
-            this.openSubmenus[key] = !this.openSubmenus[key];
-            this.openSubmenus = Object.assign({}, this.openSubmenus);
-            try {
-                localStorage.setItem('sidebar_open_submenus', JSON.stringify(this.openSubmenus));
-            } catch (e) {}
-        },
-        setupScrollPersistence() {
-            const container = this.$refs.menuContainer;
-            if (!container) return;
-            const pos = sessionStorage.getItem('sidebar_scroll_top');
-            if (pos !== null) {
-                container.scrollTop = parseInt(pos, 10);
-            }
-            container.addEventListener('scroll', () => {
-                sessionStorage.setItem('sidebar_scroll_top', container.scrollTop);
-            }, { passive: true });
-            window.addEventListener('beforeunload', () => {
-                sessionStorage.setItem('sidebar_scroll_top', container.scrollTop);
-            });
-        },
-        isActive(path) {
-            return window.location.pathname === path || '{{ $currentPath }}' === path.replace(/^\//, '');
-        },
-        isGroupActive(subItems) {
-            if (!subItems) return false;
-            return subItems.some(sub => this.isActive(sub.path));
-        }
-    }">
+    x-data="sidebarMenu">
 
     <!-- Logo & Brand Header Section -->
     <div class="h-16 flex items-center px-4 border-b border-gray-100 dark:border-gray-800 shrink-0 overflow-hidden">
         <a href="/" class="flex items-center gap-3 min-w-0">
-            <img class="h-8 w-8 shrink-0 rounded-lg" src="/image.ico" alt="Logo" />
-            <span class="font-bold text-gray-800 dark:text-white text-base leading-tight truncate transition-opacity duration-200"
+            <img class="h-8 w-8 shrink-0 rounded-lg pointer-events-none" src="/image.ico" alt="Logo" />
+            <span class="font-bold text-gray-800 dark:text-white text-base leading-tight truncate transition-opacity duration-200 pointer-events-none select-none"
                 :class="isOpen() ? 'opacity-100' : 'opacity-0 w-0 hidden'">
                 Pelanggaran Kuy
             </span>
@@ -86,12 +36,14 @@
         <nav class="space-y-6">
             @foreach ($menuGroups as $groupIndex => $menuGroup)
                 <div class="flex flex-col gap-1.5">
-                    <!-- Menu Group Label -->
-                    <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 px-3 mb-1"
-                        :class="isOpen() ? 'block' : 'hidden'">
-                        {{ $menuGroup['title'] }}
+                    <!-- Menu Group Label Container with constant height -->
+                    <div class="h-6 flex items-center px-3 mb-1 shrink-0 overflow-hidden">
+                        <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 truncate transition-opacity duration-200"
+                            :class="isOpen() ? 'opacity-100 block' : 'opacity-0 hidden'">
+                            {{ $menuGroup['title'] }}
+                        </div>
+                        <div :class="!isOpen() ? 'block' : 'hidden'" class="w-6 h-px mx-auto bg-gray-200 dark:bg-gray-800"></div>
                     </div>
-                    <div :class="!isOpen() ? 'block' : 'hidden'" class="w-6 h-px mx-auto bg-gray-200 dark:bg-gray-800 my-1.5"></div>
 
                     <!-- Menu List -->
                     <ul class="flex flex-col gap-1">
@@ -103,13 +55,14 @@
                                 @if (isset($item['subItems']))
                                     <!-- Accordion Submenu Trigger -->
                                     <button type="button" @click="toggleSubmenu('{{ $menuKey }}')"
+                                        data-submenu-key="{{ $menuKey }}"
                                         class="menu-item cursor-pointer group flex items-center justify-between w-full h-10 px-3 rounded-lg text-sm font-medium transition-colors"
                                         :class="isGroupActive(@js($item['subItems'])) || isSubmenuOpen('{{ $menuKey }}') ?
                                             'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400' :
                                             'text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white'"
                                         title="{{ $item['name'] }}">
                                         
-                                        <div class="flex items-center gap-3 min-w-0">
+                                        <div class="flex items-center gap-3 min-w-0 pointer-events-none select-none">
                                             <span class="shrink-0 size-5 flex items-center justify-center pointer-events-none">
                                                 {!! MenuHelper::getIconSvg($item['icon']) !!}
                                             </span>
@@ -134,6 +87,7 @@
                                         class="mt-1 ml-5 pl-3 border-l border-gray-200 dark:border-gray-800 space-y-1">
                                         @foreach ($item['subItems'] as $subItem)
                                             <a href="{{ $subItem['path'] }}"
+                                                data-nav-link="true"
                                                 class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
                                                 :class="isActive('{{ $subItem['path'] }}') ?
                                                     'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400 font-semibold' :
@@ -145,6 +99,7 @@
                                 @else
                                     <!-- Standalone Item (Dashboard, Settings, etc.) -->
                                     <a href="{{ $item['path'] }}"
+                                        data-nav-link="true"
                                         class="menu-item flex items-center h-10 px-3 rounded-lg text-sm font-medium transition-colors w-full"
                                         :class="isActive('{{ $item['path'] }}') ?
                                             'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400 font-semibold' :
@@ -174,7 +129,7 @@
             <div class="size-8 rounded-full bg-transparent border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 flex items-center justify-center text-xs font-semibold shrink-0 overflow-hidden"
                 title="{{ Auth::user()->name ?? 'User' }}">
                 @if(Auth::user()?->avatar_path)
-                    <img src="{{ asset('storage/'.Auth::user()->avatar_path) }}" alt="{{ Auth::user()->name }}" class="w-full h-full object-cover">
+                    <img src="{{ asset('storage/'.Auth::user()->avatar_path) }}" alt="{{ Auth::user()->name }}" class="w-full h-full object-cover pointer-events-none">
                 @else
                     {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 2)) }}
                 @endif
@@ -202,3 +157,128 @@
         </div>
     </div>
 </aside>
+
+<script>
+    (function() {
+        const registerSidebar = () => {
+            if (!window.Alpine) return;
+            Alpine.data('sidebarMenu', () => ({
+                openSubmenus: (() => {
+                    try {
+                        const raw = localStorage.getItem('sidebar_open_submenus');
+                        if (raw) {
+                            const parsed = JSON.parse(raw);
+                            if (typeof parsed === 'object' && parsed !== null) {
+                                return parsed;
+                            }
+                        }
+                    } catch (e) {}
+                    return {};
+                })(),
+
+                init() {
+                    this.setupScrollPersistence();
+                    this.setupFastNavigation();
+                },
+
+                isOpen() {
+                    return this.$store.sidebar.isExpanded || this.$store.sidebar.isHovered || this.$store.sidebar.isMobileOpen;
+                },
+
+                isSubmenuOpen(key) {
+                    return !!this.openSubmenus[key];
+                },
+
+                toggleSubmenu(key) {
+                    this.openSubmenus[key] = !this.openSubmenus[key];
+                    this.openSubmenus = Object.assign({}, this.openSubmenus);
+                    try {
+                        localStorage.setItem('sidebar_open_submenus', JSON.stringify(this.openSubmenus));
+                    } catch (e) {}
+                },
+
+                setupFastNavigation() {
+                    const aside = this.$el;
+                    if (!aside) return;
+
+                    let startX = 0, startY = 0, startTime = 0;
+                    let downTarget = null;
+
+                    aside.addEventListener('pointerdown', (e) => {
+                        if (e.button !== 0) return;
+                        startX = e.clientX;
+                        startY = e.clientY;
+                        startTime = Date.now();
+                        downTarget = e.target;
+                    }, { capture: true, passive: true });
+
+                    aside.addEventListener('pointerup', (e) => {
+                        if (e.button !== 0) return;
+                        const duration = Date.now() - startTime;
+                        const dist = Math.hypot(e.clientX - startX, e.clientY - startY);
+
+                        if (duration < 500 && dist < 25) {
+                            const link = (e.target && e.target.closest ? e.target.closest('a[href]') : null) ||
+                                         (downTarget && downTarget.closest ? downTarget.closest('a[href]') : null);
+
+                            if (link) {
+                                const href = link.getAttribute('href');
+                                if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    window.location.href = href;
+                                    return;
+                                }
+                            }
+
+                            const btn = (e.target && e.target.closest ? e.target.closest('button[data-submenu-key]') : null) ||
+                                        (downTarget && downTarget.closest ? downTarget.closest('button[data-submenu-key]') : null);
+
+                            if (btn) {
+                                const key = btn.getAttribute('data-submenu-key');
+                                if (key) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    this.toggleSubmenu(key);
+                                    return;
+                                }
+                            }
+                        }
+                    }, { capture: true });
+                },
+
+                setupScrollPersistence() {
+                    const container = this.$refs.menuContainer;
+                    if (!container) return;
+                    const pos = sessionStorage.getItem('sidebar_scroll_top');
+                    if (pos !== null) {
+                        container.scrollTop = parseInt(pos, 10);
+                    }
+                    container.addEventListener('scroll', () => {
+                        sessionStorage.setItem('sidebar_scroll_top', container.scrollTop);
+                    }, { passive: true });
+                    window.addEventListener('beforeunload', () => {
+                        sessionStorage.setItem('sidebar_scroll_top', container.scrollTop);
+                    });
+                },
+
+                isActive(path) {
+                    const clean = path.replace(/^\/+/, '');
+                    const current = window.location.pathname.replace(/^\/+/, '');
+                    return current === clean;
+                },
+
+                isGroupActive(subItems) {
+                    if (!subItems || !Array.isArray(subItems)) return false;
+                    return subItems.some(sub => this.isActive(sub.path));
+                }
+            }));
+        };
+
+        if (window.Alpine) {
+            registerSidebar();
+        } else {
+            document.addEventListener('alpine:init', registerSidebar);
+        }
+    })();
+</script>
