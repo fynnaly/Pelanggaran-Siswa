@@ -47,13 +47,6 @@
                             </x-ui.input-group.addon>
                             <x-ui.input-group.input x-ref="searchInput" type="text" placeholder="Cari siswa, NISN, atau kasus (Ctrl+K)..."
                                 class="text-gray-800 placeholder:text-gray-400 dark:text-white/90 dark:placeholder:text-white/30" />
-                            <x-ui.input-group.addon align="inline-end">
-                                <x-ui.badge variant="light" color="gray" size="sm"
-                                    class="cursor-pointer gap-0.5 rounded-lg border border-gray-200 bg-gray-50 px-1.75 py-[4.5px] text-xs tracking-[-0.2px] text-gray-500 shadow-none dark:border-gray-800 dark:bg-white/5 dark:text-gray-400">
-                                    <span>⌘</span>
-                                    <span>K</span>
-                                </x-ui.badge>
-                            </x-ui.input-group.addon>
                         </x-ui.input-group>
                     </x-ui.field>
                 </form>

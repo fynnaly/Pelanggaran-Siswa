@@ -84,6 +84,7 @@
             Alpine.store('sidebar', {
                 isExpanded: initialExpanded,
                 isMobileOpen: false,
+                isHovered: false,
 
                 init() {
                     this.handleResize();
@@ -102,9 +103,16 @@
                     }
                 },
 
+                setHovered(val) {
+                    if (window.innerWidth >= 1280 && !this.isExpanded) {
+                        this.isHovered = val;
+                    }
+                },
+
                 toggleExpanded() {
                     this.isExpanded = !this.isExpanded;
                     this.isMobileOpen = false;
+                    this.isHovered = false;
                     
                     if (window.innerWidth >= 1280) {
                         localStorage.setItem('sidebarExpanded', this.isExpanded ? 'true' : 'false');
@@ -154,6 +162,9 @@
         @media (min-width: 1280px) {
             html.sidebar-collapsed #sidebar {
                 width: 64px;
+            }
+            html.sidebar-collapsed #sidebar:hover {
+                width: 260px;
             }
             html.sidebar-collapsed .main-content-layout {
                 margin-left: 64px;
