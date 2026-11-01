@@ -262,7 +262,7 @@
                             };
                         @endphp
                         <a href="{{ route('monitor-poin.index', ['zone' => $zoneName]) }}"
-                            class="group block p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-white/2 transition">
+                            class="group block p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition">
                             <div class="flex items-center justify-between text-xs mb-1">
                                 <span class="font-medium text-gray-700 dark:text-gray-300 group-hover:text-brand-500">
                                     {{ $zoneName }} <span class="text-gray-400 text-[11px]">({{ $info['range'] }})</span>

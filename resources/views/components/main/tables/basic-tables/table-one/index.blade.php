@@ -20,7 +20,7 @@
                     @php
                         $initials = mb_substr(implode('', array_map(fn ($n) => mb_substr($n, 0, 1), explode(' ', $order['user']['name']))), 0, 2);
                     @endphp
-                    <tr class="transition hover:bg-gray-50/50 dark:hover:bg-white/2">
+                    <tr class="transition hover:bg-gray-50/50 dark:hover:bg-white/5">
                         <td class="px-5 py-4 text-start sm:px-6">
                             <div class="flex items-center gap-3">
                                 <x-ui.avatar size="default">
