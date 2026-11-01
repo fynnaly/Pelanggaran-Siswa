@@ -171,7 +171,7 @@
     <!-- Bottom User Profile & Actions Footer Section -->
     <div class="p-3 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-2 shrink-0">
         <div class="flex items-center gap-3 px-1.5 py-1">
-            <div class="size-8 rounded-full bg-brand-500 text-white flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden"
+            <div class="size-8 rounded-full bg-transparent border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 flex items-center justify-center text-xs font-semibold shrink-0 overflow-hidden"
                 title="{{ Auth::user()->name ?? 'User' }}">
                 @if(Auth::user()?->avatar_path)
                     <img src="{{ asset('storage/'.Auth::user()->avatar_path) }}" alt="{{ Auth::user()->name }}" class="w-full h-full object-cover">
