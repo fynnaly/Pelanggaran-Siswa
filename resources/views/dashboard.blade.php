@@ -104,8 +104,8 @@
         <!-- Tier 2: Operasional Harian (Kasus Terbaru & Siswa Kritis) -->
         <div class="grid grid-cols-12 gap-4 md:gap-6">
             <!-- Kolom Kiri: Tabel Kasus Terbaru -->
-            <div class="col-span-12 xl:col-span-8 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/5 shadow-theme-xs">
-                <div class="flex items-center justify-between mb-4">
+            <div class="col-span-12 xl:col-span-8 flex flex-col rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/5 shadow-theme-xs overflow-hidden">
+                <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
                     <div>
                         <h2 class="text-base font-semibold text-gray-800 dark:text-white">Kasus Terbaru</h2>
                         <p class="text-xs text-gray-500 dark:text-gray-400">Antrean pencatatan dan eskalasi disiplin</p>
@@ -116,27 +116,27 @@
                     </a>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-                        <thead class="border-b border-gray-100 bg-gray-50/50 text-xs uppercase font-semibold text-gray-400 dark:border-gray-800 dark:bg-white/2">
+                <div class="overflow-x-auto flex-1">
+                    <table class="min-w-full text-left text-sm text-gray-600 dark:text-gray-300">
+                        <thead class="border-b border-gray-100 bg-gray-50/50 text-xs uppercase font-semibold text-gray-400 dark:border-gray-800 dark:bg-white/5">
                             <tr>
-                                <th class="px-4 py-3">No. Kasus</th>
+                                <th class="px-5 py-3 sm:px-6">No. Kasus</th>
                                 <th class="px-4 py-3">Siswa</th>
                                 <th class="px-4 py-3">Pelanggaran</th>
                                 <th class="px-4 py-3">Poin</th>
                                 <th class="px-4 py-3">Status</th>
-                                <th class="px-4 py-3">Tanggal</th>
+                                <th class="px-5 py-3 sm:pe-6">Tanggal</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                             @forelse($recentCases as $case)
-                                <tr class="hover:bg-gray-50/50 dark:hover:bg-white/2 transition">
-                                    <td class="px-4 py-3 font-mono text-xs font-medium text-gray-800 dark:text-white">
+                                <tr class="hover:bg-gray-50/50 dark:hover:bg-white/5 transition">
+                                    <td class="px-5 py-3.5 sm:px-6 font-mono text-xs font-medium text-gray-800 dark:text-white">
                                         <a href="{{ route('kasus-pelanggaran.show', $case) }}" class="hover:text-brand-500">
                                             {{ $case->case_number ?? ('#' . $case->id) }}
                                         </a>
                                     </td>
-                                    <td class="px-4 py-3">
+                                    <td class="px-4 py-3.5">
                                         <div class="font-medium text-gray-800 dark:text-white">
                                             {{ $case->student?->full_name ?? $case->student?->name ?? '-' }}
                                         </div>
@@ -144,13 +144,15 @@
                                             {{ $case->schoolClass?->name ?? $case->student?->currentEnrollment?->schoolClass?->name ?? '-' }}
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3 max-w-[200px] truncate" title="{{ $case->violationCategory?->name ?? '-' }}">
-                                        {{ $case->violationCategory?->name ?? '-' }}
+                                    <td class="px-4 py-3.5">
+                                        <div class="max-w-[200px] truncate" title="{{ $case->violationCategory?->name ?? '-' }}">
+                                            {{ $case->violationCategory?->name ?? '-' }}
+                                        </div>
                                     </td>
-                                    <td class="px-4 py-3 font-mono font-semibold text-red-500">
+                                    <td class="px-4 py-3.5 font-mono font-semibold text-red-500">
                                         -{{ $case->getEffectivePoints() }}
                                     </td>
-                                    <td class="px-4 py-3">
+                                    <td class="px-4 py-3.5">
                                         @php
                                             $statusMap = [
                                                 'found' => ['label' => 'Temuan', 'class' => 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-900/40'],
@@ -165,13 +167,13 @@
                                             {{ $st['label'] }}
                                         </span>
                                     </td>
-                                    <td class="px-4 py-3 text-xs text-gray-400">
+                                    <td class="px-5 py-3.5 sm:pe-6 text-xs text-gray-400">
                                         {{ ($case->incident_date ?? $case->created_at)?->format('d/m/Y') }}
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-4 py-8 text-center text-xs text-gray-400">
+                                    <td colspan="6" class="px-5 py-8 text-center text-xs text-gray-400">
                                         Belum ada kasus pelanggaran yang tercatat.
                                     </td>
                                 </tr>
@@ -196,7 +198,7 @@
 
                 <div class="space-y-3">
                     @forelse($lowPointStudents as $student)
-                        <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50/50 dark:border-gray-800 dark:bg-white/2">
+                        <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50/50 dark:border-gray-800 dark:bg-white/5">
                             <div class="min-w-0 pr-3">
                                 <a href="{{ route('students.show', $student) }}" class="font-medium text-sm text-gray-800 dark:text-white hover:text-brand-500 block truncate">
                                     {{ $student->full_name ?? $student->name }}
