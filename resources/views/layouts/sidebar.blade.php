@@ -40,6 +40,44 @@
         })(),
         init() {
             this.setupScrollPersistence();
+            this.setupFastNavigation();
+        },
+        setupFastNavigation() {
+            const sidebar = document.getElementById('sidebar');
+            if (!sidebar) return;
+
+            let pointerStartX = 0;
+            let pointerStartY = 0;
+            let pointerTargetAnchor = null;
+            let pointerStartTime = 0;
+
+            sidebar.addEventListener('pointerdown', (e) => {
+                if (e.button !== 0) return;
+                pointerTargetAnchor = e.target.closest('a[href]');
+                pointerStartX = e.clientX;
+                pointerStartY = e.clientY;
+                pointerStartTime = Date.now();
+            }, { passive: true });
+
+            sidebar.addEventListener('pointerup', (e) => {
+                if (e.button !== 0 || !pointerTargetAnchor) return;
+                const duration = Date.now() - pointerStartTime;
+                const deltaX = Math.abs(e.clientX - pointerStartX);
+                const deltaY = Math.abs(e.clientY - pointerStartY);
+
+                if (duration < 450 && deltaX < 20 && deltaY < 20) {
+                    const anchor = pointerTargetAnchor;
+                    pointerTargetAnchor = null;
+                    const href = anchor.getAttribute('href');
+                    if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+                    if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || anchor.target === '_blank') return;
+
+                    if (anchor.href && anchor.href !== window.location.href) {
+                        window.location.href = anchor.href;
+                    }
+                }
+                pointerTargetAnchor = null;
+            }, { passive: true });
         },
         toggleSubmenu(groupIndex, itemIndex) {
             const key = groupIndex + '-' + itemIndex;
@@ -124,20 +162,20 @@
                                             ($store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen) ? 'px-3 justify-start' : 'px-0 justify-center'
                                         ]"
                                         title="{{ $item['name'] }}">
-                                        <span class="shrink-0 size-5 flex items-center justify-center"
+                                        <span class="shrink-0 size-5 flex items-center justify-center pointer-events-none"
                                             :class="openSubmenus['{{ $menuKey }}'] ? 'menu-item-icon-active' : 'menu-item-icon-inactive'">
                                             {!! MenuHelper::getIconSvg($item['icon']) !!}
                                         </span>
 
                                         <span x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
-                                            class="flex-1 text-left truncate">
+                                            class="flex-1 text-left truncate pointer-events-none select-none">
                                             {{ $item['name'] }}
                                         </span>
 
                                         <!-- Chevron Down Icon with explicit path direction swap -->
                                         <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"
                                             x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
-                                            class="ms-auto size-4.5 shrink-0"
+                                            class="ms-auto size-4.5 shrink-0 pointer-events-none"
                                             :class="openSubmenus['{{ $menuKey }}'] ? 'text-brand-500' : 'text-gray-400'">
                                             <!-- Path saat terbuka (panah mengarah ke atas) -->
                                             <path x-show="openSubmenus['{{ $menuKey }}']"
@@ -160,7 +198,7 @@
                                                             :class="isActive('{{ $subItem['path'] }}') ?
                                                                 'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400' :
                                                                 'text-gray-900 hover:text-brand-600 hover:bg-gray-100 dark:text-gray-100 dark:hover:text-white dark:hover:bg-white/5'">
-                                                            <span class="block truncate">{{ $subItem['name'] }}</span>
+                                                            <span class="block truncate pointer-events-none select-none">{{ $subItem['name'] }}</span>
                                                         </a>
                                                     </li>
                                                 @endforeach
@@ -176,13 +214,13 @@
                                             ($store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen) ? 'px-3 justify-start' : 'px-0 justify-center'
                                         ]"
                                         title="{{ $item['name'] }}">
-                                        <span class="shrink-0 size-5 flex items-center justify-center"
+                                        <span class="shrink-0 size-5 flex items-center justify-center pointer-events-none"
                                             :class="isActive('{{ $item['path'] }}') ? 'menu-item-icon-active' : 'menu-item-icon-inactive'">
                                             {!! MenuHelper::getIconSvg($item['icon']) !!}
                                         </span>
 
                                         <span x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
-                                            class="flex-1 text-left truncate">
+                                            class="flex-1 text-left truncate pointer-events-none select-none">
                                             {{ $item['name'] }}
                                         </span>
                                     </a>
@@ -218,11 +256,11 @@
             class="flex items-center gap-3 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition"
             :class="($store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen) ? 'px-3 py-2' : 'p-2 justify-center'"
             title="Pengaturan Akun">
-            <svg class="size-5 shrink-0 text-gray-500 dark:text-gray-400" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="size-5 shrink-0 text-gray-500 dark:text-gray-400 pointer-events-none" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
                 <circle cx="12" cy="12" r="3"/>
             </svg>
-            <span x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen" class="truncate">Pengaturan Akun</span>
+            <span x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen" class="truncate pointer-events-none select-none">Pengaturan Akun</span>
         </a>
 
         <form method="POST" action="{{ route('logout') }}" class="m-0" :class="($store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen) ? 'w-full' : ''">
