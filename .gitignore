@@ -29,9 +29,6 @@ Homestead.yaml
 Thumbs.db
 
 # Local workspace
-/docs/
-/.worktrees/
-/pelanggaran_siswa
 docs/procedure
 .hermes/
 .claude/
