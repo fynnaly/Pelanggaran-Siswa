@@ -53,11 +53,17 @@ Route::middleware('auth')->group(function () {
 
     // Siswa — export/import/template CSV native (tanpa library, PHP 8.5.5 ext-gd kosong)
     // Letak SEBELUM resource agar /students/export tidak kecapture sebagai {student}
-      Route::get('students/template', [StudentController::class, 'downloadTemplate'])->name('students.template');
-      Route::get('students/export', [StudentController::class, 'export'])->name('students.export');
-      Route::post('students/import', [StudentController::class, 'import'])->name('students.import');
-      Route::get('students/search', [StudentController::class, 'search'])->name('students.search');
-      Route::resource('students', StudentController::class)->except(['destroy']);
+    Route::get('students/template', [StudentController::class, 'downloadTemplate'])->name('students.template');
+    Route::get('students/export', [StudentController::class, 'export'])->name('students.export');
+    Route::post('students/import', [StudentController::class, 'import'])->name('students.import');
+    Route::get('students/search', [StudentController::class, 'search'])->name('students.search');
+    Route::resource('students', StudentController::class)->except(['destroy']);
+
+    // Nametag NFC (Data Referensi)
+    Route::get('nametag-nfc/template', [\App\Http\Controllers\NfcCardController::class, 'downloadTemplate'])->name('nametag-nfc.template');
+    Route::get('nametag-nfc/export', [\App\Http\Controllers\NfcCardController::class, 'export'])->name('nametag-nfc.export');
+    Route::post('nametag-nfc/import', [\App\Http\Controllers\NfcCardController::class, 'import'])->name('nametag-nfc.import');
+    Route::resource('nametag-nfc', \App\Http\Controllers\NfcCardController::class)->names('nametag-nfc')->parameters(['nametag-nfc' => 'student']);
 
     // Kelas — promote HARUS sebelum resource agar tidak tertelan sebagai {class}
     Route::post('classes/promote', [SchoolClassController::class, 'promote'])->name('classes.promote');

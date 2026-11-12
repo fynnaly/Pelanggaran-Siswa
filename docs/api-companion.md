@@ -40,7 +40,12 @@ Memastikan layanan backend aktif dan dapat dijangkau dari aplikasi seluler.
       "GET auth/me (auth:sanctum)",
       "POST auth/logout (auth:sanctum)",
       "GET monitor-poin (auth:sanctum)",
-      "GET students/{id}/points (auth:sanctum)"
+      "GET students/{id}/points (auth:sanctum)",
+      "GET students/search (auth:sanctum)",
+      "GET students/by-nfc/{uid} (auth:sanctum)",
+      "GET violation-categories (auth:sanctum)",
+      "GET discipline-cases (auth:sanctum)",
+      "POST discipline-cases (auth:sanctum)"
     ]
   }
   ```
@@ -210,3 +215,207 @@ Mengambil rincian mutasi kredit dan debit yang pernah dialami siswa.
     "message": "Anda tidak memiliki otorisasi untuk mengakses riwayat siswa ini."
   }
   ```
+
+---
+
+## 3.5 Pencarian Siswa & Lookup NFC
+
+### A. Pencarian Siswa Cepat (Autocompletion)
+Digunakan saat guru mengetik nama / NISN / NIS siswa di form input pelanggaran (minimum 2 karakter).
+
+- **URL**: `GET /api/v1/students/search`
+- **Header**: `Authorization: Bearer <token>`
+- **Hak Akses**: Staf Sekolah (Guru, Wali Kelas, BK, Kesiswaan, Admin). Akun peran `siswa` ditolak `403 Forbidden`.
+- **Parameter Kueri**:
+- `q` (string, required): Kata kunci nama, NIS, atau NISN (min 2 karakter).
+- `limit` (int, opsional, default: 10, max: 50).
+- **Respons Berhasil (`200 OK`)**:
+```json
+{
+  "data": [
+    {
+      "id": 15,
+      "nis": "NIS-015",
+      "nisn": "0012345678",
+      "nama": "Budi Santoso",
+      "kelas": "X RPL 1",
+      "saldo_poin": 2000,
+      "zona": "Normal"
+    }
+  ]
+}
+```
+
+### B. Scan Nametag Siswa (NFC UID Lookup)
+Digunakan saat perangkat membaca chip NFC pada kartu tanda pengenal siswa untuk melihat profil dan status saldo secara instan.
+
+- **URL**: `GET /api/v1/students/by-nfc/{uid}`
+- **Header**: `Authorization: Bearer <token>`
+- **Hak Akses**: Semua pengguna terotentikasi (Guru, BK, Kesiswaan, Admin, Siswa).
+- **Parameter URL**: `uid` (string, contoh: `04A23B891F6080`, pencarian case-insensitive).
+- **Respons Berhasil (`200 OK`)**:
+```json
+{
+  "siswa": {
+    "id": 15,
+    "nisn": "0012345678",
+    "nis": "NIS-015",
+    "nama": "Budi Santoso",
+    "kelas": "X RPL 1"
+  },
+  "saldo": 2000,
+  "zona": {
+    "nama": "Normal",
+    "warna": "hijau",
+    "penanggung_jawab": "Wali Kelas",
+    "tindakan": "Pembinaan rutin"
+  }
+}
+```
+- **Respons Tidak Ditemukan (`404 Not Found`)**:
+```json
+{
+  "message": "Nametag belum terdaftar pada siswa mana pun."
+}
+```
+
+---
+
+## 3.6 Katalog Tata Tertib & Kategori Pelanggaran
+
+### A. Daftar Kategori Pelanggaran
+Digunakan untuk opsi dropdown pilihan jenis pelanggaran serta tampilan buku pedoman tata tertib di aplikasi Android.
+
+- **URL**: `GET /api/v1/violation-categories`
+- **Header**: `Authorization: Bearer <token>`
+- **Hak Akses**: Semua pengguna terotentikasi (termasuk Siswa).
+- **Parameter Kueri**:
+- `grouped` (boolean, opsional, default: `true`): Jika `true`, dikelompokkan per kategori induk (P1-P5) dengan relasi `sub_categories`. Jika `false`, mengembalikan daftar datar (*flat*) sub-kategori.
+- **Respons Berhasil (`200 OK` - Grouped)**:
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "code": "P1",
+      "name": "Kerapian & Atribut",
+      "sub_categories": [
+        {
+          "id": 101,
+          "code": "P1.1",
+          "name": "Tidak memakai dasi / ikat pinggang standar",
+          "points": 5,
+          "is_recurring": false
+        }
+      ]
+    }
+  ]
+}
+```
+- **Respons Berhasil (`200 OK` - Flat `?grouped=false`)**:
+```json
+{
+  "data": [
+    {
+      "id": 101,
+      "code": "P1.1",
+      "name": "Tidak memakai dasi / ikat pinggang standar",
+      "points": 5,
+      "is_recurring": false
+    }
+  ]
+}
+```
+
+---
+
+## 3.7 Kasus Pelanggaran Disiplin
+
+### A. Pelaporan Pelanggaran Baru dari Lapangan
+Mencatat temuan pelanggaran siswa secara langsung saat razia atau observasi guru di lingkungan sekolah.
+
+- **URL**: `POST /api/v1/discipline-cases`
+- **Header**:
+- `Authorization: Bearer <token>`
+- `Accept: application/json`
+- `Content-Type: application/json`
+- **Hak Akses**: Staf Sekolah (Guru, Wali Kelas, BK, Kesiswaan, Admin). Akun peran `siswa` ditolak `403 Forbidden`.
+- **Payload Request**:
+```json
+{
+  "student_id": 15,
+  "violation_category_id": 101,
+  "incident_date": "2026-11-12",
+  "incident_time": "08:15",
+  "location": "Gerbang Depan Sekolah",
+  "notes": "Tidak memakai dasi saat upacara bendera hari Senin."
+}
+```
+- **Aturan Validasi**:
+- `student_id`: Wajib (`required`), harus ada di tabel `students`.
+- `violation_category_id`: Wajib (`required`), harus ada di tabel `violation_categories`, wajib berupa sub-kategori aktif (bukan kategori induk).
+- `incident_date`: Opsional, format `YYYY-MM-DD` (default: hari ini).
+- `incident_time`: Opsional, format `H:i` (default: waktu server saat ini).
+- `location`: Opsional, string max 100 karakter.
+- `notes`: Wajib (`required`), string deskripsi kronologi temuan.
+- **Respons Berhasil (`201 Created`)**:
+```json
+{
+  "success": true,
+  "message": "Laporan pelanggaran berhasil dicatat (status: Temuan).",
+  "data": {
+    "case_number": "KAS-2026-0042",
+    "student_name": "Budi Santoso",
+    "violation": "Tidak memakai dasi / ikat pinggang standar",
+    "points": 5,
+    "status": "found",
+    "reporter": "Andi Pratama, S.Pd."
+  }
+}
+```
+- **Respons Validasi Gagal (`422 Unprocessable Entity`)**:
+```json
+{
+  "message": "Keterangan / catatan pelanggaran wajib diisi.",
+  "errors": {
+    "notes": [
+      "Keterangan / catatan pelanggaran wajib diisi."
+    ]
+  }
+}
+```
+
+### B. Riwayat Kasus Pelanggaran
+Mengambil daftar kasus pelanggaran yang pernah dilaporkan dengan filter status dan siswa.
+
+- **URL**: `GET /api/v1/discipline-cases`
+- **Header**: `Authorization: Bearer <token>`
+- **Hak Akses**: Staf Sekolah (Guru, Wali Kelas, BK, Kesiswaan, Admin).
+- **Parameter Kueri (Opsional)**:
+- `status`: Filter status kasus (`found`, `handling`, `closed`, `dismissed`).
+- `student_id`: Filter ID siswa tertentu.
+- `limit`: Jumlah data per halaman (default: 15, max: 100).
+- `page`: Nomor halaman paginasi.
+- **Respons Berhasil (`200 OK`)**:
+```json
+{
+  "data": [
+    {
+      "id": 42,
+      "case_number": "KAS-2026-0042",
+      "student_name": "Budi Santoso",
+      "class_name": "X RPL 1",
+      "violation_name": "Tidak memakai dasi / ikat pinggang standar",
+      "points": 5,
+      "status": "found",
+      "incident_date": "2026-11-12",
+      "created_at": "2026-11-12T08:20:00.000000Z"
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "last_page": 1,
+    "total": 1
+  }
+}
+```

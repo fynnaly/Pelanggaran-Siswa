@@ -21,6 +21,7 @@ class Student extends Model
         'parent_name',
         'parent_phone',
         'avatar_path',
+        'nfc_uid',
         'status',
     ];
 

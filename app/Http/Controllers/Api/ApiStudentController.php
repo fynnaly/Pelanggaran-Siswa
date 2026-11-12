@@ -14,6 +14,91 @@ class ApiStudentController extends Controller
     use ScopesWaliKelas;
 
     /**
+     * Pencarian siswa instan (autocompletion) nama / NIS / NISN.
+     */
+    public function search(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if ($user && $user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])) {
+            return response()->json(['message' => 'Akses ditolak. Fitur ini hanya untuk staf sekolah.'], 403);
+        }
+
+        $q = trim((string) $request->query('q', ''));
+        if (mb_strlen($q) < 2) {
+            return response()->json(['data' => []]);
+        }
+
+        $limit = min(max($request->integer('limit', 10), 1), 50);
+
+        $students = Student::query()
+            ->where(function ($query) use ($q) {
+                $query->where('full_name', 'like', "%{$q}%")
+                    ->orWhere('nis', 'like', "%{$q}%")
+                    ->orWhere('nisn', 'like', "%{$q}%");
+            })
+            ->with(['enrollments.schoolClass'])
+            ->limit($limit)
+            ->get();
+
+        return response()->json([
+            'data' => $students->map(fn (Student $s) => [
+                'id' => $s->id,
+                'nis' => $s->nis,
+                'nisn' => $s->nisn,
+                'nama' => $s->full_name,
+                'kelas' => $s->class_name,
+                'saldo_poin' => $s->current_balance,
+                'zona' => $s->zone['name'] ?? 'Normal',
+            ]),
+        ]);
+    }
+
+    /**
+     * Scan nametag NFC untuk lookup profil & saldo cepat.
+     */
+    public function byNfc(string $uid): JsonResponse
+    {
+        $cleanUid = trim($uid);
+
+        $student = Student::query()
+            ->whereRaw('LOWER(nfc_uid) = ?', [strtolower($cleanUid)])
+            ->with(['enrollments.schoolClass'])
+            ->first();
+
+        if (! $student) {
+            return response()->json([
+                'message' => 'Nametag belum terdaftar pada siswa mana pun.',
+            ], 404);
+        }
+
+        $zone = $student->zone;
+        $colorName = match ($zone['color'] ?? 'success') {
+            'danger' => 'merah',
+            'warning' => 'oranye',
+            'info' => 'biru-muda',
+            'primary' => 'biru',
+            default => 'hijau',
+        };
+
+        return response()->json([
+            'siswa' => [
+                'id' => $student->id,
+                'nisn' => $student->nisn,
+                'nis' => $student->nis,
+                'nama' => $student->full_name,
+                'kelas' => $student->class_name,
+            ],
+            'saldo' => $student->current_balance,
+            'zona' => [
+                'nama' => $zone['name'] ?? 'Normal',
+                'warna' => $colorName,
+                'penanggung_jawab' => $zone['responsible'] ?? 'Wali Kelas',
+                'tindakan' => $zone['action'] ?? 'Pembinaan rutin',
+            ],
+        ]);
+    }
+
+    /**
      * Ledger poin satu siswa + saldo/zone — untuk layar detail di Android.
      * Siswa di luar kelas yang diampu wali kelas ditolak 403 di sini,
      * bukan hanya lewat query list, supaya ID yang ditebak tidak bocor.

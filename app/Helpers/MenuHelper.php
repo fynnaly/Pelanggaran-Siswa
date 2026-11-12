@@ -49,6 +49,7 @@ class MenuHelper
                 'subItems' => [
                     ['name' => 'Pengguna', 'path' => '/users', 'pro' => false],
                     ['name' => 'Siswa', 'path' => '/students', 'pro' => false],
+                    ['name' => 'Nametag NFC', 'path' => '/nametag-nfc', 'pro' => false],
                     ['name' => 'Kelas', 'path' => '/classes', 'pro' => false],
                     ['name' => 'Tahun Ajaran', 'path' => '/academic-years', 'pro' => false],
                 ],

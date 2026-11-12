@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\Api\ApiAuthController;
+use App\Http\Controllers\Api\ApiDisciplineCaseController;
 use App\Http\Controllers\Api\ApiStudentController;
 use App\Http\Controllers\Api\ApiStudentPointController;
+use App\Http\Controllers\Api\ApiViolationCategoryController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -28,6 +30,11 @@ Route::prefix('v1')->group(function () {
                 'POST auth/logout (auth:sanctum)',
                 'GET monitor-poin (auth:sanctum)',
                 'GET students/{id}/points (auth:sanctum)',
+                'GET students/search (auth:sanctum)',
+                'GET students/by-nfc/{uid} (auth:sanctum)',
+                'GET violation-categories (auth:sanctum)',
+                'GET discipline-cases (auth:sanctum)',
+                'POST discipline-cases (auth:sanctum)',
             ],
         ]);
     });
@@ -45,5 +52,12 @@ Route::prefix('v1')->group(function () {
 
         // Detail ledger per siswa
         Route::get('students/{student}/points', [ApiStudentController::class, 'points']);
+
+        // Input Pelanggaran, Pencarian & NFC
+        Route::get('students/search', [ApiStudentController::class, 'search']);
+        Route::get('students/by-nfc/{uid}', [ApiStudentController::class, 'byNfc']);
+        Route::get('violation-categories', [ApiViolationCategoryController::class, 'index']);
+        Route::get('discipline-cases', [ApiDisciplineCaseController::class, 'index']);
+        Route::post('discipline-cases', [ApiDisciplineCaseController::class, 'store']);
     });
 });
