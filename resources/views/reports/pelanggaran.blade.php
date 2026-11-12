@@ -37,48 +37,67 @@
             </form>
         </div>
 
-        <div class="card">
-            <h2 style="font-weight:600;margin-bottom:var(--sp-md)">10 Pelanggaran Terbanyak</h2>
-            @if($top->isEmpty())
+        <div class="card" x-data="{ showAll: false }">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-md);gap:var(--sp-sm);flex-wrap:wrap">
+                <div>
+                    <h2 style="font-weight:600;margin:0" x-text="showAll ? 'Semua Pelanggaran yang Pernah Terjadi ({{ $categories->count() }})' : '10 Pelanggaran Terbanyak'">10 Pelanggaran Terbanyak</h2>
+                    <p class="text-muted text-sm" style="margin:2px 0 0">Klik bar pada diagram untuk melihat daftar siswa yang pernah melanggar.</p>
+                </div>
+                @if($categories->count() > 10)
+                    <button type="button" @click="showAll = !showAll; $nextTick(() => window.toggleChartScope && window.toggleChartScope(showAll))" class="btn btn-secondary btn-sm">
+                        <span x-text="showAll ? 'Tampilkan Top 10' : 'Tampilkan Semua (' + {{ $categories->count() }} + ')'">Tampilkan Semua ({{ $categories->count() }})</span>
+                    </button>
+                @endif
+            </div>
+            @if($categories->isEmpty())
                 <p class="text-muted text-sm" style="padding:var(--sp-lg) 0;text-align:center">Belum ada data pada filter ini.</p>
             @else
-                <div style="position:relative;height:{{ max(180, $top->count() * 36) }}px">
+                <div id="chartContainer" style="position:relative;height:{{ max(180, min(10, $categories->count()) * 36) }}px">
                     <canvas id="catChart"
                         data-labels='@json($top->pluck('name'))'
                         data-values='@json($top->pluck('total')->map(fn ($v) => (int) $v))'
-                        data-urls='@json($top->map(fn ($c) => route('laporan.pelanggaran.kategori', array_merge(['violationCategory' => $c->id], $linkParams)))->values())'></canvas>
+                        data-urls='@json($top->map(fn ($c) => route('laporan.pelanggaran.kategori', array_merge(['violationCategory' => $c->id], $linkParams)))->values())'
+                        data-all-labels='@json($categories->pluck('name'))'
+                        data-all-values='@json($categories->pluck('total')->map(fn ($v) => (int) $v))'
+                        data-all-urls='@json($categories->map(fn ($c) => route('laporan.pelanggaran.kategori', array_merge(['violationCategory' => $c->id], $linkParams)))->values())'></canvas>
                 </div>
             @endif
         </div>
 
-        <div class="table-wrap">
-            <table>
-                <thead><tr>
-                    <th style="width:40px">#</th>
-                    <th>Pelanggaran</th>
-                    <th>Tingkat</th>
-                    <th style="text-align:right">Kasus</th>
-                    <th style="text-align:right">Siswa</th>
-                </tr></thead>
-                <tbody>
-                    @forelse($categories as $i => $c)
-                        <tr>
-                            <td class="text-muted">{{ $i + 1 }}</td>
-                            <td>
-                                <a href="{{ route('laporan.pelanggaran.kategori', array_merge(['violationCategory' => $c->id], $linkParams)) }}" style="font-weight:600;text-decoration:none;color:inherit">
-                                    <span class="mono text-muted">{{ $c->code }}</span> {{ $c->name }}
-                                </a>
-                                @if($c->parent_name)<div class="text-muted text-sm">{{ $c->parent_name }}</div>@endif
-                            </td>
-                            <td><span class="badge {{ $badge[$c->severity] ?? 'badge-info' }}">{{ str_replace('_', ' ', $c->severity ?? '-') }}</span></td>
-                            <td class="mono" style="text-align:right;font-weight:700">{{ $c->total }}</td>
-                            <td class="mono" style="text-align:right">{{ $c->students }}</td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="5" class="text-muted" style="text-align:center;padding:var(--sp-lg)">Belum ada data.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
+        <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-sm)">
+                <h2 style="font-weight:600;margin:0">Daftar Seluruh Pelanggaran</h2>
+                <span class="text-muted text-sm">{{ $categories->count() }} jenis pelanggaran tercatat</span>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr>
+                        <th style="width:40px">#</th>
+                        <th>Pelanggaran</th>
+                        <th>Tingkat</th>
+                        <th style="text-align:right">Kasus</th>
+                        <th style="text-align:right">Siswa</th>
+                    </tr></thead>
+                    <tbody>
+                        @forelse($categories as $i => $c)
+                            <tr>
+                                <td class="text-muted">{{ $i + 1 }}</td>
+                                <td>
+                                    <a href="{{ route('laporan.pelanggaran.kategori', array_merge(['violationCategory' => $c->id], $linkParams)) }}" style="font-weight:600;text-decoration:none;color:inherit">
+                                        <span class="mono text-muted">{{ $c->code }}</span> {{ $c->name }}
+                                    </a>
+                                    @if($c->parent_name)<div class="text-muted text-sm">{{ $c->parent_name }}</div>@endif
+                                </td>
+                                <td><span class="badge {{ $badge[$c->severity] ?? 'badge-info' }}">{{ str_replace('_', ' ', $c->severity ?? '-') }}</span></td>
+                                <td class="mono" style="text-align:right;font-weight:700">{{ $c->total }}</td>
+                                <td class="mono" style="text-align:right">{{ $c->students }}</td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="5" class="text-muted" style="text-align:center;padding:var(--sp-lg)">Belum ada data.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <div>
@@ -119,13 +138,23 @@
         document.addEventListener('DOMContentLoaded', function () {
             lucide.createIcons();
             const el = document.getElementById('catChart');
+            const container = document.getElementById('chartContainer');
             if (!el) return;
             const dark = document.documentElement.classList.contains('dark');
-            new Chart(el, {
+
+            const topLabels = JSON.parse(el.dataset.labels || '[]');
+            const topValues = JSON.parse(el.dataset.values || '[]');
+            let currentUrls = JSON.parse(el.dataset.urls || '[]');
+
+            const allLabels = JSON.parse(el.dataset.allLabels || '[]');
+            const allValues = JSON.parse(el.dataset.allValues || '[]');
+            const allUrls = JSON.parse(el.dataset.allUrls || '[]');
+
+            const chart = new Chart(el, {
                 type: 'bar',
                 data: {
-                    labels: JSON.parse(el.dataset.labels),
-                    datasets: [{ label: 'Kasus', data: JSON.parse(el.dataset.values), backgroundColor: '#465fff', borderRadius: 6 }]
+                    labels: topLabels,
+                    datasets: [{ label: 'Kasus', data: topValues, backgroundColor: '#465fff', borderRadius: 6 }]
                 },
                 options: {
                     indexAxis: 'y',
@@ -135,12 +164,50 @@
                     scales: {
                         x: { beginAtZero: true, ticks: { precision: 0, color: dark ? '#9ca3af' : '#6b7280' }, grid: { color: dark ? '#1f2937' : '#f3f4f6' } },
                         y: { grid: { display: false }, ticks: { color: dark ? '#d1d5db' : '#374151', font: { family: 'Outfit', size: 12 } } }
+                    },
+                    onHover: function (e) {
+                        const points = this.getElementsAtEventForMode(e.native || e, 'nearest', { intersect: true }, false);
+                        this.canvas.style.cursor = points.length ? 'pointer' : 'default';
+                    },
+                    onClick: function (e) {
+                        const nativeEvent = e.native || e;
+                        const points = this.getElementsAtEventForMode(nativeEvent, 'nearest', { intersect: true }, false);
+                        if (points.length) {
+                            const idx = points[0].index;
+                            if (currentUrls[idx]) {
+                                window.location.href = currentUrls[idx];
+                            }
+                        }
                     }
-                },
-                // Klik bar → buka detail kategori (daftar siswa kena pelanggaran, bisa disortir).
-                onHover: (e, els, chart) => chart.canvas.style.cursor = els.length ? 'pointer' : 'default',
-                onClick: (e, els) => { if (els.length) window.location.href = JSON.parse(el.dataset.urls)[els[0].index]; }
+                }
             });
+
+            // Native click listener fallback
+            el.addEventListener('click', function (evt) {
+                const points = chart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, false);
+                if (points.length) {
+                    const idx = points[0].index;
+                    if (currentUrls[idx]) {
+                        window.location.href = currentUrls[idx];
+                    }
+                }
+            });
+
+            window.toggleChartScope = function (showAll) {
+                const labels = showAll ? allLabels : topLabels;
+                const values = showAll ? allValues : topValues;
+                currentUrls = showAll ? allUrls : JSON.parse(el.dataset.urls || '[]');
+
+                if (container) {
+                    const count = labels.length;
+                    container.style.height = Math.max(180, count * 34) + 'px';
+                }
+
+                chart.data.labels = labels;
+                chart.data.datasets[0].data = values;
+                chart.resize();
+                chart.update();
+            };
         });
     </script>
     @endpush

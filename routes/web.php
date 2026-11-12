@@ -85,6 +85,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('achievement-records', AchievementRecordController::class)
         ->parameters(['achievement-records' => 'achievementRecord'])
         ->only(['index', 'create', 'store', 'show']);
+    Route::post('achievement-records/bulk-validate', [AchievementRecordController::class, 'bulkValidate'])->name('achievement-records.bulk-validate');
     Route::patch('achievement-records/{achievementRecord}/validate', [AchievementRecordController::class, 'validate'])->name('achievement-records.validate');
     Route::patch('achievement-records/{achievementRecord}/dismiss', [AchievementRecordController::class, 'dismiss'])->name('achievement-records.dismiss');
 

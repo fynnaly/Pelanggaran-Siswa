@@ -303,4 +303,71 @@ class AchievementRecordController extends Controller
             ->route('achievement-records.index')
             ->with('warning', 'Rekam prestasi ditolak, poin tidak ditambahkan.');
     }
+
+    public function bulkValidate(Request $request)
+    {
+        if (! auth()->user()?->hasAnyRole(['bk', 'kesiswaan', 'admin'])) {
+            abort(403, 'Anda tidak memiliki hak akses untuk memvalidasi prestasi.');
+        }
+
+        $ids = $request->input('ids');
+        if (! is_array($ids) || $ids === []) {
+            return redirect()->back()->with('error', 'Pilih minimal satu rekam prestasi terlebih dahulu.');
+        }
+
+        $records = AchievementRecord::with(['student', 'achievementCategory'])
+            ->whereIn('id', $ids)
+            ->where('status', 'pending')
+            ->get();
+
+        if ($records->isEmpty()) {
+            return redirect()->back()->with('warning', 'Tidak ada rekam prestasi berstatus pending yang dapat divalidasi.');
+        }
+
+        $defaultAcademicYearId = AcademicYear::where('is_active', true)->first()?->id;
+        $totalPoints = 0;
+
+        DB::transaction(function () use ($records, $defaultAcademicYearId, &$totalPoints) {
+            foreach ($records as $record) {
+                $points = $record->points_awarded;
+                $totalPoints += $points;
+
+                $academicYearId = $record->academic_year_id
+                    ?? $record->student?->academic_year_id
+                    ?? $defaultAcademicYearId;
+
+                $lastBalance = PointLedger::getLastBalance($record->student_id, $academicYearId);
+                $balanceAfter = $lastBalance + $points;
+
+                $record->update([
+                    'status' => 'verified',
+                    'verified_by' => auth()->id(),
+                    'verified_at' => now(),
+                ]);
+
+                PointLedger::create([
+                    'student_id' => $record->student_id,
+                    'academic_year_id' => $academicYearId,
+                    'direction' => PointLedger::DIR_CREDIT,
+                    'amount' => $points,
+                    'balance_after' => $balanceAfter,
+                    'transaction_type' => PointLedger::TYPE_ACHIEVEMENT,
+                    'source_type' => AchievementRecord::class,
+                    'source_id' => $record->id,
+                    'reason' => 'Prestasi: ' . ($record->event_name ?? $record->achievementCategory?->code),
+                    'created_by' => auth()->id(),
+                    'verified_by' => auth()->id(),
+                    'verified_at' => now(),
+                ]);
+            }
+        });
+
+        $skipped = count($ids) - $records->count();
+        $msg = $records->count() . ' rekam prestasi berhasil divalidasi (total +' . $totalPoints . ' poin).';
+        if ($skipped > 0) {
+            $msg .= ' (' . $skipped . ' dilewati karena bukan pending)';
+        }
+
+        return redirect()->back()->with('success', $msg);
+    }
 }

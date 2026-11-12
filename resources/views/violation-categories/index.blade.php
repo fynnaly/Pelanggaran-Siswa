@@ -41,7 +41,19 @@
                             <td class="text-sm text-muted">@if($cat->parent){{ $cat->parent->name }}@else<span class="badge badge-info">Induk</span>@endif</td>
                             <td class="mono">{{ $cat->code }}</td>
                             <td><strong>{{ $cat->name }}</strong></td>
-                            <td><span class="badge badge-warning">{{ $cat->severity }}</span></td>
+                            @php
+                                $sevClass = match($cat->severity) {
+                                    'ringan' => 'badge-info',
+                                    'sedang' => 'badge-warning',
+                                    'berat', 'sangat_berat' => 'badge-danger',
+                                    default => 'badge-info',
+                                };
+                                $sevLabel = match($cat->severity) {
+                                    'sangat_berat' => 'Sangat Berat',
+                                    default => ucfirst($cat->severity ?? '-'),
+                                };
+                            @endphp
+                            <td><span class="badge {{ $sevClass }}">{{ $sevLabel }}</span></td>
                             <td class="mono">{{ implode(' / ', $cat->tierPoints()) }}</td>
                             <td><span class="badge {{ $cat->status==='active'?'badge-success':'' }}" style="{{ $cat->status!=='active'?'background:var(--surface);color:var(--on-surface-muted)':'' }}">{{ ucfirst($cat->status) }}</span></td>
                             <td><div class="action-cell">

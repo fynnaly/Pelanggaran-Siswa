@@ -80,7 +80,12 @@ class ViolationStats
             ->where('dc.violation_category_id', $categoryId)
             ->join('students as s', 's.id', '=', 'dc.student_id')
             ->leftJoin('classes as c', 'c.id', '=', 'dc.class_id')
-            ->selectRaw('dc.id, dc.case_number, dc.status, s.id AS student_id, s.full_name, c.name AS class_name, '.self::DATE.' AS tanggal')
+            ->leftJoin('academic_years as ay', 'ay.id', '=', 'dc.academic_year_id')
+            ->leftJoin('point_ledgers as pl', function ($j) {
+                $j->on('pl.source_id', '=', 'dc.id')
+                    ->where('pl.source_type', '=', \App\Models\DisciplineCase::class);
+            })
+            ->selectRaw('dc.id, dc.case_number, dc.status, dc.severity_override, dc.points_override, dc.academic_year_id, dc.violation_category_id, s.id AS student_id, s.full_name, s.nisn, s.status AS student_status, c.name AS class_name, ay.name AS academic_year_name, pl.amount AS points_deducted, '.self::DATE.' AS tanggal')
             ->orderByRaw($col.' '.$dir)->orderByDesc('dc.id')
             ->paginate(20)->withQueryString();
     }

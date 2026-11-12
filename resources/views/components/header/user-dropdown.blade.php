@@ -37,8 +37,8 @@
 
         <form id="logout-form" method="POST" action="{{ route('logout') }}" class="hidden">@csrf</form>
         <x-ui.dropdown-menu.item variant="destructive" x-on:click.capture="document.getElementById('logout-form').submit()">
-            <x-svg.log-out />
-            {{ __('userDropdown.signOut') }}
+            <x-svg.log-out class="size-5" />
+            Keluar
         </x-ui.dropdown-menu.item>
     </x-ui.dropdown-menu.content>
 </x-ui.dropdown-menu>

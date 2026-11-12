@@ -16,10 +16,22 @@
         @if(session('success'))<div class="alert alert-success"><i data-lucide="check-circle" class="icon-sm"></i> {{ session('success') }}</div>@endif
         @if(session('error'))<div class="alert alert-error"><i data-lucide="alert-circle" class="icon-sm"></i> {{ session('error') }}</div>@endif
 
-        @if($classId)
-            <div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-md)">
-                <span class="badge" style="background:var(--bs);color:var(--bt)"><i data-lucide="filter" class="icon-sm"></i> Kelas {{ $students->first()?->schoolClass?->name ?? '#' }}</span>
-                <a href="{{ route('students.index') }}" class="text-sm" style="color:var(--on-surface-muted);white-space:nowrap;flex-shrink:0"><i data-lucide="x" class="icon-sm"></i> Hapus filter</a>
+        @if(request()->filled('q') || request()->filled('year_id') || request()->filled('class_id'))
+            <div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-md);flex-wrap:wrap">
+                @if(request()->filled('class_id'))
+                    @php $clsName = $allClasses->firstWhere('id', request('class_id'))?->name ?? 'Kelas #'.request('class_id'); @endphp
+                    <span class="badge" style="background:var(--bs);color:var(--bt);display:inline-flex;align-items:center;gap:4px">
+                        <i data-lucide="filter" class="icon-sm"></i> Kelas {{ $clsName }}
+                    </span>
+                @endif
+                @if(request()->filled('q'))
+                    <span class="badge badge-neutral" style="display:inline-flex;align-items:center;gap:4px">
+                        <i data-lucide="search" class="icon-sm"></i> "{{ request('q') }}"
+                    </span>
+                @endif
+                <a href="{{ route('students.index') }}" class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:4px">
+                    <i data-lucide="x" class="icon-sm"></i> Reset Filter
+                </a>
             </div>
         @endif
 

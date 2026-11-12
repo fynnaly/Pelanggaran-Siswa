@@ -89,7 +89,22 @@
                             <td class="mono">{{ $case->case_number }}</td>
                             <td><strong>{{ $case->student?->full_name ?? '-' }}</strong><br><span class="text-muted text-sm">{{ $case->schoolClass?->name ?? $case->student?->currentEnrollment?->schoolClass?->name ?? '' }}</span></td>
                             <td>
-                                @if($cat)<span class="mono" style="font-size:.75rem;color:var(--on-surface-muted)">{{ $code }}</span> {{ $catName }}
+                                @if($cat)
+                                    @php
+                                        $sev = $cat->severity;
+                                        $sevClass = match($sev) {
+                                            'ringan' => 'badge-info',
+                                            'sedang' => 'badge-warning',
+                                            'berat', 'sangat_berat' => 'badge-danger',
+                                            default => null,
+                                        };
+                                    @endphp
+                                    <span class="mono" style="font-size:.75rem;color:var(--on-surface-muted)">{{ $code }}</span> {{ $catName }}
+                                    @if($sevClass)
+                                        <span class="badge {{ $sevClass }}" style="margin-left:4px;font-size:.65rem;padding:2px 6px">
+                                            {{ $sev === 'sangat_berat' ? 'Sangat Berat' : ucfirst($sev) }}
+                                        </span>
+                                    @endif
                                 @else<span class="text-muted text-sm">-</span>@endif
                             </td>
                             <td class="mono" style="color:var(--danger);font-weight:600">-{{ $points }}</td>
