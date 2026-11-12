@@ -15,6 +15,7 @@ use App\Http\Controllers\AchievementCategoryController;
 use App\Http\Controllers\AchievementRecordController;
 use App\Http\Controllers\StudentPointController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\ReportController;
 
 // Admin/Auth routes
 Route::redirect('/', '/dashboard');
@@ -97,6 +98,10 @@ Route::middleware('auth')->group(function () {
         Route::patch('/{disciplineCase}/update-status', [DisciplineCaseController::class, 'updateStatus'])->name('update-status');
         Route::patch('/{disciplineCase}/dismiss', [DisciplineCaseController::class, 'dismiss'])->name('dismiss');
     });
+
+    // Laporan — statistik pelanggaran terbanyak & detail per kategori
+    Route::get('laporan/pelanggaran', [ReportController::class, 'index'])->name('laporan.pelanggaran');
+    Route::get('laporan/pelanggaran/{violationCategory}', [ReportController::class, 'kategori'])->name('laporan.pelanggaran.kategori');
 
     // Master Pengguna — template/export/import HARUS sebelum resource agar tidak tertelan {user}
     Route::get('users/template', [UserController::class, 'downloadTemplate'])->name('users.template');

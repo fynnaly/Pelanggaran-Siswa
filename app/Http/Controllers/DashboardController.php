@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ScopesWaliKelas;
 use App\Models\AcademicYear;
 use App\Models\DisciplineCase;
 use App\Models\Student;
 use App\Models\ViolationCategory;
+use App\Support\ViolationStats;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
+    use ScopesWaliKelas;
+
     public function index(): View
     {
         $totalStudentsActive = Student::where('status', 'active')->count();
@@ -104,7 +108,14 @@ class DashboardController extends Controller
             $trendDone[] = (int) ($dailyDone[$d] ?? 0);
         }
 
+        // Pelanggaran terbanyak & siswa paling sering melanggar (tahun ajaran aktif, scope wali kelas).
+        $statFilters = ['year' => $activeAcademicYear?->id, 'scope' => $this->waliKelasScope()];
+        $topCategories = ViolationStats::topCategories($statFilters, 5);
+        $topStudents = ViolationStats::topStudents($statFilters, 5);
+
         return view('dashboard', compact(
+            'topCategories',
+            'topStudents',
             'totalStudentsActive',
             'totalCasesFound',
             'totalCasesValidated',

@@ -21,6 +21,13 @@ class MenuHelper
                 ],
             ],
             [
+                'icon' => 'charts',
+                'name' => 'Laporan',
+                'subItems' => [
+                    ['name' => 'Statistik Pelanggaran', 'path' => '/laporan/pelanggaran', 'pro' => false],
+                ],
+            ],
+            [
                 'icon' => 'trophy',
                 'name' => 'Prestasi',
                 'subItems' => [
@@ -41,7 +48,7 @@ class MenuHelper
                 'name' => 'Data Referensi',
                 'subItems' => [
                     ['name' => 'Pengguna', 'path' => '/users', 'pro' => false],
-                    ['name' => 'Data Siswa', 'path' => '/students', 'pro' => false],
+                    ['name' => 'Siswa', 'path' => '/students', 'pro' => false],
                     ['name' => 'Kelas', 'path' => '/classes', 'pro' => false],
                     ['name' => 'Tahun Ajaran', 'path' => '/academic-years', 'pro' => false],
                 ],

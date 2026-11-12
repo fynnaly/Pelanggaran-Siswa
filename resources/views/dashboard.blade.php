@@ -278,12 +278,82 @@
                 </div>
             </div>
         </div>
+
+        <!-- Tier 4: Pelanggaran Terbanyak & Siswa Paling Sering Melanggar -->
+        <div class="grid grid-cols-12 gap-4 md:gap-6">
+            <div class="col-span-12 xl:col-span-7 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/5 shadow-theme-xs">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 class="text-base font-semibold text-gray-800 dark:text-white">Pelanggaran Terbanyak</h2>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Top 5 jenis pelanggaran tahun ajaran aktif</p>
+                    </div>
+                    <a href="{{ route('laporan.pelanggaran') }}" class="text-xs font-medium text-brand-500 hover:underline">Lihat laporan &rarr;</a>
+                </div>
+                @if($topCategories->isEmpty())
+                    <div class="py-10 text-center text-xs text-gray-400">Belum ada pelanggaran tercatat.</div>
+                @else
+                    <div class="h-64 relative">
+                        <canvas id="topCategoryChart"
+                            data-labels='@json($topCategories->pluck('name'))'
+                            data-values='@json($topCategories->pluck('total')->map(fn ($v) => (int) $v))'></canvas>
+                    </div>
+                @endif
+            </div>
+
+            <div class="col-span-12 xl:col-span-5 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/5 shadow-theme-xs">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 class="text-base font-semibold text-gray-800 dark:text-white">Siswa Paling Sering Melanggar</h2>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Berdasarkan jumlah kasus, bukan poin</p>
+                    </div>
+                    <a href="{{ route('laporan.pelanggaran') }}" class="text-xs font-medium text-brand-500 hover:underline">Lihat laporan &rarr;</a>
+                </div>
+                <div class="space-y-3">
+                    @forelse($topStudents as $s)
+                        <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50/50 dark:border-gray-800 dark:bg-white/5">
+                            <div class="min-w-0 pr-3">
+                                <a href="{{ route('students.show', $s->id) }}" class="font-medium text-sm text-gray-800 dark:text-white hover:text-brand-500 block truncate">{{ $s->full_name }}</a>
+                                <span class="text-xs text-gray-400 block truncate">{{ $s->class_name ?? 'Tanpa Kelas' }} &bull; NISN: {{ $s->nisn ?? '-' }}</span>
+                            </div>
+                            <div class="text-end shrink-0">
+                                <span class="font-mono text-sm font-bold text-red-500 block">{{ $s->total }}</span>
+                                <span class="text-[10px] text-gray-400 uppercase tracking-wider block">Kasus</span>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="py-10 text-center text-xs text-gray-400">Belum ada pelanggaran tercatat.</div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
     </div>
 
     @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const cat = document.getElementById('topCategoryChart');
+            if (cat) {
+                const dark = document.documentElement.classList.contains('dark');
+                new Chart(cat, {
+                    type: 'bar',
+                    data: {
+                        labels: JSON.parse(cat.dataset.labels),
+                        datasets: [{ label: 'Kasus', data: JSON.parse(cat.dataset.values), backgroundColor: '#465fff', borderRadius: 6 }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { beginAtZero: true, ticks: { precision: 0 } },
+                            y: { grid: { display: false }, ticks: { color: dark ? '#d1d5db' : '#374151', font: { family: 'Outfit', size: 12 } } }
+                        }
+                    }
+                });
+            }
+
             const canvas = document.getElementById('trendChart');
             if (!canvas) return;
 
