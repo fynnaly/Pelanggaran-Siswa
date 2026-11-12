@@ -28,8 +28,10 @@
                         <option value="{{ $c->id }}" {{ (string) $filters['class'] === (string) $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
                     @endforeach
                 </select>
-                <input type="date" name="from" class="input" style="width:auto" value="{{ $filters['from'] }}" title="Dari tanggal">
-                <input type="date" name="to" class="input" style="width:auto" value="{{ $filters['to'] }}" title="Sampai tanggal">
+                <span class="text-muted text-sm" style="white-space:nowrap">Tanggal <strong>mulai</strong></span>
+                <input type="date" name="from" class="input" style="width:auto" value="{{ $filters['from'] }}" title="Tanggal mulai (start) — kasus pada tanggal ini ikut dihitung">
+                <span class="text-muted text-sm" style="white-space:nowrap">s/d <strong>selesai</strong></span>
+                <input type="date" name="to" class="input" style="width:auto" value="{{ $filters['to'] }}" title="Tanggal selesai (end) — kasus pada tanggal ini ikut dihitung">
                 <button type="submit" class="btn btn-primary btn-sm"><i data-lucide="filter" class="icon-sm"></i> Terapkan</button>
                 <a href="{{ route('laporan.pelanggaran') }}" class="btn btn-secondary btn-sm">Reset</a>
             </form>
@@ -43,7 +45,8 @@
                 <div style="position:relative;height:{{ max(180, $top->count() * 36) }}px">
                     <canvas id="catChart"
                         data-labels='@json($top->pluck('name'))'
-                        data-values='@json($top->pluck('total')->map(fn ($v) => (int) $v))'></canvas>
+                        data-values='@json($top->pluck('total')->map(fn ($v) => (int) $v))'
+                        data-urls='@json($top->map(fn ($c) => route('laporan.pelanggaran.kategori', array_merge(['violationCategory' => $c->id], $linkParams)))->values())'></canvas>
                 </div>
             @endif
         </div>
@@ -133,7 +136,10 @@
                         x: { beginAtZero: true, ticks: { precision: 0, color: dark ? '#9ca3af' : '#6b7280' }, grid: { color: dark ? '#1f2937' : '#f3f4f6' } },
                         y: { grid: { display: false }, ticks: { color: dark ? '#d1d5db' : '#374151', font: { family: 'Outfit', size: 12 } } }
                     }
-                }
+                },
+                // Klik bar → buka detail kategori (daftar siswa kena pelanggaran, bisa disortir).
+                onHover: (e, els, chart) => chart.canvas.style.cursor = els.length ? 'pointer' : 'default',
+                onClick: (e, els) => { if (els.length) window.location.href = JSON.parse(el.dataset.urls)[els[0].index]; }
             });
         });
     </script>
