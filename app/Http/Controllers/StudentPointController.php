@@ -17,6 +17,13 @@ class StudentPointController extends Controller
 
     public function index()
     {
+        $user = auth()->user();
+        if ($user && $user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])) {
+            if ($user->student) {
+                return redirect()->route('point-ledgers.siswa', $user->student);
+            }
+        }
+
         [$students] = $this->filteredStudents();
 
         $sort = request('sort', 'poin');

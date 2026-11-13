@@ -29,7 +29,7 @@
             </form>
         </div>
 
-        @php $canBulk = auth()->user()?->hasAnyRole(['admin','kepala_sekolah']); @endphp
+        @php $canBulk = auth()->user()?->hasAnyRole(['bk','kesiswaan','admin','kepala_sekolah']); @endphp
         @if($canBulk)
         <form id="bulkForm" method="POST" action="{{ route('kasus-pelanggaran.bulk-status') }}" style="display:none;align-items:center;gap:var(--sp-sm);flex-wrap:wrap;margin-bottom:var(--sp-md);padding:var(--sp-sm) var(--sp-md);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm)">
             @csrf
@@ -117,7 +117,12 @@
                                 @elseif($case->status==='closed')<span class="badge badge-success"><i data-lucide="check-circle" style="width:12px;height:12px"></i> Selesai</span>
                                 @else<span class="badge badge-danger"><i data-lucide="x-circle" style="width:12px;height:12px"></i> Dibuang</span>@endif
                             </td>
-                            <td class="text-sm text-muted">{{ $incDate?->format('d M Y') }}</td>
+                            <td class="text-sm text-muted">
+                                <div>{{ $incDate?->format('d M Y') }}</div>
+                                @if($case->incident_time)
+                                    <div class="mono" style="font-size:0.75rem;color:var(--on-surface-muted)">{{ \Carbon\Carbon::parse($case->incident_time)->format('H:i') }} WIB</div>
+                                @endif
+                            </td>
                             <td><div class="action-cell">
                                 @can('update', $case)
                                     @php $next = $nextStatus[$case->status] ?? null; @endphp

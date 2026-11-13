@@ -42,6 +42,12 @@
                             @elseif($disciplineCase->status==='closed')<span class="badge badge-success"><i data-lucide="check-circle" style="width:12px;height:12px"></i> Selesai</span>
                             @else<span class="badge badge-danger"><i data-lucide="x-circle" style="width:12px;height:12px"></i> Dibuang</span>@endif
                         </td></tr>
+                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Waktu Kejadian</td><td style="padding:8px 0">
+                            {{ $disciplineCase->incident_date ? \Carbon\Carbon::parse($disciplineCase->incident_date)->format('d M Y') : '-' }}
+                            @if($disciplineCase->incident_time)
+                                &middot; <span class="mono">{{ \Carbon\Carbon::parse($disciplineCase->incident_time)->format('H:i') }} WIB</span>
+                            @endif
+                        </td></tr>
                         <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Tanggal Dilaporkan</td><td style="padding:8px 0">{{ $disciplineCase->created_at?->format('d M Y H:i') }}</td></tr>
                         @if($disciplineCase->validated_at)<tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Divalidasi</td><td style="padding:8px 0">{{ $disciplineCase->validated_at?->format('d M Y H:i') }}</td></tr>@endif
                         @if($disciplineCase->closed_at)<tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Selesai</td><td style="padding:8px 0">{{ $disciplineCase->closed_at?->format('d M Y H:i') }}</td></tr>@endif

@@ -25,7 +25,7 @@ class NfcCardController extends Controller
         );
     }
 
-    private const MANAGER_ROLES = ['admin', 'kesiswaan', 'kepala_sekolah'];
+    private const MANAGER_ROLES = ['admin', 'bk', 'kesiswaan', 'kepala_sekolah'];
 
     /**
      * Pastikan pengguna adalah staf manajemen (admin, kesiswaan, kepala sekolah).

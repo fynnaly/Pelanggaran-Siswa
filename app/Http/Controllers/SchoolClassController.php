@@ -11,7 +11,7 @@ use Illuminate\Validation\Rule;
 
 class SchoolClassController extends Controller
 {
-    private const MANAGER_ROLES = ['admin', 'kesiswaan', 'kepala_sekolah'];
+    private const MANAGER_ROLES = ['admin', 'bk', 'kesiswaan', 'kepala_sekolah'];
 
     private function authorizeManagement(): void
     {

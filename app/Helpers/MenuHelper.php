@@ -6,6 +6,32 @@ class MenuHelper
 {
     public static function getMainNavItems()
     {
+        $user = auth()->user();
+        $isSiswa = $user?->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah']);
+
+        if ($isSiswa) {
+            $student = $user->student;
+            $poinPath = $student ? '/point-ledgers/siswa/' . $student->id : '/point-ledgers';
+
+            return [
+                [
+                    'icon' => 'dashboard',
+                    'name' => 'Dashboard',
+                    'path' => '/dashboard',
+                ],
+                [
+                    'icon' => 'shield-alert',
+                    'name' => 'Pelanggaran Saya',
+                    'path' => '/kasus-pelanggaran',
+                ],
+                [
+                    'icon' => 'award',
+                    'name' => 'Buku Kas Poin',
+                    'path' => $poinPath,
+                ],
+            ];
+        }
+
         return [
             [
                 'icon' => 'dashboard',
@@ -59,6 +85,19 @@ class MenuHelper
 
     public static function getOthersItems()
     {
+        $user = auth()->user();
+        $isSiswa = $user?->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah']);
+
+        if ($isSiswa) {
+            return [
+                [
+                    'icon' => 'user-profile',
+                    'name' => 'Profil Saya',
+                    'path' => '/profile',
+                ],
+            ];
+        }
+
         return [
             [
                 'icon' => 'settings',

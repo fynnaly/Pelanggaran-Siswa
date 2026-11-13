@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Hash;
 
 class StudentController extends Controller
 {
-    private const MANAGER_ROLES = ['admin', 'kesiswaan', 'kepala_sekolah'];
+    private const MANAGER_ROLES = ['admin', 'bk', 'kesiswaan', 'kepala_sekolah'];
 
     private function authorizeManagement(): void
     {

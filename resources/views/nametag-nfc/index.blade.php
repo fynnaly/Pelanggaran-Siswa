@@ -12,7 +12,7 @@
                     @endif
                 </p>
             </div>
-            @php $isManager = auth()->user()?->hasAnyRole(['admin','kesiswaan','kepala_sekolah']); @endphp
+            @php $isManager = auth()->user()?->hasAnyRole(['admin','bk','kesiswaan','kepala_sekolah']); @endphp
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
                 <a href="{{ route('nametag-nfc.template') }}" class="btn btn-secondary btn-sm" title="Download template format XLSX untuk import">
                     <i data-lucide="file-down" class="icon-sm"></i> Template

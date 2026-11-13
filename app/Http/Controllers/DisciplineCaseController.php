@@ -22,6 +22,9 @@ class DisciplineCaseController extends Controller
     /** Menampilkan daftar semua pelanggaran berdasarkan status */
     public function index()
     {
+        $user = auth()->user();
+        $isSiswa = $user?->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah']);
+
         $status = request('status');
         $search = request('search');
         $sort = request()->string('sort')->toString();
@@ -33,6 +36,12 @@ class DisciplineCaseController extends Controller
         $query = DisciplineCase::with(['student.currentEnrollment.schoolClass', 'schoolClass', 'violationCategory', 'reporter'])
             ->when($academicYearId, fn ($q) => $q->where('academic_year_id', $academicYearId))
             ->orderBy($sort, $order);
+
+        // Siswa hanya boleh melihat kasus miliknya sendiri
+        if ($isSiswa) {
+            $studentId = $user->student?->id ?? 0;
+            $query->where('student_id', $studentId);
+        }
 
         if ($status) {
             $query->where('status', $status);
@@ -236,6 +245,12 @@ class DisciplineCaseController extends Controller
     /** Menampilkan detail pelanggaran tertentu */
     public function show(DisciplineCase $disciplineCase)
     {
+        $user = auth()->user();
+        if ($user && $user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])) {
+            $studentId = $user->student?->id;
+            abort_if(! $studentId || $disciplineCase->student_id !== $studentId, 403, 'Akses ditolak. Anda hanya dapat melihat kasus Anda sendiri.');
+        }
+
         $disciplineCase->load([
             'student.currentEnrollment.schoolClass', 'enrollment.schoolClass', 'schoolClass',
             'violationCategory.parent', 'violationCategory.redemptionRules.achievementCategory',

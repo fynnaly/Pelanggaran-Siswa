@@ -13,6 +13,14 @@ class PointLedgerController extends Controller
      */
     public function index(Request $request)
     {
+        $user = auth()->user();
+        $isSiswa = $user?->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah']);
+
+        // Jika siswa membuka riwayat poin, redirect langsung ke riwayat miliknya sendiri
+        if ($isSiswa && $user->student) {
+            return redirect()->route('point-ledgers.siswa', $user->student);
+        }
+
         $search = $request->string('search')->trim();
         $direction = $request->string('direction')->toString();
         $type = $request->string('type')->toString();
@@ -48,6 +56,12 @@ class PointLedgerController extends Controller
      */
     public function forStudent(Student $student)
     {
+        $user = auth()->user();
+        if ($user && $user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])) {
+            $myStudentId = $user->student?->id;
+            abort_if(! $myStudentId || $student->id !== $myStudentId, 403, 'Akses ditolak. Anda hanya boleh melihat buku kas poin Anda sendiri.');
+        }
+
         // Ambil tahun ajaran terakhir yang punya transaksi untuk siswa ini,
         // supaya kolom "Saldo" (balance_after) tetap bermakna (per-tahun).
         $yearId = PointLedger::where('student_id', $student->id)
@@ -70,6 +84,12 @@ class PointLedgerController extends Controller
      */
     public function show(PointLedger $pointLedger)
     {
+        $user = auth()->user();
+        if ($user && $user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])) {
+            $myStudentId = $user->student?->id;
+            abort_if(! $myStudentId || $pointLedger->student_id !== $myStudentId, 403, 'Akses ditolak. Anda hanya boleh melihat buku kas poin Anda sendiri.');
+        }
+
         $pointLedger->load(['student.currentEnrollment.schoolClass', 'academicYear', 'creator', 'verifier']);
 
         $student = $pointLedger->student;

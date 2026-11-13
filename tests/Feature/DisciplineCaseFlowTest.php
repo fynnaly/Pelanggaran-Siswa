@@ -211,13 +211,17 @@ it('supports bulk status progression from found to handling and handling to clos
     expect(PointLedger::count())->toBe(2);
 });
 
-it('forbids bk and kesiswaan from updating or dismissing discipline case', function () {
+it('allows bk and kesiswaan to update and dismiss discipline case but forbids guru', function () {
     $bk = User::factory()->create();
     $bk->assignRole('bk');
 
     Role::firstOrCreate(['name' => 'kesiswaan', 'guard_name' => 'web']);
     $kesiswaan = User::factory()->create();
     $kesiswaan->assignRole('kesiswaan');
+
+    Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web']);
+    $guru = User::factory()->create();
+    $guru->assignRole('guru');
 
     $case = DisciplineCase::create([
         'case_number' => 'KAS-2026-0005',
@@ -226,20 +230,84 @@ it('forbids bk and kesiswaan from updating or dismissing discipline case', funct
         'class_id' => $this->class->id,
         'violation_category_id' => $this->category->id,
         'academic_year_id' => $this->year->id,
-        'reporter_id' => $this->adminUser->id,
-        'description' => 'Kasus uji RBAC',
+        'reporter_id' => $guru->id,
+        'description' => 'Laporan temuan guru',
         'status' => 'found',
     ]);
 
-    // BK tidak boleh update status maupun dismiss
-    $this->actingAs($bk);
+    // Guru hanya bisa melapor, dilarang validasi / ubah status / dismiss
+    $this->actingAs($guru);
     $this->patch(route('kasus-pelanggaran.update-status', $case), ['status' => 'handling'])->assertForbidden();
     $this->patch(route('kasus-pelanggaran.dismiss', $case))->assertForbidden();
     $this->post(route('kasus-pelanggaran.bulk-status'), ['ids' => [$case->id], 'status' => 'handling'])->assertForbidden();
 
-    // Kesiswaan juga tidak boleh
-    $this->actingAs($kesiswaan);
-    $this->patch(route('kasus-pelanggaran.update-status', $case), ['status' => 'handling'])->assertForbidden();
-    $this->patch(route('kasus-pelanggaran.dismiss', $case))->assertForbidden();
-    $this->post(route('kasus-pelanggaran.bulk-status'), ['ids' => [$case->id], 'status' => 'handling'])->assertForbidden();
+    // BK dan Kesiswaan berwenang memajukan / memvalidasi status
+    $this->actingAs($bk);
+    $this->patch(route('kasus-pelanggaran.update-status', $case), ['status' => 'handling'])->assertRedirect();
+    $case->refresh();
+    expect($case->status)->toBe('handling');
+});
+
+it('scopes discipline cases and point history for siswa role', function () {
+    Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web']);
+    $siswaUser = User::factory()->create();
+    $siswaUser->assignRole('siswa');
+    $this->student->update(['user_id' => $siswaUser->id]);
+
+    $otherStudent = Student::create([
+        'full_name' => 'Siswa Lain',
+        'nis' => '999999999999',
+        'nisn' => '9999999999',
+        'gender' => 'P',
+        'status' => 'active',
+    ]);
+
+    $caseMy = DisciplineCase::create([
+        'case_number' => 'KAS-MY-001',
+        'student_id' => $this->student->id,
+        'enrollment_id' => $this->enrollment->id,
+        'class_id' => $this->class->id,
+        'violation_category_id' => $this->category->id,
+        'academic_year_id' => $this->year->id,
+        'reporter_id' => $this->adminUser->id,
+        'description' => 'Pelanggaran saya',
+        'status' => 'found',
+        'incident_date' => '2026-11-12',
+        'incident_time' => '07:30',
+    ]);
+
+    $caseOther = DisciplineCase::create([
+        'case_number' => 'KAS-OTHER-002',
+        'student_id' => $otherStudent->id,
+        'enrollment_id' => $this->enrollment->id,
+        'class_id' => $this->class->id,
+        'violation_category_id' => $this->category->id,
+        'academic_year_id' => $this->year->id,
+        'reporter_id' => $this->adminUser->id,
+        'description' => 'Pelanggaran orang lain',
+        'status' => 'found',
+        'incident_date' => '2026-11-12',
+        'incident_time' => '08:00',
+    ]);
+
+    $this->actingAs($siswaUser);
+
+    // Siswa melihat indeks kasus disiplin: hanya kasus dirinya sendiri yang tampil
+    $response = $this->get(route('kasus-pelanggaran.index'));
+    $response->assertOk();
+    $response->assertSee('KAS-MY-001');
+    $response->assertDontSee('KAS-OTHER-002');
+    $response->assertSee('07:30 WIB');
+
+    // Siswa bisa melihat rincian kasusnya sendiri
+    $this->get(route('kasus-pelanggaran.show', $caseMy))->assertOk()->assertSee('07:30 WIB');
+
+    // Siswa ditolak jika mencoba mengintip rincian kasus siswa lain
+    $this->get(route('kasus-pelanggaran.show', $caseOther))->assertForbidden();
+
+    // Siswa ditolak jika mencoba melihat buku kas siswa lain
+    $this->get(route('point-ledgers.siswa', $otherStudent))->assertForbidden();
+
+    // Siswa membuka buku kas miliknya sendiri berhasil
+    $this->get(route('point-ledgers.siswa', $this->student))->assertOk();
 });
