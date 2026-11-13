@@ -8,6 +8,17 @@ use App\Models\AchievementCategory;
 
 class AchievementCategoryController extends Controller
 {
+    private const MANAGER_ROLES = ['admin', 'kesiswaan', 'kepala_sekolah'];
+
+    private function authorizeManagement(): void
+    {
+        abort_unless(
+            request()->user()?->hasAnyRole(self::MANAGER_ROLES),
+            403,
+            'Hanya admin / kesiswaan / kepala sekolah yang boleh mengubah master kategori prestasi.',
+        );
+    }
+
     public function index(Request $request)
     {
         $search = request('search');
@@ -39,6 +50,8 @@ class AchievementCategoryController extends Controller
 
     public function create()
     {
+        $this->authorizeManagement();
+
         // Daftar kategori induk untuk dropdown "Induk Kategori".
         $parents = AchievementCategory::whereNull('parent_id')->orderBy('name')->get();
 
@@ -47,6 +60,8 @@ class AchievementCategoryController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorizeManagement();
+
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:20', 'unique:achievement_categories,code'],
             'name' => ['required', 'string', 'max:150'],
@@ -64,6 +79,8 @@ class AchievementCategoryController extends Controller
 
     public function edit(AchievementCategory $achievementCategory)
     {
+        $this->authorizeManagement();
+
         // Kecualikan dirinya sendiri agar tidak bisa jadi induk diri sendiri.
         $parents = AchievementCategory::whereNull('parent_id')
             ->where('id', '!=', $achievementCategory->id)
@@ -74,6 +91,8 @@ class AchievementCategoryController extends Controller
 
     public function update(Request $request, AchievementCategory $achievementCategory)
     {
+        $this->authorizeManagement();
+
         $validated = $request->validate([
             'code' => ['sometimes', 'required', 'string', 'max:20', 'unique:achievement_categories,code,' . $achievementCategory->id],
             'name' => ['sometimes', 'required', 'string', 'max:150'],
@@ -96,6 +115,8 @@ class AchievementCategoryController extends Controller
 
     public function destroy(AchievementCategory $achievementCategory)
     {
+        $this->authorizeManagement();
+
         // Sub-kategori masih menunjuk ke kategori ini — tolak agar tidak jadi yatim.
         if ($achievementCategory->children()->exists()) {
             return redirect()

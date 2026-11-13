@@ -234,8 +234,17 @@ class AchievementRecordController extends Controller
         return view('achievement-records.show', compact('achievementRecord'));
     }
 
+    private function authorizeVerifier(): void
+    {
+        if (! auth()->user()?->hasAnyRole(['bk', 'kesiswaan', 'admin'])) {
+            abort(403, 'Anda tidak memiliki hak akses untuk memvalidasi prestasi.');
+        }
+    }
+
     public function validate(Request $request, AchievementRecord $achievementRecord)
     {
+        $this->authorizeVerifier();
+
         if ($achievementRecord->status !== 'pending') {
             return redirect()
                 ->route('achievement-records.index')
@@ -282,6 +291,8 @@ class AchievementRecordController extends Controller
 
     public function dismiss(Request $request, AchievementRecord $achievementRecord)
     {
+        $this->authorizeVerifier();
+
         if ($achievementRecord->status !== 'pending') {
             return redirect()
                 ->route('achievement-records.index')
@@ -306,9 +317,7 @@ class AchievementRecordController extends Controller
 
     public function bulkValidate(Request $request)
     {
-        if (! auth()->user()?->hasAnyRole(['bk', 'kesiswaan', 'admin'])) {
-            abort(403, 'Anda tidak memiliki hak akses untuk memvalidasi prestasi.');
-        }
+        $this->authorizeVerifier();
 
         $ids = $request->input('ids');
         if (! is_array($ids) || $ids === []) {

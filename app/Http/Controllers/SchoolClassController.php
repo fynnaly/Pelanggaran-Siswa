@@ -11,6 +11,17 @@ use Illuminate\Validation\Rule;
 
 class SchoolClassController extends Controller
 {
+    private const MANAGER_ROLES = ['admin', 'kesiswaan', 'kepala_sekolah'];
+
+    private function authorizeManagement(): void
+    {
+        abort_unless(
+            request()->user()?->hasAnyRole(self::MANAGER_ROLES),
+            403,
+            'Hanya admin / kesiswaan / kepala sekolah yang boleh mengubah data kelas.',
+        );
+    }
+
     /** Menampilkan daftar semua kelas */
     public function index(Request $request)
     {
@@ -62,6 +73,8 @@ class SchoolClassController extends Controller
     /** Menampilkan form pembuatan kelas baru */
     public function create()
     {
+        $this->authorizeManagement();
+
         $academicYears = AcademicYear::orderBy('name', 'desc')->get();
         $users = User::whereHas('roles', fn ($q) => $q->where('name', 'guru'))->orderBy('name')->get();
 
@@ -82,6 +95,8 @@ class SchoolClassController extends Controller
     /** Menyimpan kelas baru ke database */
     public function store(Request $request)
     {
+        $this->authorizeManagement();
+
         $validated = $request->validate([
             'academic_year_id' => 'required|exists:academic_years,id',
             'name' => ['required', 'string', 'max:50',
@@ -107,6 +122,8 @@ class SchoolClassController extends Controller
     /** Menampilkan form edit kelas */
     public function edit(SchoolClass $class)
     {
+        $this->authorizeManagement();
+
         $academicYears = AcademicYear::orderBy('name', 'desc')->get();
         $users = User::whereHas('roles', fn ($q) => $q->where('name', 'guru'))->orderBy('name')->get();
         return view('classes.edit', compact('class', 'academicYears', 'users'));
@@ -115,6 +132,8 @@ class SchoolClassController extends Controller
     /** Memperbarui data kelas */
     public function update(Request $request, SchoolClass $class)
     {
+        $this->authorizeManagement();
+
         // amvil data ID tahun ajaran
         $academicYearId = $request->input('academic_year_id', $class->academic_year_id);
 
@@ -144,6 +163,8 @@ class SchoolClassController extends Controller
     /** Pindahkan massal (naik kelas) sekumpulan siswa ke satu kelas target — via enrollments. */
     public function promote(Request $request)
     {
+        $this->authorizeManagement();
+
         $validated = $request->validate([
             'student_ids' => 'required|array|min:1',
             'student_ids.*' => 'exists:students,id',
@@ -189,6 +210,7 @@ class SchoolClassController extends Controller
     /** Menghapus kelas */
     public function destroy(SchoolClass $class)
     {
+        $this->authorizeManagement();
 
     // cek relasi siswa sebelum hapus (kelas)
         if ($class->students()->count() > 0) {

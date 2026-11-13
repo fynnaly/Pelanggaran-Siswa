@@ -14,6 +14,17 @@ use Illuminate\Support\Facades\Hash;
 
 class StudentController extends Controller
 {
+    private const MANAGER_ROLES = ['admin', 'kesiswaan', 'kepala_sekolah'];
+
+    private function authorizeManagement(): void
+    {
+        abort_unless(
+            request()->user()?->hasAnyRole(self::MANAGER_ROLES),
+            403,
+            'Hanya admin / kesiswaan / kepala sekolah yang boleh mengubah data siswa.',
+        );
+    }
+
     /** Daftar siswa, terpisah dari data poin. */
     public function index()
     {
@@ -76,6 +87,8 @@ class StudentController extends Controller
     /** Form tambah siswa — kirim daftar kelas dari controller (jangan query di Blade). */
     public function create()
     {
+        $this->authorizeManagement();
+
         $activeYear = AcademicYear::where('is_active', true)->first();
         // Hanya kelas aktif — kelas arsip (nonaktif/tahun lama) tidak boleh dipakai mendaftar.
         $classes = SchoolClass::with('academicYear')
@@ -108,8 +121,10 @@ class StudentController extends Controller
 
     /** Simpan siswa baru + buat saldo awal 2000 (OPENING_BALANCE) sekali per tahun ajaran. */
     public function store(Request $request)
-        {
-            $validated = $request->validate([
+    {
+        $this->authorizeManagement();
+
+        $validated = $request->validate([
                 // NISN standar Kemendikbud: 10 digit angka. NIS sekolah: YYYYMMDD+urutan = 12 digit.
                 'nisn'      => 'required|digits:10|unique:students',
                 'nis'       => 'required|digits:12|unique:students',
@@ -168,6 +183,8 @@ class StudentController extends Controller
     /** Form edit siswa */
     public function edit(Student $student)
     {
+        $this->authorizeManagement();
+
         // Hanya kelas aktif — kelas arsip tidak boleh dipilih ulang.
         $classes = SchoolClass::with('academicYear')
             ->where('academic_year_id', AcademicYear::where('is_active', true)->value('id'))
@@ -193,6 +210,8 @@ class StudentController extends Controller
     /** Update data siswa */
     public function update(Request $request, Student $student)
     {
+        $this->authorizeManagement();
+
         $validated = $request->validate([
             'nisn'      => 'sometimes|digits:10|unique:students,nisn,' . $student->id,
             'nis'       => 'sometimes|digits:12|unique:students,nis,' . $student->id,
@@ -369,6 +388,8 @@ class StudentController extends Controller
      */
     public function import(Request $request)
     {
+        $this->authorizeManagement();
+
         $request->validate([
             'file' => 'required|file|mimes:csv,txt,xlsx|max:5120',
         ]);

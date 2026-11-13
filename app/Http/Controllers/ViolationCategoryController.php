@@ -103,11 +103,24 @@ class ViolationCategoryController extends Controller
         ];
     }
 
+    private const MANAGER_ROLES = ['admin', 'kesiswaan', 'kepala_sekolah'];
+
+    private function authorizeManagement(): void
+    {
+        abort_unless(
+            request()->user()?->hasAnyRole(self::MANAGER_ROLES),
+            403,
+            'Hanya admin / kesiswaan / kepala sekolah yang boleh mengubah master tata tertib.',
+        );
+    }
+
     /**
      * Show the form for creating a new resource.
      */
     public function create()
     {
+        $this->authorizeManagement();
+
         // Daftar kategori induk untuk dropdown "Induk Kategori".
         $parents = ViolationCategory::whereNull('parent_id')->orderBy('name')->get();
 
@@ -119,6 +132,8 @@ class ViolationCategoryController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorizeManagement();
+
         $validated = $this->validateCategory($request);
 
         $data = collect($validated)->except(['poin_ke_1', 'poin_ke_2', 'poin_ke_3'])->all();
@@ -145,6 +160,8 @@ class ViolationCategoryController extends Controller
      */
     public function edit(ViolationCategory $violationCategory)
     {
+        $this->authorizeManagement();
+
         // Kecualikan dirinya sendiri agar tidak bisa jadi induk diri sendiri.
         $parents = ViolationCategory::whereNull('parent_id')
             ->where('id', '!=', $violationCategory->id)
@@ -158,6 +175,8 @@ class ViolationCategoryController extends Controller
      */
     public function update(Request $request, ViolationCategory $violationCategory)
     {
+        $this->authorizeManagement();
+
         $validated = $this->validateCategory($request, $violationCategory);
 
         $data = collect($validated)->except(['poin_ke_1', 'poin_ke_2', 'poin_ke_3'])->all();
@@ -175,6 +194,8 @@ class ViolationCategoryController extends Controller
      */
     public function destroy(ViolationCategory $violationCategory)
     {
+        $this->authorizeManagement();
+
         // Sub-kategori masih menunjuk ke kategori ini — tolak agar tidak jadi yatim.
         if ($violationCategory->children()->exists()) {
             return redirect()

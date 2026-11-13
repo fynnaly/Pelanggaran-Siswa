@@ -12,6 +12,7 @@
                     @endif
                 </p>
             </div>
+            @php $isManager = auth()->user()?->hasAnyRole(['admin','kesiswaan','kepala_sekolah']); @endphp
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
                 <a href="{{ route('nametag-nfc.template') }}" class="btn btn-secondary btn-sm" title="Download template format XLSX untuk import">
                     <i data-lucide="file-down" class="icon-sm"></i> Template
@@ -19,9 +20,11 @@
                 <a href="{{ route('nametag-nfc.export') }}" class="btn btn-secondary btn-sm" title="Export seluruh data nametag ke XLSX">
                     <i data-lucide="download" class="icon-sm"></i> Export
                 </a>
+                @if($isManager)
                 <a href="{{ route('nametag-nfc.create') }}" class="btn btn-primary btn-sm">
                     <i data-lucide="plus" class="icon-sm"></i> Pasangkan Nametag
                 </a>
+                @endif
             </div>
         </div>
     </x-slot>
@@ -67,6 +70,7 @@
                 @endif
             </form>
 
+            @if($isManager)
             <div style="display:flex;align-items:center;gap:var(--sp-sm);flex-wrap:wrap">
                 <form action="{{ route('nametag-nfc.import') }}" method="POST" enctype="multipart/form-data" style="display:flex;align-items:center;gap:var(--sp-sm);flex:1;min-width:0">
                     @csrf
@@ -77,6 +81,7 @@
                     </button>
                 </form>
             </div>
+            @endif
         </div>
 
         {{-- Tabel Data Nametag --}}
@@ -140,6 +145,7 @@
                                 @endif
                             </td>
                             <td style="text-align:center">
+                                @if($isManager)
                                 <div class="action-cell" style="justify-content:center">
                                     <a href="{{ route('nametag-nfc.edit', $student) }}"
                                        class="action-btn"
@@ -153,12 +159,15 @@
                                               style="display:inline">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="action-btn text-danger" title="Lepaskan Nametag" style="border:none;background:none;cursor:pointer">
-                                                <i data-lucide="link-2-off" style="width:14px;height:14px;color:var(--danger)"></i>
+                                            <button type="submit" class="action-btn" title="Lepaskan Nametag" style="color:var(--danger)">
+                                                <i data-lucide="unlink" style="width:14px;height:14px"></i>
                                             </button>
                                         </form>
                                     @endif
                                 </div>
+                                @else
+                                <span class="text-muted text-sm">-</span>
+                                @endif
                             </td>
                         </tr>
                     @empty

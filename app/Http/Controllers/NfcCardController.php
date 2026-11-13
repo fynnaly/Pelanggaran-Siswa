@@ -25,6 +25,20 @@ class NfcCardController extends Controller
         );
     }
 
+    private const MANAGER_ROLES = ['admin', 'kesiswaan', 'kepala_sekolah'];
+
+    /**
+     * Pastikan pengguna adalah staf manajemen (admin, kesiswaan, kepala sekolah).
+     */
+    private function authorizeManagement(): void
+    {
+        abort_unless(
+            auth()->user()?->hasAnyRole(self::MANAGER_ROLES),
+            403,
+            'Hanya admin / kesiswaan / kepala sekolah yang boleh mengubah data nametag NFC.',
+        );
+    }
+
     /**
      * Tampilkan tabel data nametag NFC yang dicocokkan dengan siswa.
      */
@@ -95,7 +109,7 @@ class NfcCardController extends Controller
      */
     public function create()
     {
-        $this->authorizeStaff();
+        $this->authorizeManagement();
 
         $studentsWithoutNfc = Student::query()
             ->where(function ($q) {
@@ -113,7 +127,7 @@ class NfcCardController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authorizeStaff();
+        $this->authorizeManagement();
 
         $validated = $request->validate([
             'student_id' => 'required|exists:students,id',
@@ -139,7 +153,7 @@ class NfcCardController extends Controller
      */
     public function edit(Student $student)
     {
-        $this->authorizeStaff();
+        $this->authorizeManagement();
 
         $student->load(['currentEnrollment.schoolClass']);
 
@@ -151,7 +165,7 @@ class NfcCardController extends Controller
      */
     public function update(Request $request, Student $student)
     {
-        $this->authorizeStaff();
+        $this->authorizeManagement();
 
         $validated = $request->validate([
             'nfc_uid' => [
@@ -179,7 +193,7 @@ class NfcCardController extends Controller
      */
     public function destroy(Student $student)
     {
-        $this->authorizeStaff();
+        $this->authorizeManagement();
 
         $oldUid = $student->nfc_uid;
         $student->update(['nfc_uid' => null]);
@@ -266,7 +280,7 @@ class NfcCardController extends Controller
      */
     public function import(Request $request)
     {
-        $this->authorizeStaff();
+        $this->authorizeManagement();
 
         $request->validate([
             'file' => 'required|file|max:4096',

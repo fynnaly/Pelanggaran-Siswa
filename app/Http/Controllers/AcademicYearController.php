@@ -9,6 +9,17 @@ use DB;
 
 class AcademicYearController extends Controller
 {
+    private const MANAGER_ROLES = ['admin', 'kesiswaan', 'kepala_sekolah'];
+
+    private function authorizeManagement(): void
+    {
+        abort_unless(
+            request()->user()?->hasAnyRole(self::MANAGER_ROLES),
+            403,
+            'Hanya admin / kesiswaan / kepala sekolah yang boleh mengubah tahun ajaran.',
+        );
+    }
+
     /** Display a listing of the resource. */
     public function index(Request $request)
     {
@@ -25,12 +36,16 @@ class AcademicYearController extends Controller
     /** Show the form for creating a new resource. */
     public function create()
     {
+        $this->authorizeManagement();
+
         return view('academic-years.create');
     }
 
     /** Store a newly created resource in storage. */
     public function store(Request $request)
     {
+        $this->authorizeManagement();
+
         // Validasi
         $validated = $request->validate([
             'name' => 'required|string|max:20|unique:academic_years,name',
@@ -67,12 +82,16 @@ class AcademicYearController extends Controller
     /** Show the form for editing the specified resource. */
     public function edit(AcademicYear $academicYear)
     {
+        $this->authorizeManagement();
+
         return view('academic-years.edit', compact('academicYear'));
     }
 
     /** Update the specified resource in storage. */
     public function update(Request $request, AcademicYear $academicYear)
     {
+        $this->authorizeManagement();
+
         // Validasi
         $validated = $request->validate([
             'name' => 'required|string|max:20|unique:academic_years,name,' . $academicYear->id,
@@ -117,6 +136,8 @@ class AcademicYearController extends Controller
     /** Remove the specified resource from storage. */
     public function destroy(AcademicYear $academicYear)
     {
+        $this->authorizeManagement();
+
         $academicYear->delete();
 
         return redirect()
