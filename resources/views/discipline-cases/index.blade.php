@@ -29,7 +29,7 @@
             </form>
         </div>
 
-        @php $canBulk = auth()->user()?->hasAnyRole(['bk','kesiswaan','admin']); @endphp
+        @php $canBulk = auth()->user()?->hasAnyRole(['admin','kepala_sekolah']); @endphp
         @if($canBulk)
         <form id="bulkForm" method="POST" action="{{ route('kasus-pelanggaran.bulk-status') }}" style="display:none;align-items:center;gap:var(--sp-sm);flex-wrap:wrap;margin-bottom:var(--sp-md);padding:var(--sp-sm) var(--sp-md);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm)">
             @csrf

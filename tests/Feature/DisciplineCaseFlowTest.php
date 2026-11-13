@@ -64,14 +64,14 @@ beforeEach(function () {
         'status' => 'active',
     ]);
 
-    $this->bkUser = User::factory()->create();
-    $this->bkUser->assignRole('bk');
-    $this->actingAs($this->bkUser, 'web');
+    $this->adminUser = User::factory()->create();
+    $this->adminUser->assignRole('admin');
+    $this->actingAs($this->adminUser, 'web');
     $this->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class);
 });
 
 it('creates case with initial found status and does not deduct points yet', function () {
-    $this->actingAs($this->bkUser);
+    $this->actingAs($this->adminUser);
 
     $response = $this->post(route('kasus-pelanggaran.store'), [
         'student_id' => $this->student->id,
@@ -89,7 +89,7 @@ it('creates case with initial found status and does not deduct points yet', func
 });
 
 it('deducts points when case is transitioned to handling', function () {
-    $this->actingAs($this->bkUser);
+    $this->actingAs($this->adminUser);
 
     $case = DisciplineCase::create([
         'case_number' => 'KAS-2026-0001',
@@ -98,7 +98,7 @@ it('deducts points when case is transitioned to handling', function () {
         'class_id' => $this->class->id,
         'violation_category_id' => $this->category->id,
         'academic_year_id' => $this->year->id,
-        'reporter_id' => $this->bkUser->id,
+        'reporter_id' => $this->adminUser->id,
         'description' => 'Terlambat 5 menit.',
         'status' => 'found',
     ]);
@@ -112,7 +112,7 @@ it('deducts points when case is transitioned to handling', function () {
 
     $case->refresh();
     expect($case->status)->toBe('handling');
-    expect($case->validator_id)->toBe($this->bkUser->id);
+    expect($case->validator_id)->toBe($this->adminUser->id);
     expect($case->validated_at)->not->toBeNull();
 
     // Pastikan debit poin dibuat (8 poin dari saldo awal 2000 => 1992)
@@ -134,7 +134,7 @@ it('deducts points when case is transitioned to handling', function () {
 });
 
 it('does not deduct points when case is dismissed from found', function () {
-    $this->actingAs($this->bkUser);
+    $this->actingAs($this->adminUser);
 
     $case = DisciplineCase::create([
         'case_number' => 'KAS-2026-0002',
@@ -143,7 +143,7 @@ it('does not deduct points when case is dismissed from found', function () {
         'class_id' => $this->class->id,
         'violation_category_id' => $this->category->id,
         'academic_year_id' => $this->year->id,
-        'reporter_id' => $this->bkUser->id,
+        'reporter_id' => $this->adminUser->id,
         'description' => 'Salah lapor.',
         'status' => 'found',
     ]);
@@ -157,7 +157,7 @@ it('does not deduct points when case is dismissed from found', function () {
 });
 
 it('supports bulk status progression from found to handling and handling to closed', function () {
-    $this->actingAs($this->bkUser);
+    $this->actingAs($this->adminUser);
 
     $c1 = DisciplineCase::create([
         'case_number' => 'KAS-2026-0003',
@@ -166,7 +166,7 @@ it('supports bulk status progression from found to handling and handling to clos
         'class_id' => $this->class->id,
         'violation_category_id' => $this->category->id,
         'academic_year_id' => $this->year->id,
-        'reporter_id' => $this->bkUser->id,
+        'reporter_id' => $this->adminUser->id,
         'description' => 'Kasus 1',
         'status' => 'found',
     ]);
@@ -178,7 +178,7 @@ it('supports bulk status progression from found to handling and handling to clos
         'class_id' => $this->class->id,
         'violation_category_id' => $this->category->id,
         'academic_year_id' => $this->year->id,
-        'reporter_id' => $this->bkUser->id,
+        'reporter_id' => $this->adminUser->id,
         'description' => 'Kasus 2',
         'status' => 'found',
     ]);
@@ -209,4 +209,37 @@ it('supports bulk status progression from found to handling and handling to clos
     expect($c2->status)->toBe('closed');
     // Poin tetap 2 debit (tidak bertambah lagi)
     expect(PointLedger::count())->toBe(2);
+});
+
+it('forbids bk and kesiswaan from updating or dismissing discipline case', function () {
+    $bk = User::factory()->create();
+    $bk->assignRole('bk');
+
+    Role::firstOrCreate(['name' => 'kesiswaan', 'guard_name' => 'web']);
+    $kesiswaan = User::factory()->create();
+    $kesiswaan->assignRole('kesiswaan');
+
+    $case = DisciplineCase::create([
+        'case_number' => 'KAS-2026-0005',
+        'student_id' => $this->student->id,
+        'enrollment_id' => $this->enrollment->id,
+        'class_id' => $this->class->id,
+        'violation_category_id' => $this->category->id,
+        'academic_year_id' => $this->year->id,
+        'reporter_id' => $this->adminUser->id,
+        'description' => 'Kasus uji RBAC',
+        'status' => 'found',
+    ]);
+
+    // BK tidak boleh update status maupun dismiss
+    $this->actingAs($bk);
+    $this->patch(route('kasus-pelanggaran.update-status', $case), ['status' => 'handling'])->assertForbidden();
+    $this->patch(route('kasus-pelanggaran.dismiss', $case))->assertForbidden();
+    $this->post(route('kasus-pelanggaran.bulk-status'), ['ids' => [$case->id], 'status' => 'handling'])->assertForbidden();
+
+    // Kesiswaan juga tidak boleh
+    $this->actingAs($kesiswaan);
+    $this->patch(route('kasus-pelanggaran.update-status', $case), ['status' => 'handling'])->assertForbidden();
+    $this->patch(route('kasus-pelanggaran.dismiss', $case))->assertForbidden();
+    $this->post(route('kasus-pelanggaran.bulk-status'), ['ids' => [$case->id], 'status' => 'handling'])->assertForbidden();
 });
