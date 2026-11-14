@@ -75,7 +75,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('departments/{department}/toggle-status', [\App\Http\Controllers\DepartmentController::class, 'toggleStatus'])->name('departments.toggle-status');
     Route::resource('departments', \App\Http\Controllers\DepartmentController::class)->except(['destroy']);
     Route::patch('jurusan/{department}/toggle-status', [\App\Http\Controllers\DepartmentController::class, 'toggleStatus'])->name('jurusan.toggle-status');
-    Route::resource('jurusan', \App\Http\Controllers\DepartmentController::class)->except(['destroy'])->names('jurusan');
+    Route::resource('jurusan', \App\Http\Controllers\DepartmentController::class)->except(['destroy'])->names('jurusan')->parameters(['jurusan' => 'department']);
 
     // PointLedger — siswa/{student} SEBELUM resource agar tidak tertelan {pointLedger}
     Route::get('point-ledgers/siswa/{student}', [PointLedgerController::class, 'forStudent'])->name('point-ledgers.siswa');
