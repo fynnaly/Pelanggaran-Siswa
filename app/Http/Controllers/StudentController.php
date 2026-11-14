@@ -222,6 +222,12 @@ class StudentController extends Controller
     public function show(Student $student)
     {
         $user = request()->user();
+        abort_unless(
+            $user?->hasAnyRole(array_merge(self::STAFF_ROLES, ['siswa'])),
+            403,
+            'Akses ditolak. Fitur ini hanya untuk pengguna terdaftar.'
+        );
+
         if ($user && $user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])) {
             abort_unless($user->student?->id === $student->id, 403, 'Akses ditolak. Anda hanya dapat melihat profil Anda sendiri.');
         }

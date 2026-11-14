@@ -200,6 +200,31 @@ class DashboardController extends Controller
             : collect();
         $defaultBalance = (int) config('zones.default_balance', 2000);
 
+        $totalAchievementPoints = $student
+            ? (int) \App\Models\AchievementRecord::where('student_id', $student->id)
+                ->where('status', 'verified')
+                ->when($activeAcademicYear, fn ($q) => $q->where('academic_year_id', $activeAcademicYear->id))
+                ->sum('points_awarded')
+            : 0;
+
+        if ($balance >= 2500) {
+            $nextTargetName = 'Zona Istimewa (Tertinggi)';
+            $pointsToNext = 0;
+            $visualProgress = 100;
+        } elseif ($balance >= 2200) {
+            $nextTargetName = 'Zona Istimewa (2.500)';
+            $pointsToNext = 2500 - $balance;
+            $visualProgress = (int) round((($balance - 2200) / 300) * 100);
+        } elseif ($balance >= 2000) {
+            $nextTargetName = 'Zona Luar Biasa (2.200)';
+            $pointsToNext = 2200 - $balance;
+            $visualProgress = (int) round((($balance - 2000) / 200) * 100);
+        } else {
+            $nextTargetName = 'Standar Sekolah (2.000)';
+            $pointsToNext = 2000 - $balance;
+            $visualProgress = max(0, min(100, (int) round(($balance / 2000) * 100)));
+        }
+
         return view('dashboard-siswa', compact(
             'student',
             'balance',
@@ -211,7 +236,11 @@ class DashboardController extends Controller
             'activeAcademicYear',
             'homeroomTeacher',
             'recentLedgers',
-            'defaultBalance'
+            'defaultBalance',
+            'totalAchievementPoints',
+            'nextTargetName',
+            'pointsToNext',
+            'visualProgress'
         ));
     }
 

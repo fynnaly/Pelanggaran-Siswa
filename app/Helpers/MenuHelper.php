@@ -21,12 +21,12 @@ class MenuHelper
                 ],
                 [
                     'icon' => 'shield-alert',
-                    'name' => 'Pelanggaran Saya',
+                    'name' => 'Catatan Kedisiplinan',
                     'path' => '/kasus-pelanggaran',
                 ],
                 [
                     'icon' => 'award',
-                    'name' => 'Buku Kas Poin',
+                    'name' => 'Buku Saku Poin',
                     'path' => $poinPath,
                 ],
             ];

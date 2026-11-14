@@ -20,11 +20,20 @@ class DisciplineCaseController extends Controller
     use AuthorizesRequests;
     use \App\Http\Controllers\Concerns\ScopesWaliKelas;
 
+    /** Daftar role yang dianggap staf sekolah. */
+    private const STAFF_ROLES = ['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'];
+
     /** Menampilkan daftar semua pelanggaran berdasarkan status */
     public function index()
     {
         $user = auth()->user();
-        $isSiswa = $user?->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah']);
+        abort_unless(
+            $user?->hasAnyRole(array_merge(self::STAFF_ROLES, ['siswa'])),
+            403,
+            'Akses ditolak. Fitur ini hanya untuk pengguna terdaftar.'
+        );
+
+        $isSiswa = $user?->hasRole('siswa') && ! $user->hasAnyRole(self::STAFF_ROLES);
 
         $status = request('status');
         $search = request('search');
@@ -270,7 +279,13 @@ class DisciplineCaseController extends Controller
     public function show(DisciplineCase $disciplineCase)
     {
         $user = auth()->user();
-        if ($user && $user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])) {
+        abort_unless(
+            $user?->hasAnyRole(array_merge(self::STAFF_ROLES, ['siswa'])),
+            403,
+            'Akses ditolak. Fitur ini hanya untuk pengguna terdaftar.'
+        );
+
+        if ($user && $user->hasRole('siswa') && ! $user->hasAnyRole(self::STAFF_ROLES)) {
             $studentId = $user->student?->id;
             abort_if(! $studentId || $disciplineCase->student_id !== $studentId, 403, 'Akses ditolak. Anda hanya dapat melihat kasus Anda sendiri.');
         }

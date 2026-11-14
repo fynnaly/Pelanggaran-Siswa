@@ -9,13 +9,23 @@ use App\Models\Student;
 class PointLedgerController extends Controller
 {
     use \App\Http\Controllers\Concerns\ScopesWaliKelas;
+
+    /** Daftar role yang dianggap staf sekolah. */
+    private const STAFF_ROLES = ['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'];
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
         $user = auth()->user();
-        $isSiswa = $user?->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah']);
+        abort_unless(
+            $user?->hasAnyRole(array_merge(self::STAFF_ROLES, ['siswa'])),
+            403,
+            'Akses ditolak. Fitur ini hanya untuk pengguna terdaftar.'
+        );
+
+        $isSiswa = $user?->hasRole('siswa') && ! $user->hasAnyRole(self::STAFF_ROLES);
 
         // Jika siswa membuka riwayat poin, redirect langsung ke riwayat miliknya sendiri
         if ($isSiswa) {
@@ -71,9 +81,15 @@ class PointLedgerController extends Controller
     public function forStudent(Student $student)
     {
         $user = auth()->user();
-        if ($user && $user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])) {
+        abort_unless(
+            $user?->hasAnyRole(array_merge(self::STAFF_ROLES, ['siswa'])),
+            403,
+            'Akses ditolak. Fitur ini hanya untuk pengguna terdaftar.'
+        );
+
+        if ($user && $user->hasRole('siswa') && ! $user->hasAnyRole(self::STAFF_ROLES)) {
             $myStudentId = $user->student?->id;
-            abort_if(! $myStudentId || $student->id !== $myStudentId, 403, 'Akses ditolak. Anda hanya boleh melihat buku kas poin Anda sendiri.');
+            abort_if(! $myStudentId || $student->id !== $myStudentId, 403, 'Akses ditolak. Anda hanya boleh melihat buku saku poin Anda sendiri.');
         }
 
         // Scope wali kelas: hanya siswa di kelas binaan
@@ -110,9 +126,15 @@ class PointLedgerController extends Controller
     public function show(PointLedger $pointLedger)
     {
         $user = auth()->user();
-        if ($user && $user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])) {
+        abort_unless(
+            $user?->hasAnyRole(array_merge(self::STAFF_ROLES, ['siswa'])),
+            403,
+            'Akses ditolak. Fitur ini hanya untuk pengguna terdaftar.'
+        );
+
+        if ($user && $user->hasRole('siswa') && ! $user->hasAnyRole(self::STAFF_ROLES)) {
             $myStudentId = $user->student?->id;
-            abort_if(! $myStudentId || $pointLedger->student_id !== $myStudentId, 403, 'Akses ditolak. Anda hanya boleh melihat buku kas poin Anda sendiri.');
+            abort_if(! $myStudentId || $pointLedger->student_id !== $myStudentId, 403, 'Akses ditolak. Anda hanya boleh melihat buku saku poin Anda sendiri.');
         }
 
         // Scope wali kelas: hanya boleh melihat riwayat poin siswa di kelas binaan

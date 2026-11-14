@@ -37,6 +37,8 @@ class StudentPointController extends Controller
             abort(403, 'Akses ditolak. Akun siswa Anda belum terhubung dengan data siswa.');
         }
 
+        $this->authorizeStaff();
+
         [$students] = $this->filteredStudents();
 
         $sort = request('sort', 'poin');

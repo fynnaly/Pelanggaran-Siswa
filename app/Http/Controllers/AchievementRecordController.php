@@ -30,6 +30,13 @@ class AchievementRecordController extends Controller
 
     public function index()
     {
+        $user = auth()->user();
+        abort_unless(
+            $user?->hasAnyRole(array_merge(self::STAFF_ROLES, ['siswa'])),
+            403,
+            'Akses ditolak. Fitur ini hanya untuk pengguna terdaftar.'
+        );
+
         $status = request('status');
         $search = request('search');
         $sort = request()->string('sort')->toString();
@@ -39,8 +46,7 @@ class AchievementRecordController extends Controller
 
         $query = AchievementRecord::with(['student.currentEnrollment.schoolClass', 'schoolClass', 'achievementCategory', 'disciplineCase.violationCategory', 'recorder']);
 
-        $user = auth()->user();
-        if ($user && $user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])) {
+        if ($user && $user->hasRole('siswa') && ! $user->hasAnyRole(self::STAFF_ROLES)) {
             $studentId = $user->student?->id;
             abort_unless($studentId, 403, 'Akses ditolak. Akun siswa Anda belum terhubung dengan data siswa.');
             $query->where('student_id', $studentId);
@@ -284,7 +290,13 @@ class AchievementRecordController extends Controller
     public function show(AchievementRecord $achievementRecord)
     {
         $user = auth()->user();
-        if ($user && $user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])) {
+        abort_unless(
+            $user?->hasAnyRole(array_merge(self::STAFF_ROLES, ['siswa'])),
+            403,
+            'Akses ditolak. Fitur ini hanya untuk pengguna terdaftar.'
+        );
+
+        if ($user && $user->hasRole('siswa') && ! $user->hasAnyRole(self::STAFF_ROLES)) {
             abort_unless($user->student?->id === $achievementRecord->student_id, 403, 'Akses ditolak. Anda hanya boleh melihat data prestasi Anda sendiri.');
         }
 
