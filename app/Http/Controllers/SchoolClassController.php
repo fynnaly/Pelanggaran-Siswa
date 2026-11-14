@@ -15,11 +15,13 @@ class SchoolClassController extends Controller
 
     use \App\Http\Controllers\Concerns\ScopesWaliKelas;
 
+    /** Daftar role yang dianggap staf sekolah. User tanpa role apa pun = DITOLAK. */
+    private const STAFF_ROLES = ['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'];
+
     private function authorizeStaff(): void
     {
-        $user = request()->user();
-        abort_if(
-            ! $user || ($user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])),
+        abort_unless(
+            request()->user()?->hasAnyRole(self::STAFF_ROLES),
             403,
             'Akses ditolak. Fitur ini hanya untuk staf sekolah.'
         );

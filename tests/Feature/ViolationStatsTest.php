@@ -6,8 +6,11 @@ use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\ViolationCategory;
 use App\Support\ViolationStats;
+use Spatie\Permission\Models\Role;
 
 beforeEach(function () {
+    Role::firstOrCreate(['name' => 'kesiswaan', 'guard_name' => 'web']);
+
     $year = AcademicYear::create(['name' => '2026/2027', 'start_date' => now(), 'is_active' => true, 'status' => 'active']);
     $this->class = SchoolClass::create(['name' => 'X PPLG 1', 'academic_year_id' => $year->id, 'grade_level' => 'X', 'status' => 'active']);
 
@@ -52,7 +55,9 @@ it('mengurutkan kategori dan siswa berdasarkan jumlah kasus, tanpa kasus dismiss
 
 it('halaman dashboard, laporan, dan detail kategori ter-render', function () {
     ($this->kasus)($this->budi, $this->a);
-    $this->actingAs(\App\Models\User::factory()->create(), 'web');
+    $user = \App\Models\User::factory()->create();
+    $user->assignRole('kesiswaan'); // role staf; kesiswaan = supervisor tanpa scope wali kelas
+    $this->actingAs($user, 'web');
 
     $this->get(route('dashboard'))->assertOk()->assertSee('Pelanggaran Terbanyak')->assertSee('Statistik Pelanggaran');
     $this->get(route('laporan.pelanggaran'))->assertOk()->assertSee('Kat A1')->assertSee('Budi');

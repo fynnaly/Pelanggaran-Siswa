@@ -12,14 +12,16 @@ use Illuminate\Validation\Rule;
 
 class NfcCardController extends Controller
 {
+    /** Daftar role yang dianggap staf sekolah. User tanpa role apa pun = DITOLAK. */
+    private const STAFF_ROLES = ['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'];
+
     /**
      * Pastikan pengguna adalah staf sekolah.
      */
     private function authorizeStaff(): void
     {
-        $user = auth()->user();
-        abort_if(
-            ! $user || ($user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])),
+        abort_unless(
+            request()->user()?->hasAnyRole(self::STAFF_ROLES),
             403,
             'Akses ditolak. Fitur ini hanya untuk staf sekolah.'
         );
