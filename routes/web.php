@@ -27,10 +27,12 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
 Route::middleware('auth')->group(function () {
     // Pengaturan global (nama aplikasi, kop sertifikat, tanda tangan digital) —
     // ditaruh SEBELUM resource agar tidak tertelan sebagai {student}/{user}.
-    Route::prefix('settings')->name('settings.')->group(function () {
-        Route::get('/', [SettingController::class, 'index'])->name('index');
-        Route::put('/', [SettingController::class, 'update'])->name('update');
-    });
+    Route::prefix('settings')->name('settings.')
+        ->middleware('role:admin|kesiswaan|kepala_sekolah')
+        ->group(function () {
+            Route::get('/', [SettingController::class, 'index'])->name('index');
+            Route::put('/', [SettingController::class, 'update'])->name('update');
+        });
 
     // Auth Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -68,6 +70,12 @@ Route::middleware('auth')->group(function () {
     // Kelas — promote HARUS sebelum resource agar tidak tertelan sebagai {class}
     Route::post('classes/promote', [SchoolClassController::class, 'promote'])->name('classes.promote');
     Route::resource('classes', SchoolClassController::class);
+
+    // Jurusan / Program Keahlian (tanpa destroy — hanya aktif & nonaktif)
+    Route::patch('departments/{department}/toggle-status', [\App\Http\Controllers\DepartmentController::class, 'toggleStatus'])->name('departments.toggle-status');
+    Route::resource('departments', \App\Http\Controllers\DepartmentController::class)->except(['destroy']);
+    Route::patch('jurusan/{department}/toggle-status', [\App\Http\Controllers\DepartmentController::class, 'toggleStatus'])->name('jurusan.toggle-status');
+    Route::resource('jurusan', \App\Http\Controllers\DepartmentController::class)->except(['destroy'])->names('jurusan');
 
     // PointLedger — siswa/{student} SEBELUM resource agar tidak tertelan {pointLedger}
     Route::get('point-ledgers/siswa/{student}', [PointLedgerController::class, 'forStudent'])->name('point-ledgers.siswa');
@@ -111,10 +119,13 @@ Route::middleware('auth')->group(function () {
     Route::get('laporan/pelanggaran/{violationCategory}', [ReportController::class, 'kategori'])->name('laporan.pelanggaran.kategori');
 
     // Master Pengguna — template/export/import HARUS sebelum resource agar tidak tertelan {user}
-    Route::get('users/template', [UserController::class, 'downloadTemplate'])->name('users.template');
-    Route::get('users/export', [UserController::class, 'export'])->name('users.export');
-    Route::post('users/import', [UserController::class, 'import'])->name('users.import');
-    Route::resource('users', UserController::class);
+    // + middleware role: pengelola saja (admin/kesiswaan/kepala sekolah).
+    Route::middleware('role:admin|kesiswaan|kepala_sekolah')->group(function () {
+        Route::get('users/template', [UserController::class, 'downloadTemplate'])->name('users.template');
+        Route::get('users/export', [UserController::class, 'export'])->name('users.export');
+        Route::post('users/import', [UserController::class, 'import'])->name('users.import');
+        Route::resource('users', UserController::class);
+    });
 
     // Notifikasi — tandai semua sebagai dibaca
     Route::put('/notifications/mark-read', [NotificationController::class, 'markRead'])->name('notifications.mark-read');

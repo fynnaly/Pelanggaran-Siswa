@@ -43,6 +43,8 @@ class UserController extends Controller
      */
     public function index()
     {
+        $this->authorizeManagement();
+
         $type = request('type');
         $jabatan = request('jabatan');
         $q = request('q');
@@ -140,6 +142,8 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
+        $this->authorizeManagement();
+
         $user->load(['roles', 'student.currentEnrollment.schoolClass', 'student.currentEnrollment.academicYear']);
 
         return view('users.show', compact('user'));
@@ -233,6 +237,8 @@ class UserController extends Controller
      */
     public function downloadTemplate()
     {
+        $this->authorizeManagement();
+
         $path = public_path('template-pengguna.xlsx');
 
         if (is_file($path)) {
@@ -254,6 +260,8 @@ class UserController extends Controller
     /** Export pengguna ke XLSX dengan styling header */
     public function export()
     {
+        $this->authorizeManagement();
+
         $users = User::with(['roles', 'student.currentEnrollment.schoolClass'])
             ->orderBy('name')
             ->limit(5000)

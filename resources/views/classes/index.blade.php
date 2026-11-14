@@ -3,7 +3,10 @@
         <div class="page-header">
             <div><h1>Daftar Kelas</h1><p class="text-muted text-sm" data-live-count>{{ $classes->total() }} kelas</p></div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
-                <a href="{{ route('classes.create') }}" class="btn btn-primary"><i data-lucide="plus" class="icon-sm"></i> Tambah</a>
+                @php $isManager = auth()->user()?->hasAnyRole(['admin', 'bk', 'kesiswaan', 'kepala_sekolah']); @endphp
+                @if($isManager)
+                    <a href="{{ route('classes.create') }}" class="btn btn-primary"><i data-lucide="plus" class="icon-sm"></i> Tambah</a>
+                @endif
             </div>
         </div>
     </x-slot>
@@ -34,6 +37,10 @@
                             <td><span class="badge {{ ($class->status ?? 'active')==='active'?'badge-success':'' }}" style="{{ ($class->status ?? 'active')!=='active'?'background:var(--surface);color:var(--on-surface-muted)':'' }}">{{ ($class->status ?? 'active')==='active'?'Aktif':'Nonaktif' }}</span></td>
                             <td class="mono" style="width:96px;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums">{{ $class->students_count }}</td>
                             <td>
+                                @php $isManager = auth()->user()?->hasAnyRole(['admin', 'bk', 'kesiswaan', 'kepala_sekolah']); @endphp
+                                @unless($isManager)
+                                    {{ $class->homeroomTeacher?->name ?? '-' }}
+                                @else
                                 <form action="{{ route('classes.update', $class) }}" method="POST" class="inline" style="display:inline">
                                     @csrf @method('PUT')
                                     <select name="homeroom_teacher_id" class="input" style="width:auto;padding:8px 32px 8px 10px;font-size:.8125rem" onchange="this.form.submit()"
@@ -44,11 +51,14 @@
                                         @endforeach
                                     </select>
                                 </form>
+                                @endif
                             </td>
                             <td><div class="action-cell">
                                 <a href="{{ route('classes.show', $class) }}" class="action-btn" title="Detail"><i data-lucide="eye" style="width:14px;height:14px"></i></a>
-                                <a href="{{ route('classes.edit', $class) }}" class="action-btn" title="Edit"><i data-lucide="pencil" style="width:14px;height:14px"></i></a>
-                                <form action="{{ route('classes.destroy', $class) }}" method="POST" class="inline" onsubmit="return confirm('Hapus kelas {{ $class->name }}?')">@csrf @method('DELETE')<button class="action-btn" title="Hapus" style="color:var(--danger)"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button></form>
+                                @if($isManager)
+                                    <a href="{{ route('classes.edit', $class) }}" class="action-btn" title="Edit"><i data-lucide="pencil" style="width:14px;height:14px"></i></a>
+                                    <form action="{{ route('classes.destroy', $class) }}" method="POST" class="inline" onsubmit="return confirm('Hapus kelas {{ $class->name }}?')">@csrf @method('DELETE')<button class="action-btn" title="Hapus" style="color:var(--danger)"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button></form>
+                                @endif
                             </div></td>
                         </tr>
                     @empty

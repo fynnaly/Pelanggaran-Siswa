@@ -14,8 +14,20 @@ class ReportController extends Controller
 {
     use ScopesWaliKelas;
 
+    private function authorizeStaff(): void
+    {
+        $user = request()->user();
+        abort_if(
+            ! $user || ($user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])),
+            403,
+            'Akses ditolak. Laporan hanya dapat diakses oleh staf sekolah.'
+        );
+    }
+
     public function index(Request $request): View
     {
+        $this->authorizeStaff();
+
         $filters = $this->filters($request);
 
         $classes = SchoolClass::orderBy('name')
@@ -34,6 +46,8 @@ class ReportController extends Controller
 
     public function kategori(Request $request, ViolationCategory $violationCategory): View
     {
+        $this->authorizeStaff();
+
         $filters = $this->filters($request);
 
         $sort = in_array($request->query('sort'), ['tanggal', 'nama', 'kelas'], true) ? $request->query('sort') : 'tanggal';

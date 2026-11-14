@@ -11,6 +11,16 @@ class AcademicYearController extends Controller
 {
     private const MANAGER_ROLES = ['admin', 'kesiswaan', 'kepala_sekolah'];
 
+    private function authorizeStaff(): void
+    {
+        $user = request()->user();
+        abort_if(
+            ! $user || ($user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])),
+            403,
+            'Akses ditolak. Fitur ini hanya untuk staf sekolah.'
+        );
+    }
+
     private function authorizeManagement(): void
     {
         abort_unless(
@@ -23,6 +33,8 @@ class AcademicYearController extends Controller
     /** Display a listing of the resource. */
     public function index(Request $request)
     {
+        $this->authorizeStaff();
+
         $sort = $request->string('sort')->toString();
         $order = strtolower($request->string('order')->toString()) === 'asc' ? 'asc' : 'desc';
         $allowed = ['id', 'name', 'start_date', 'end_date', 'created_at'];

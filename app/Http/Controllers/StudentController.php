@@ -16,6 +16,18 @@ class StudentController extends Controller
 {
     private const MANAGER_ROLES = ['admin', 'bk', 'kesiswaan', 'kepala_sekolah'];
 
+    use \App\Http\Controllers\Concerns\ScopesWaliKelas;
+
+    private function authorizeStaff(): void
+    {
+        $user = request()->user();
+        abort_if(
+            ! $user || ($user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])),
+            403,
+            'Akses ditolak. Fitur ini hanya untuk staf sekolah.'
+        );
+    }
+
     private function authorizeManagement(): void
     {
         abort_unless(
@@ -28,6 +40,8 @@ class StudentController extends Controller
     /** Daftar siswa, terpisah dari data poin. */
     public function index()
     {
+        $this->authorizeStaff();
+
         $q = request('q');
         $classId = request('class_id');
         $sort = request('sort', 'created_at');
@@ -43,12 +57,19 @@ class StudentController extends Controller
 
         $allClasses = SchoolClass::where('academic_year_id', $filterYearId)->orderBy('name')->get();
 
+        $waliScope = $this->waliKelasScope();
+        if ($waliScope !== null) {
+            $allClasses = $allClasses->filter(fn ($c) => in_array($c->id, $waliScope, true))->values();
+        }
+
         $students = Student::with([
                 'currentEnrollment.schoolClass',
                 'currentEnrollment.academicYear',
                 'enrollments.schoolClass',
                 'enrollments.academicYear',
             ])
+            ->when($waliScope !== null, fn ($query) => $query
+                ->whereHas('currentEnrollment', fn ($sub) => $sub->whereIn('class_id', $waliScope)))
             ->whereHas('enrollments', fn ($q) => $q
                 ->when($selectedYearId, fn ($sub) => $sub->where('academic_year_id', $selectedYearId))
                 ->when($classId, fn ($sub) => $sub->where('class_id', $classId)))
@@ -198,6 +219,22 @@ class StudentController extends Controller
     /** Detail siswa (master only) */
     public function show(Student $student)
     {
+        $user = request()->user();
+        if ($user && $user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])) {
+            abort_unless($user->student?->id === $student->id, 403, 'Akses ditolak. Anda hanya dapat melihat profil Anda sendiri.');
+        }
+
+        // Scope wali kelas: hanya boleh melihat siswa di kelas binaan
+        $waliScope = $this->waliKelasScope();
+        if ($waliScope !== null) {
+            $studentClassId = $student->currentEnrollment?->class_id;
+            abort_unless(
+                $studentClassId && in_array($studentClassId, $waliScope, true),
+                403,
+                'Akses ditolak. Anda hanya dapat melihat data siswa di kelas yang Anda bimbing.'
+            );
+        }
+
         $student->load([
             'currentEnrollment.schoolClass',
             'currentEnrollment.academicYear',
@@ -260,6 +297,8 @@ class StudentController extends Controller
      */
     public function search(Request $request)
     {
+        $this->authorizeStaff();
+
         $classId = $request->input('class_id');
         $q = $request->input('q', '');
 
@@ -318,6 +357,8 @@ class StudentController extends Controller
     /** Download template XLSX untuk import siswa (file asli ber-style, siap unduh). */
     public function downloadTemplate()
     {
+        $this->authorizeManagement();
+
         $path = public_path('template-siswa.xlsx');
 
         if (is_file($path)) {
@@ -342,6 +383,8 @@ class StudentController extends Controller
     /** Export daftar siswa ke XLSX (paginate 5000, include poin terkini) */
     public function export()
     {
+        $this->authorizeManagement();
+
         $students = Student::with(['currentEnrollment.schoolClass', 'currentEnrollment.academicYear', 'pointLedgers' => fn ($q) => $q->orderByDesc('id')])
             ->latest('nisn')
             ->limit(5000)

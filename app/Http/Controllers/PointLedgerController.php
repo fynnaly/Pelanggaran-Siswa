@@ -8,6 +8,7 @@ use App\Models\Student;
 
 class PointLedgerController extends Controller
 {
+    use \App\Http\Controllers\Concerns\ScopesWaliKelas;
     /**
      * Display a listing of the resource.
      */
@@ -17,8 +18,11 @@ class PointLedgerController extends Controller
         $isSiswa = $user?->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah']);
 
         // Jika siswa membuka riwayat poin, redirect langsung ke riwayat miliknya sendiri
-        if ($isSiswa && $user->student) {
-            return redirect()->route('point-ledgers.siswa', $user->student);
+        if ($isSiswa) {
+            if ($user->student) {
+                return redirect()->route('point-ledgers.siswa', $user->student);
+            }
+            abort(403, 'Akses ditolak. Akun siswa Anda belum terhubung dengan data siswa.');
         }
 
         $search = $request->string('search')->trim();
@@ -29,8 +33,18 @@ class PointLedgerController extends Controller
         $allowed = ['id', 'created_at', 'amount', 'balance_after', 'direction', 'transaction_type'];
         $sort = in_array($sort, $allowed, true) ? $sort : 'created_at';
 
-        $query = PointLedger::with(['student.currentEnrollment.schoolClass', 'academicYear'])
-            ->when($search, fn($q, $s) => $q->whereHas('student', fn($sq) =>
+        $query = PointLedger::with(['student.currentEnrollment.schoolClass', 'academicYear']);
+
+        // Scope wali kelas: hanya riwayat poin siswa di kelas binaan
+        $waliScope = $this->waliKelasScope();
+        if ($waliScope !== null) {
+            $query->whereHas(
+                'student.currentEnrollment',
+                fn ($eq) => $eq->whereIn('class_id', $waliScope)
+            );
+        }
+
+        $query->when($search, fn($q, $s) => $q->whereHas('student', fn($sq) =>
                 $sq->where('full_name', 'like', "%{$s}%")
                     ->orWhere('nisn', 'like', "%{$s}%")
             ))
@@ -62,6 +76,17 @@ class PointLedgerController extends Controller
             abort_if(! $myStudentId || $student->id !== $myStudentId, 403, 'Akses ditolak. Anda hanya boleh melihat buku kas poin Anda sendiri.');
         }
 
+        // Scope wali kelas: hanya siswa di kelas binaan
+        $waliScope = $this->waliKelasScope();
+        if ($waliScope !== null) {
+            $studentClassId = $student->currentEnrollment?->class_id;
+            abort_if(
+                ! $studentClassId || ! in_array($studentClassId, $waliScope, true),
+                403,
+                'Akses ditolak. Siswa tersebut bukan anggota kelas yang Anda bimbing.'
+            );
+        }
+
         // Ambil tahun ajaran terakhir yang punya transaksi untuk siswa ini,
         // supaya kolom "Saldo" (balance_after) tetap bermakna (per-tahun).
         $yearId = PointLedger::where('student_id', $student->id)
@@ -88,6 +113,17 @@ class PointLedgerController extends Controller
         if ($user && $user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])) {
             $myStudentId = $user->student?->id;
             abort_if(! $myStudentId || $pointLedger->student_id !== $myStudentId, 403, 'Akses ditolak. Anda hanya boleh melihat buku kas poin Anda sendiri.');
+        }
+
+        // Scope wali kelas: hanya boleh melihat riwayat poin siswa di kelas binaan
+        $waliScope = $this->waliKelasScope();
+        if ($waliScope !== null) {
+            $studentClassId = $pointLedger->student?->currentEnrollment?->class_id;
+            abort_if(
+                ! $studentClassId || ! in_array($studentClassId, $waliScope, true),
+                403,
+                'Akses ditolak. Siswa tersebut bukan anggota kelas yang Anda bimbing.'
+            );
         }
 
         $pointLedger->load(['student.currentEnrollment.schoolClass', 'academicYear', 'creator', 'verifier']);

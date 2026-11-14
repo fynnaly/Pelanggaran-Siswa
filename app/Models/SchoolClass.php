@@ -13,6 +13,7 @@ class SchoolClass extends Model
 
     protected $fillable = [
         'academic_year_id',
+        'department_id',
         'name',
         'grade_level',
         'major',
@@ -30,6 +31,12 @@ class SchoolClass extends Model
     public function academicYear(): BelongsTo
     {
         return $this->belongsTo(AcademicYear::class);
+    }
+
+    /** Jurusan / Program Keahlian */
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
     }
 
     public function homeroomTeacher(): BelongsTo

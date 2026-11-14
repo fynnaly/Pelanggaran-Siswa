@@ -6,7 +6,10 @@
                 <p class="text-muted text-sm" data-live-count>{{ $cases->total() }} total kasus</p>
             </div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
-                <a href="{{ route('kasus-pelanggaran.create') }}" class="btn btn-primary"><i data-lucide="plus" class="icon-sm"></i> Buat Kasus</a>
+                @php $isSiswaMurni = auth()->user()?->hasRole('siswa') && ! auth()->user()->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah']); @endphp
+                @unless($isSiswaMurni)
+                    <a href="{{ route('kasus-pelanggaran.create') }}" class="btn btn-primary"><i data-lucide="plus" class="icon-sm"></i> Buat Kasus</a>
+                @endunless
             </div>
         </div>
     </x-slot>

@@ -6,7 +6,10 @@
                 <p class="text-muted text-sm" data-live-count>{{ $records->total() }} total rekam</p>
             </div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
-                <a href="{{ route('achievement-records.create') }}" class="btn btn-primary"><i data-lucide="plus" class="icon-sm"></i> Tambah</a>
+                @php $isSiswaMurni = auth()->user()?->hasRole('siswa') && ! auth()->user()->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah']); @endphp
+                @unless($isSiswaMurni)
+                    <a href="{{ route('achievement-records.create') }}" class="btn btn-primary"><i data-lucide="plus" class="icon-sm"></i> Tambah</a>
+                @endunless
             </div>
         </div>
     </x-slot>
@@ -74,7 +77,7 @@
                             <td class="text-sm text-muted">{{ $rec->created_at?->format('d M Y') }}</td>
                             <td><div class="action-cell">
                                 <a href="{{ route('achievement-records.show', $rec) }}" class="action-btn" title="Lihat"><i data-lucide="eye" style="width:14px;height:14px"></i></a>
-                                @if($rec->status==='pending')
+                                @if($rec->status==='pending' && auth()->user()?->hasAnyRole(['bk', 'kesiswaan', 'admin', 'kepala_sekolah']))
                                     <form action="{{ route('achievement-records.validate', $rec) }}" method="POST" class="inline" onsubmit="return confirm('Validasi prestasi ini? Poin akan ditambahkan.')">@csrf @method('PATCH')<button class="action-btn" title="Validasi" style="color:var(--tertiary)"><i data-lucide="check" style="width:14px;height:14px"></i></button></form>
                                 @endif
                             </div></td>

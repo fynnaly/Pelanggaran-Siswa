@@ -18,6 +18,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 class DisciplineCaseController extends Controller
 {
     use AuthorizesRequests;
+    use \App\Http\Controllers\Concerns\ScopesWaliKelas;
 
     /** Menampilkan daftar semua pelanggaran berdasarkan status */
     public function index()
@@ -41,6 +42,18 @@ class DisciplineCaseController extends Controller
         if ($isSiswa) {
             $studentId = $user->student?->id ?? 0;
             $query->where('student_id', $studentId);
+        }
+
+        // Scope wali kelas: pelanggaran siswa di kelas binaan + kasus yang ia laporkan
+        // sendiri (guru non-wali tetap bisa melacak status laporannya).
+        $waliScope = $this->waliKelasScope();
+        if ($waliScope !== null) {
+            $query->where(function ($q) use ($waliScope, $user) {
+                $q->whereHas(
+                    'student.currentEnrollment',
+                    fn ($eq) => $eq->whereIn('class_id', $waliScope)
+                )->orWhere('reporter_id', $user->id);
+            });
         }
 
         if ($status) {
@@ -182,7 +195,11 @@ class DisciplineCaseController extends Controller
         $cat = ViolationCategory::find($validated['violation_category_id']);
         $createdCases = [];
 
-        DB::transaction(function () use ($studentIds, $validated, $description, $incidentYear, $cat, &$createdCases) {
+        // BK & Kesiswaan: kasus baru langsung konfirmasi & masuk penanganan
+        // (debit poin), tanpa tahap validasi terpisah.
+        $autoHandling = (bool) auth()->user()?->hasAnyRole(['bk', 'kesiswaan']);
+
+        DB::transaction(function () use ($studentIds, $validated, $description, $incidentYear, $cat, $autoHandling, &$createdCases) {
             foreach ($studentIds as $sid) {
                 $student = Student::with(['enrollments.schoolClass'])->findOrFail($sid);
                 $enrollment = $student->enrollments
@@ -194,7 +211,7 @@ class DisciplineCaseController extends Controller
                 $classId = $validated['class_id'] ?? $enrollment?->class_id;
                 $academicYearId = $enrollment?->academic_year_id ?? $incidentYear?->id;
 
-                $createdCases[] = DisciplineCase::create([
+                $case = DisciplineCase::create([
                     'case_number' => DisciplineCase::generateCaseNumber(),
                     'student_id' => $sid,
                     'enrollment_id' => $enrollment?->id,
@@ -209,13 +226,20 @@ class DisciplineCaseController extends Controller
                     'status' => 'found',
                     'is_recurring' => $cat->is_recurring ?? false,
                 ]);
+
+                if ($autoHandling) {
+                    $this->applyStatusChange($case, 'handling', 'Dikonfirmasi otomatis oleh ' . auth()->user()->name);
+                }
+
+                $createdCases[] = $case;
             }
         });
 
         $count = count($createdCases);
+        $statusLabel = $autoHandling ? 'Penanganan' : 'Temuan';
         $msg = $count > 1
-            ? "{$count} laporan pelanggaran berhasil dicatat secara kolektif (status: Temuan)."
-            : 'Laporan pelanggaran ' . $createdCases[0]->case_number . ' berhasil dicatat (status: Temuan).';
+            ? "{$count} laporan pelanggaran berhasil dicatat secara kolektif (status: {$statusLabel})."
+            : 'Laporan pelanggaran ' . $createdCases[0]->case_number . ' berhasil dicatat (status: ' . $statusLabel . ').';
 
         // Notifikasi ke BK & Kesiswaan bila kasus dicatat
         try {
@@ -249,6 +273,20 @@ class DisciplineCaseController extends Controller
         if ($user && $user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])) {
             $studentId = $user->student?->id;
             abort_if(! $studentId || $disciplineCase->student_id !== $studentId, 403, 'Akses ditolak. Anda hanya dapat melihat kasus Anda sendiri.');
+        }
+
+        // Scope wali kelas: boleh melihat jika siswa adalah anggota kelas binaan,
+        // ATAU jika ia sendiri yang melaporkan kasus tersebut.
+        $waliScope = $this->waliKelasScope();
+        if ($waliScope !== null) {
+            $studentClassId = $disciplineCase->student?->currentEnrollment?->class_id ?? $disciplineCase->class_id;
+            $isOwnClass = $studentClassId && in_array($studentClassId, $waliScope, true);
+            $isReporter = $disciplineCase->reporter_id === $user->id;
+            abort_unless(
+                $isOwnClass || $isReporter,
+                403,
+                'Akses ditolak. Anda hanya dapat memantau kasus siswa di kelas binaan atau yang Anda laporkan sendiri.'
+            );
         }
 
         $disciplineCase->load([

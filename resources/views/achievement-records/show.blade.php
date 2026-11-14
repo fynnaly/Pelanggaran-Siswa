@@ -3,7 +3,7 @@
         <div class="page-header">
             <div><h1 style="display:flex;align-items:center;gap:var(--sp-sm)"><i data-lucide="award" class="icon"></i> Rekam Prestasi</h1></div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
-                @if($achievementRecord->status==='pending')
+                @if($achievementRecord->status==='pending' && auth()->user()?->hasAnyRole(['bk', 'kesiswaan', 'admin', 'kepala_sekolah']))
                     <form action="{{ route('achievement-records.validate', $achievementRecord) }}" method="POST" onsubmit="return confirm('Validasi prestasi ini? Poin akan ditambahkan.')">@csrf @method('PATCH')<button class="btn btn-primary btn-sm"><i data-lucide="check" class="icon-sm"></i> Validasi</button></form>
                     <form action="{{ route('achievement-records.dismiss', $achievementRecord) }}" method="POST" onsubmit="return confirm('Tolak rekam prestasi ini?')">@csrf @method('PATCH')<button class="btn btn-danger btn-sm"><i data-lucide="x" class="icon-sm"></i> Tolak</button></form>
                 @endif

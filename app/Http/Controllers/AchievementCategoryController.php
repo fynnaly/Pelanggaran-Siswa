@@ -10,6 +10,16 @@ class AchievementCategoryController extends Controller
 {
     private const MANAGER_ROLES = ['admin', 'bk', 'kesiswaan', 'kepala_sekolah'];
 
+    private function authorizeStaff(): void
+    {
+        $user = request()->user();
+        abort_if(
+            ! $user || ($user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])),
+            403,
+            'Akses ditolak. Fitur ini hanya untuk staf sekolah.'
+        );
+    }
+
     private function authorizeManagement(): void
     {
         abort_unless(
@@ -21,6 +31,8 @@ class AchievementCategoryController extends Controller
 
     public function index(Request $request)
     {
+        $this->authorizeStaff();
+
         $search = request('search');
         $sort = $request->string('sort')->toString();
         $order = strtolower($request->string('order')->toString()) === 'asc' ? 'asc' : 'desc';

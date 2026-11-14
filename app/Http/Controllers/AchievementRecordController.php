@@ -14,6 +14,17 @@ use Illuminate\Support\Facades\DB;
 
 class AchievementRecordController extends Controller
 {
+    use \App\Http\Controllers\Concerns\ScopesWaliKelas;
+    private function authorizeStaff(): void
+    {
+        $user = auth()->user();
+        abort_if(
+            ! $user || ($user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])),
+            403,
+            'Akses ditolak. Fitur ini hanya untuk staf sekolah.'
+        );
+    }
+
     public function index()
     {
         $status = request('status');
@@ -24,6 +35,25 @@ class AchievementRecordController extends Controller
         $sort = in_array($sort, $allowed, true) ? $sort : 'created_at';
 
         $query = AchievementRecord::with(['student.currentEnrollment.schoolClass', 'schoolClass', 'achievementCategory', 'disciplineCase.violationCategory', 'recorder']);
+
+        $user = auth()->user();
+        if ($user && $user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])) {
+            $studentId = $user->student?->id;
+            abort_unless($studentId, 403, 'Akses ditolak. Akun siswa Anda belum terhubung dengan data siswa.');
+            $query->where('student_id', $studentId);
+        }
+
+        // Scope wali kelas: pencapaian siswa di kelas binaan + prestasi yang ia rekam
+        // sendiri (guru non-wali tetap bisa melacak status validasinya).
+        $waliScope = $this->waliKelasScope();
+        if ($waliScope !== null) {
+            $query->where(function ($q) use ($waliScope, $user) {
+                $q->whereHas(
+                    'student.currentEnrollment',
+                    fn ($eq) => $eq->whereIn('class_id', $waliScope)
+                )->orWhere('recorded_by', $user->id);
+            });
+        }
 
         if ($sort === 'created_at') {
             $query->latest('created_at');
@@ -46,6 +76,8 @@ class AchievementRecordController extends Controller
 
     public function create()
     {
+        $this->authorizeStaff();
+
         // Hanya sub-kategori (punya induk) — kategori induk berpoin 0 tidak dipilih
         // saat mencatat prestasi.
         $categories = AchievementCategory::where('status', 'active')
@@ -108,8 +140,8 @@ class AchievementRecordController extends Controller
      */
     public function openCases(Student $student)
     {
-        // Dilindungi middleware 'auth' sama seperti index/create/store — tidak
-        // memanggil authorize() di sini supaya konsisten dengan metode lain.
+        $this->authorizeStaff();
+
         $cases = DisciplineCase::with(['violationCategory', 'schoolClass'])
             ->where('student_id', $student->id)
             ->whereNotIn('status', ['closed', 'dismissed'])
@@ -137,6 +169,8 @@ class AchievementRecordController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorizeStaff();
+
         // Batas validasi = panjang kolom DB (VARCHAR 150/20/50) — sinkron dengan
         // migration sync_schema_phase2, supaya validasi lolos tapi SQL gagal tak terjadi.
         //
@@ -169,6 +203,10 @@ class AchievementRecordController extends Controller
         $activeYear = AcademicYear::where('is_active', true)->first();
         $caseId = $validated['discipline_case_id'] ?? null;
         $createdRecords = [];
+
+        // BK & Kesiswaan: rekam prestasi langsung diverifikasi (kredit poin),
+        // tanpa tahap validasi terpisah.
+        $autoVerify = (bool) auth()->user()?->hasAnyRole(['bk', 'kesiswaan']);
 
         DB::transaction(function () use ($studentIds, $validated, $category, $activeYear, $caseId, &$createdRecords) {
             foreach ($studentIds as $sid) {
@@ -210,25 +248,57 @@ class AchievementRecordController extends Controller
             }
         });
 
+        if ($autoVerify) {
+            foreach ($createdRecords as $record) {
+                if ($record->status === 'pending') {
+                    $this->verifyRecord($record);
+                }
+            }
+        }
+
         $count = count($createdRecords);
         if ($count === 1) {
             $record = $createdRecords[0];
-            $pesan = $record->isRedemption()
-                ? 'Rekam prestasi dicatat sebagai penebusan kasus ' . $record->disciplineCase?->case_number . ' (status: pending).'
-                : 'Rekam prestasi berhasil dicatat (status: pending).';
+            if ($autoVerify) {
+                $pesan = 'Rekam prestasi dicatat dan langsung diverifikasi (poin +' . number_format((int) $record->points_awarded) . ' ditambahkan).';
+            } else {
+                $pesan = $record->isRedemption()
+                    ? 'Rekam prestasi dicatat sebagai penebusan kasus ' . $record->disciplineCase?->case_number . ' (status: pending).'
+                    : 'Rekam prestasi berhasil dicatat (status: pending).';
+            }
 
             return redirect()
                 ->route('achievement-records.show', $record)
                 ->with('success', $pesan);
         }
 
+        $statusAkhir = $autoVerify ? 'langsung diverifikasi' : 'status: pending';
         return redirect()
             ->route('achievement-records.index')
-            ->with('success', "{$count} catatan prestasi berhasil direkam secara kolektif (status: pending).");
+            ->with('success', "{$count} catatan prestasi berhasil direkam secara kolektif ({$statusAkhir}).");
     }
 
     public function show(AchievementRecord $achievementRecord)
     {
+        $user = auth()->user();
+        if ($user && $user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])) {
+            abort_unless($user->student?->id === $achievementRecord->student_id, 403, 'Akses ditolak. Anda hanya boleh melihat data prestasi Anda sendiri.');
+        }
+
+        // Scope wali kelas: boleh melihat jika siswa adalah anggota kelas binaan,
+        // ATAU jika ia sendiri yang merekam prestasi tersebut.
+        $waliScope = $this->waliKelasScope();
+        if ($waliScope !== null) {
+            $studentClassId = $achievementRecord->student?->currentEnrollment?->class_id ?? $achievementRecord->class_id;
+            $isOwnClass = $studentClassId && in_array($studentClassId, $waliScope, true);
+            $isRecorder = $achievementRecord->recorded_by === $user->id;
+            abort_unless(
+                $isOwnClass || $isRecorder,
+                403,
+                'Akses ditolak. Anda hanya dapat memantau prestasi siswa di kelas binaan atau yang Anda rekam sendiri.'
+            );
+        }
+
         $achievementRecord->load(['student.currentEnrollment.schoolClass', 'enrollment.schoolClass', 'schoolClass', 'achievementCategory', 'disciplineCase.violationCategory', 'recorder', 'verifier', 'pointLedger']);
 
         return view('achievement-records.show', compact('achievementRecord'));
@@ -236,7 +306,7 @@ class AchievementRecordController extends Controller
 
     private function authorizeVerifier(): void
     {
-        if (! auth()->user()?->hasAnyRole(['bk', 'kesiswaan', 'admin'])) {
+        if (! auth()->user()?->hasAnyRole(['bk', 'kesiswaan', 'admin', 'kepala_sekolah'])) {
             abort(403, 'Anda tidak memiliki hak akses untuk memvalidasi prestasi.');
         }
     }
@@ -251,6 +321,20 @@ class AchievementRecordController extends Controller
                 ->with('error', 'Hanya rekam prestasi dengan status pending yang bisa divalidasi.');
         }
 
+        $this->verifyRecord($achievementRecord);
+
+        return redirect()
+            ->route('achievement-records.index')
+            ->with('success', 'Rekam prestasi diverifikasi, poin +' . $achievementRecord->points_awarded . ' berhasil ditambahkan.');
+    }
+
+    /**
+     * Verifikasi satu rekam prestasi: pending → verified + kredit poin ke
+     * ledger. DIPAKAI BERSAMA oleh validate() (manual) dan store() (otomatis
+     * BK / Kesiswaan) supaya aturan kredit tidak terpecah dua.
+     */
+    private function verifyRecord(AchievementRecord $achievementRecord): void
+    {
         $points = $achievementRecord->points_awarded;
 
         DB::transaction(function () use ($achievementRecord, $points) {
@@ -283,10 +367,6 @@ class AchievementRecordController extends Controller
                 'verified_at' => now(),
             ]);
         });
-
-        return redirect()
-            ->route('achievement-records.index')
-            ->with('success', 'Rekam prestasi diverifikasi, poin +' . $points . ' berhasil ditambahkan.');
     }
 
     public function dismiss(Request $request, AchievementRecord $achievementRecord)

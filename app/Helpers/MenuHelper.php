@@ -32,6 +32,59 @@ class MenuHelper
             ];
         }
 
+        // Guru / wali kelas murni: pemantauan kelas binaan + lapor kasus.
+        // Tanpa menu master data, laporan, atau validasi.
+        $isGuruMurni = $user?->hasAnyRole(['guru', 'wali_kelas'])
+            && ! $user->hasAnyRole(['admin', 'bk', 'kesiswaan', 'kepala_sekolah']);
+        if ($isGuruMurni) {
+            $guruMenu = [
+                [
+                    'icon' => 'dashboard',
+                    'name' => 'Dashboard',
+                    'path' => '/dashboard',
+                ],
+            ];
+            if ($user->hasRole('wali_kelas')) {
+                $guruMenu[] = [
+                    'icon' => 'tables',
+                    'name' => 'Pemantauan Kelas',
+                    'path' => '/classes',
+                ];
+            }
+            $guruMenu[] = [
+                'icon' => 'shield-alert',
+                'name' => 'Kasus Disiplin',
+                'path' => '/kasus-pelanggaran',
+            ];
+            $guruMenu[] = [
+                'icon' => 'trophy',
+                'name' => 'Rekam Prestasi',
+                'path' => '/achievement-records',
+            ];
+            $guruMenu[] = [
+                'icon' => 'award',
+                'name' => 'Monitor Poin',
+                'path' => '/monitor-poin',
+            ];
+
+            return $guruMenu;
+        }
+
+        // Menu ikut RBAC: Pengguna & Pengaturan hanya untuk pengelola
+        // (admin / kesiswaan / kepala sekolah) — guru, wali kelas & BK tidak.
+        $isManagement = $user?->hasAnyRole(['admin', 'kesiswaan', 'kepala_sekolah']) ?? false;
+
+        $dataReferensi = [
+            ['name' => 'Siswa', 'path' => '/students', 'pro' => false],
+            ['name' => 'Nametag NFC', 'path' => '/nametag-nfc', 'pro' => false],
+            ['name' => 'Kelas', 'path' => '/classes', 'pro' => false],
+            ['name' => 'Jurusan', 'path' => '/departments', 'pro' => false],
+            ['name' => 'Tahun Ajaran', 'path' => '/academic-years', 'pro' => false],
+        ];
+        if ($isManagement) {
+            array_unshift($dataReferensi, ['name' => 'Pengguna', 'path' => '/users', 'pro' => false]);
+        }
+
         return [
             [
                 'icon' => 'dashboard',
@@ -72,13 +125,7 @@ class MenuHelper
             [
                 'icon' => 'database',
                 'name' => 'Data Referensi',
-                'subItems' => [
-                    ['name' => 'Pengguna', 'path' => '/users', 'pro' => false],
-                    ['name' => 'Siswa', 'path' => '/students', 'pro' => false],
-                    ['name' => 'Nametag NFC', 'path' => '/nametag-nfc', 'pro' => false],
-                    ['name' => 'Kelas', 'path' => '/classes', 'pro' => false],
-                    ['name' => 'Tahun Ajaran', 'path' => '/academic-years', 'pro' => false],
-                ],
+                'subItems' => $dataReferensi,
             ],
         ];
     }
@@ -98,18 +145,22 @@ class MenuHelper
             ];
         }
 
-        return [
-            [
+        // Pengaturan hanya pengelola (admin / kesiswaan / kepala sekolah).
+        $items = [];
+        if ($user?->hasAnyRole(['admin', 'kesiswaan', 'kepala_sekolah'])) {
+            $items[] = [
                 'icon' => 'settings',
                 'name' => 'Pengaturan',
                 'path' => '/settings',
-            ],
-            [
-                'icon' => 'user-profile',
-                'name' => 'Profil Saya',
-                'path' => '/profile',
-            ],
+            ];
+        }
+        $items[] = [
+            'icon' => 'user-profile',
+            'name' => 'Profil Saya',
+            'path' => '/profile',
         ];
+
+        return $items;
     }
 
     public static function getMenuGroups()

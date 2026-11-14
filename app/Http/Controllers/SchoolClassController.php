@@ -13,6 +13,18 @@ class SchoolClassController extends Controller
 {
     private const MANAGER_ROLES = ['admin', 'bk', 'kesiswaan', 'kepala_sekolah'];
 
+    use \App\Http\Controllers\Concerns\ScopesWaliKelas;
+
+    private function authorizeStaff(): void
+    {
+        $user = request()->user();
+        abort_if(
+            ! $user || ($user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])),
+            403,
+            'Akses ditolak. Fitur ini hanya untuk staf sekolah.'
+        );
+    }
+
     private function authorizeManagement(): void
     {
         abort_unless(
@@ -25,6 +37,8 @@ class SchoolClassController extends Controller
     /** Menampilkan daftar semua kelas */
     public function index(Request $request)
     {
+        $this->authorizeStaff();
+
         $academicYears = AcademicYear::orderBy('start_date')->get();
         $activeYearId = AcademicYear::where('is_active', true)->value('id');
         $selectedYearId = request('year_id') ?: $activeYearId;
@@ -34,9 +48,16 @@ class SchoolClassController extends Controller
         $allowed = ['id', 'name', 'grade_level', 'academic_year_id', 'status', 'students_count'];
         $sort = in_array($sort, $allowed, true) ? $sort : 'id';
 
-        $classes = SchoolClass::with(['academicYear', 'homeroomTeacher', 'assistantTeacher'])->withCount('students')
-            ->where('academic_year_id', $selectedYearId)
-            ->orderBy($sort, $order)
+        $query = SchoolClass::with(['academicYear', 'homeroomTeacher', 'assistantTeacher'])->withCount('students')
+            ->where('academic_year_id', $selectedYearId);
+
+        // Scope wali kelas: null = role pengawas/penuh, array = wajib filter (bisa kosong = tidak ada kelas binaan)
+        $waliScope = $this->waliKelasScope();
+        if ($waliScope !== null) {
+            $query->whereIn('id', $waliScope);
+        }
+
+        $classes = $query->orderBy($sort, $order)
             ->paginate(20)
             ->withQueryString();
         // Hanya role 'guru' yang bisa jadi wali kelas (skill: filter whereHas('roles')).
@@ -49,6 +70,18 @@ class SchoolClassController extends Controller
     /** Menampilkan detail satu kelas beserta daftarnya */
     public function show(SchoolClass $class)
     {
+        $this->authorizeStaff();
+
+        // Wali kelas hanya boleh membuka detail kelas binaannya sendiri
+        $waliScope = $this->waliKelasScope();
+        if ($waliScope !== null) {
+            abort_unless(
+                in_array($class->id, $waliScope, true),
+                403,
+                'Akses ditolak. Anda hanya dapat memantau kelas yang Anda bimbing sebagai wali kelas.'
+            );
+        }
+
         $class->load(['academicYear', 'homeroomTeacher', 'assistantTeacher']);
         $students = $class->students()
             ->with(['currentEnrollment', 'pointLedgers'])

@@ -15,6 +15,16 @@ class StudentPointController extends Controller
 {
     use ScopesWaliKelas;
 
+    private function authorizeStaff(): void
+    {
+        $user = auth()->user();
+        abort_if(
+            ! $user || ($user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])),
+            403,
+            'Akses ditolak. Fitur ini hanya untuk staf sekolah.'
+        );
+    }
+
     public function index()
     {
         $user = auth()->user();
@@ -22,6 +32,7 @@ class StudentPointController extends Controller
             if ($user->student) {
                 return redirect()->route('point-ledgers.siswa', $user->student);
             }
+            abort(403, 'Akses ditolak. Akun siswa Anda belum terhubung dengan data siswa.');
         }
 
         [$students] = $this->filteredStudents();
@@ -55,6 +66,8 @@ class StudentPointController extends Controller
      */
     public function export()
     {
+        $this->authorizeStaff();
+
         [$students] = $this->filteredStudents();
         $students = $this->sortStudents($students, 'poin', 'desc');
 
@@ -148,6 +161,7 @@ class StudentPointController extends Controller
      */
     public function certificate(Student $student)
     {
+        $this->authorizeStaff();
         $this->authorizeStudent($student);
 
         $zone = $student->zone;
@@ -162,6 +176,8 @@ class StudentPointController extends Controller
      */
     public function printAll(Request $request)
     {
+        $this->authorizeStaff();
+
         $validated = $request->validate([
             'ids' => 'required|array|min:1',
             'ids.*' => 'integer|exists:students,id',
@@ -185,6 +201,8 @@ class StudentPointController extends Controller
      */
     public function bulkCertificates(Request $request)
     {
+        $this->authorizeStaff();
+
         $validated = $request->validate([
             'ids' => 'required|array|min:1',
             'ids.*' => 'integer|exists:students,id',
