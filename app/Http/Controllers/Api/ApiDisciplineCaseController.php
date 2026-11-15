@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Concerns\ScopesWaliKelas;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicYear;
 use App\Models\DisciplineCase;
@@ -14,13 +15,29 @@ use Illuminate\Support\Facades\Validator;
 
 class ApiDisciplineCaseController extends Controller
 {
+    use ScopesWaliKelas;
+
+    private const STAFF_ROLES = ['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'];
+
     /**
-     * Pastikan pengguna memiliki peran staf sekolah.
+     * Pastikan pengguna memiliki peran yang dapat melihat riwayat kasus.
+     */
+    protected function authorizeViewer(Request $request): ?JsonResponse
+    {
+        $user = $request->user();
+        if (! $user?->hasAnyRole(array_merge(self::STAFF_ROLES, ['siswa']))) {
+            return response()->json(['message' => 'Akses ditolak. Fitur ini hanya untuk pengguna terdaftar.'], 403);
+        }
+
+        return null;
+    }
+
+    /**
+     * Pastikan pengguna memiliki peran staf sekolah sebelum membuat kasus.
      */
     protected function authorizeStaff(Request $request): ?JsonResponse
     {
-        $user = $request->user();
-        if ($user && $user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])) {
+        if (! $request->user()?->hasAnyRole(self::STAFF_ROLES)) {
             return response()->json(['message' => 'Akses ditolak. Fitur ini hanya untuk staf sekolah.'], 403);
         }
 
@@ -32,12 +49,24 @@ class ApiDisciplineCaseController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        if ($authError = $this->authorizeStaff($request)) {
+        if ($authError = $this->authorizeViewer($request)) {
             return $authError;
         }
 
+        $user = $request->user();
+        $isStudent = $user->hasRole('siswa') && ! $user->hasAnyRole(self::STAFF_ROLES);
         $query = DisciplineCase::query()
             ->with(['student.enrollments.schoolClass', 'schoolClass', 'violationCategory']);
+
+        if ($isStudent) {
+            $query->where('student_id', $user->student?->id ?? 0);
+        }
+
+        $isReporterOnly = $user->hasAnyRole(['guru', 'wali_kelas'])
+            && ! $user->hasAnyRole(['bk', 'kesiswaan', 'admin', 'kepala_sekolah']);
+        if ($isReporterOnly) {
+            $query->where('reporter_id', $user->id);
+        }
 
         if ($request->filled('status')) {
             $query->where('status', (string) $request->query('status'));
@@ -118,6 +147,14 @@ class ApiDisciplineCaseController extends Controller
         $validated = $validator->validated();
 
         $student = Student::with(['enrollments.schoolClass'])->findOrFail($validated['student_id']);
+        $scopeClassIds = $this->waliKelasScope();
+        if (
+            $scopeClassIds !== null
+            && ! $student->enrollments()->whereIn('class_id', $scopeClassIds)->exists()
+        ) {
+            return response()->json(['message' => 'Siswa di luar kelas yang Anda ampu.'], 403);
+        }
+
         $category = ViolationCategory::findOrFail($validated['violation_category_id']);
         $activeYear = AcademicYear::where('is_active', true)->first();
 

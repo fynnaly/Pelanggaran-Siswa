@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class ApiAuthController extends Controller
@@ -28,7 +29,7 @@ class ApiAuthController extends Controller
 
         $user = User::where('email', $credentials['email'])->first();
 
-        if (! $user || ! Hash::check($credentials['password'], $user->password)) {
+        if (! $user || ! $user->is_active || ! Hash::check($credentials['password'], $user->password)) {
             throw ValidationException::withMessages([
                 'email' => ['Email atau password salah.'],
             ]);
@@ -61,6 +62,34 @@ class ApiAuthController extends Controller
         return response()->json(['message' => 'Token dicabut.']);
     }
 
+    /**
+     * Ganti password sendiri — semua role. Wajib password lama yang benar;
+     * token aktif TIDAK dicabut agar sesi di perangkat ini tetap berjalan.
+     */
+    public function changePassword(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'current_password' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+        ], [
+            'current_password.required' => 'Password lama wajib diisi.',
+            'password.confirmed' => 'Konfirmasi password tidak sama.',
+        ]);
+
+        $user = $request->user();
+
+        if (! Hash::check($validated['current_password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['Password lama salah.'],
+            ]);
+        }
+
+        $user->password = $validated['password'];
+        $user->save();
+
+        return response()->json(['message' => 'Password berhasil diubah.']);
+    }
+
     /** Bentuk data user yang aman dikirim ke klien — tanpa password/remember_token. */
     private function userPayload(User $user): array
     {
@@ -70,7 +99,11 @@ class ApiAuthController extends Controller
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
+            'nip' => $user->hasRole('siswa') ? null : $user->nip,
             'roles' => $user->getRoleNames(),
+            'is_active' => $user->is_active,
+            'avatar_path' => $user->avatar_path,
+            'avatar_url' => $user->avatar_path ? Storage::disk('public')->url($user->avatar_path) : null,
             'siswa' => $user->student ? [
                 'id' => $user->student->id,
                 'nisn' => $user->student->nisn,

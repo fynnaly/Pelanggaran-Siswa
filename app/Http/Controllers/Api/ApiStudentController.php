@@ -13,14 +13,15 @@ class ApiStudentController extends Controller
 {
     use ScopesWaliKelas;
 
+    private const STAFF_ROLES = ['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'];
+
     /**
      * Pencarian siswa instan (autocompletion) nama / NIS / NISN.
      */
     public function search(Request $request): JsonResponse
     {
-        $user = $request->user();
-        if ($user && $user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])) {
-            return response()->json(['message' => 'Akses ditolak. Fitur ini hanya untuk staf sekolah.'], 403);
+        if ($response = $this->authorizeStaff($request)) {
+            return $response;
         }
 
         $q = trim((string) $request->query('q', ''));
@@ -30,12 +31,17 @@ class ApiStudentController extends Controller
 
         $limit = min(max($request->integer('limit', 10), 1), 50);
 
+        $scopeClassIds = $this->waliKelasScope();
         $students = Student::query()
             ->where(function ($query) use ($q) {
                 $query->where('full_name', 'like', "%{$q}%")
                     ->orWhere('nis', 'like', "%{$q}%")
                     ->orWhere('nisn', 'like', "%{$q}%");
             })
+            ->when($scopeClassIds !== null, fn ($query) => $query->whereHas(
+                'currentEnrollment',
+                fn ($enrollmentQuery) => $enrollmentQuery->whereIn('class_id', $scopeClassIds)
+            ))
             ->with(['enrollments.schoolClass'])
             ->limit($limit)
             ->get();
@@ -56,8 +62,12 @@ class ApiStudentController extends Controller
     /**
      * Scan nametag NFC untuk lookup profil & saldo cepat.
      */
-    public function byNfc(string $uid): JsonResponse
+    public function byNfc(Request $request, string $uid): JsonResponse
     {
+        if ($response = $this->authorizeStaff($request)) {
+            return $response;
+        }
+
         $cleanUid = trim($uid);
 
         $student = Student::query()
@@ -69,6 +79,11 @@ class ApiStudentController extends Controller
             return response()->json([
                 'message' => 'Nametag belum terdaftar pada siswa mana pun.',
             ], 404);
+        }
+
+        $scopeClassIds = $this->waliKelasScope();
+        if ($scopeClassIds !== null && ! $student->currentEnrollment()->whereIn('class_id', $scopeClassIds)->exists()) {
+            return response()->json(['message' => 'Siswa di luar kelas yang Anda ampu.'], 403);
         }
 
         $zone = $student->zone;
@@ -105,8 +120,21 @@ class ApiStudentController extends Controller
      */
     public function points(Request $request, Student $student): JsonResponse
     {
-        $scopeClassIds = $this->waliKelasScope();
+        $user = $request->user();
+        $isStaff = $user?->hasAnyRole(self::STAFF_ROLES) ?? false;
+        $isStudent = $user?->hasRole('siswa') && ! $isStaff;
 
+        abort_unless($isStaff || $isStudent, 403, 'Akses ditolak. Fitur ini hanya untuk pengguna terdaftar.');
+
+        if ($isStudent) {
+            abort_unless(
+                $user->student?->id === $student->id,
+                403,
+                'Akses ditolak. Anda hanya dapat melihat poin milik sendiri.'
+            );
+        }
+
+        $scopeClassIds = $isStaff ? $this->waliKelasScope() : null;
         if ($scopeClassIds !== null) {
             $inScope = Student::whereKey($student->id)
                 ->whereHas('currentEnrollment', fn ($q) => $q->whereIn('class_id', $scopeClassIds))
@@ -153,5 +181,17 @@ class ApiStudentController extends Controller
                 ]),
             ],
         ]);
+    }
+
+    /**
+     * Restrict student search and NFC lookup to school staff.
+     */
+    private function authorizeStaff(Request $request): ?JsonResponse
+    {
+        if (! $request->user()?->hasAnyRole(self::STAFF_ROLES)) {
+            return response()->json(['message' => 'Akses ditolak. Fitur ini hanya untuk staf sekolah.'], 403);
+        }
+
+        return null;
     }
 }
