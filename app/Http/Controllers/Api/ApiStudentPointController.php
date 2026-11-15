@@ -72,6 +72,14 @@ class ApiStudentPointController extends Controller
             default => mb_strtolower($s->full_name),
         }, SORT_REGULAR, $order === 'desc')->values();
 
+        // Pagination sederhana (page/per_page) setelah filter zona + sort,
+        // karena urutan final baru jelas di titik ini. Default 20, maks 100.
+        $perPage = max(1, min(100, $request->integer('per_page') ?: 20));
+        $page = max(1, $request->integer('page') ?: 1);
+        $total = $students->count();
+        $lastPage = (int) max(1, ceil($total / $perPage));
+        $pagedStudents = $students->forPage($page, $perPage)->values();
+
         $activeYearId = (int) AcademicYear::where('is_active', true)->value('id');
         $filterYearId = $selectedYearId ?: $activeYearId;
         $classes = SchoolClass::where('academic_year_id', $filterYearId)->orderBy('name')->get();
@@ -81,13 +89,16 @@ class ApiStudentPointController extends Controller
 
         return response()->json([
             'meta' => [
-                'total' => $students->count(),
+                'total' => $total,
+                'current_page' => $page,
+                'last_page' => $lastPage,
+                'per_page' => $perPage,
                 'sort' => $sort,
                 'order' => $order,
                 'scope' => $isStudent ? 'siswa' : ($scopeClassIds === null ? 'semua' : 'wali_kelas'),
                 'kelas' => $classes->map(fn ($c) => ['id' => $c->id, 'nama' => $c->name]),
             ],
-            'data' => $students->map(fn ($s) => [
+            'data' => $pagedStudents->map(fn ($s) => [
                 'id' => $s->id,
                 'nisn' => $s->nisn,
                 'nis' => $s->nis,
