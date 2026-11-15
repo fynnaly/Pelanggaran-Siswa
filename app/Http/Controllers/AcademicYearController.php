@@ -37,6 +37,13 @@ class AcademicYearController extends Controller
     {
         $this->authorizeStaff();
 
+        // Tahun ajaran yang periodenya sudah berlalu otomatis dinonaktifkan,
+        // supaya status is_active tidak bisa "nyangkut" setelah waktunya habis.
+        AcademicYear::where('is_active', true)
+            ->get()
+            ->filter(fn (AcademicYear $year) => $year->isExpired())
+            ->each(fn (AcademicYear $year) => $year->update(['is_active' => false]));
+
         $sort = $request->string('sort')->toString();
         $order = strtolower($request->string('order')->toString()) === 'asc' ? 'asc' : 'desc';
         $allowed = ['id', 'name', 'start_date', 'end_date', 'created_at'];
@@ -145,6 +152,27 @@ class AcademicYearController extends Controller
         return redirect()
             ->route('tahun-ajaran.index')
             ->with('success', 'Tahun ajaran berhasil diupdate.');
+    }
+
+    /** Aktifkan satu tahun ajaran (nonaktifkan lainnya + jalankan promosi) — tombol "Aktifkan" di index. */
+    public function activate(AcademicYear $academicYear)
+    {
+        $this->authorizeManagement();
+
+        if ($academicYear->is_active) {
+            return back()->with('success', "Tahun ajaran {$academicYear->name} sudah aktif.");
+        }
+
+        DB::transaction(function () use ($academicYear) {
+            // Nonaktifkan tahun ajaran lain, lalu aktifkan yang ini
+            AcademicYear::where('is_active', true)->update(['is_active' => false]);
+            $academicYear->update(['is_active' => true]);
+        });
+
+        $result = app(PromotionService::class)->promote($academicYear);
+
+        return back()
+            ->with('success', "Tahun ajaran {$academicYear->name} diaktifkan. {$result['classes_created']} kelas baru, {$result['students_promoted']} siswa naik kelas, {$result['students_graduated']} siswa lulus.");
     }
 
     /** Remove the specified resource from storage. */

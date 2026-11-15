@@ -68,7 +68,7 @@ it('renders student dashboard with school-oriented character terms and without c
     $response->assertSee('X PPLG 1');
     $response->assertSee('Poin Karakter dan Prestasi');
     $response->assertSee('Jenjang Sikap');
-    $response->assertSee('Buku Saku Poin');
+    $response->assertSee('Lihat Riwayat Poin');
     $response->assertSee('Catatan Kedisiplinan');
     $response->assertSee('Pencapaian dan Prestasi');
     $response->assertSee('Standar Baik (1900-2199)');

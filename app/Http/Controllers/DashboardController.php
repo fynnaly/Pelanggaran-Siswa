@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\ScopesWaliKelas;
 use App\Models\AcademicYear;
+use App\Models\AchievementRecord;
 use App\Models\DisciplineCase;
+use App\Models\PointLedger;
+use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\ViolationCategory;
 use App\Support\ViolationStats;
@@ -54,7 +57,9 @@ class DashboardController extends Controller
         // Saldo terakhir per siswa aktif — 1 query, tanpa N+1.
         $latestBalances = DB::table('point_ledgers')
             ->join(DB::raw('(SELECT student_id, MAX(id) AS max_id FROM point_ledgers GROUP BY student_id) lb'),
-                function ($j) { $j->on('point_ledgers.id', '=', 'lb.max_id'); })
+                function ($j) {
+                    $j->on('point_ledgers.id', '=', 'lb.max_id');
+                })
             ->join('students', 'students.id', '=', 'point_ledgers.student_id')
             ->where('students.status', 'active')
             ->pluck('point_ledgers.balance_after', 'point_ledgers.student_id');
@@ -70,6 +75,7 @@ class DashboardController extends Controller
             ->get()
             ->map(function (Student $s) use ($latestBalances) {
                 $s->latest_balance = (int) ($latestBalances[$s->id] ?? 0);
+
                 return $s;
             })
             ->filter(fn (Student $s) => $s->latest_balance <= $intervensiMax)
@@ -156,7 +162,7 @@ class DashboardController extends Controller
         $student = $user->student()->with(['currentEnrollment.schoolClass'])->first();
 
         $balance = $student
-            ? \App\Models\PointLedger::getLastBalance($student->id, $activeAcademicYear?->id)
+            ? PointLedger::getLastBalance($student->id, $activeAcademicYear?->id)
             : (int) config('zones.default_balance', 2000);
         $zone = null;
         foreach (config('zones.zones', []) as $z) {
@@ -184,7 +190,7 @@ class DashboardController extends Controller
         }
 
         $myAchievements = $student
-            ? \App\Models\AchievementRecord::with('achievementCategory')
+            ? AchievementRecord::with('achievementCategory')
                 ->where('student_id', $student->id)
                 ->latest('created_at')
                 ->limit(5)
@@ -193,15 +199,20 @@ class DashboardController extends Controller
 
         $homeroomTeacher = $student?->currentEnrollment?->schoolClass?->homeroomTeacher;
         $recentLedgers = $student
-            ? \App\Models\PointLedger::where('student_id', $student->id)
-                ->latest('created_at')
+            ? PointLedger::where('student_id', $student->id)
+                ->whereIn('transaction_type', [
+                    PointLedger::TYPE_VIOLATION,
+                    PointLedger::TYPE_ACHIEVEMENT,
+                    PointLedger::TYPE_RECOVERY,
+                ])
+                ->latest('id')
                 ->limit(5)
                 ->get()
             : collect();
         $defaultBalance = (int) config('zones.default_balance', 2000);
 
         $totalAchievementPoints = $student
-            ? (int) \App\Models\AchievementRecord::where('student_id', $student->id)
+            ? (int) AchievementRecord::where('student_id', $student->id)
                 ->where('status', 'verified')
                 ->when($activeAcademicYear, fn ($q) => $q->where('academic_year_id', $activeAcademicYear->id))
                 ->sum('points_awarded')
@@ -261,25 +272,26 @@ class DashboardController extends Controller
 
         if ($waliScope !== null && $waliScope !== []) {
             // Kelas binaan bisa lebih dari satu (homeroom + asisten) — tampilkan semua.
-            $homeroomClasses = \App\Models\SchoolClass::with('academicYear')
+            $homeroomClasses = SchoolClass::with('academicYear')
                 ->whereKey($waliScope)
                 ->get();
 
-            $studentIds = \App\Models\Student::whereHas(
+            $studentIds = Student::whereHas(
                 'currentEnrollment',
                 fn ($q) => $q->whereIn('class_id', $waliScope)->where('status', 'active')
             )->pluck('id');
 
-            $latestBalances = $studentIds->isEmpty() ? collect() : \Illuminate\Support\Facades\DB::table('point_ledgers')
+            $latestBalances = $studentIds->isEmpty() ? collect() : DB::table('point_ledgers')
                 ->join(DB::raw('(SELECT student_id, MAX(id) AS max_id FROM point_ledgers GROUP BY student_id) lb'),
                     fn ($j) => $j->on('point_ledgers.id', '=', 'lb.max_id'))
                 ->whereIn('point_ledgers.student_id', $studentIds)
                 ->pluck('point_ledgers.balance_after', 'point_ledgers.student_id');
 
-            $students = $studentIds->isEmpty() ? collect() : \App\Models\Student::whereIn('id', $studentIds)
+            $students = $studentIds->isEmpty() ? collect() : Student::whereIn('id', $studentIds)
                 ->with(['user', 'currentEnrollment.schoolClass'])->get()
                 ->map(function (Student $s) use ($latestBalances) {
                     $s->latest_balance = (int) ($latestBalances[$s->id] ?? (int) config('zones.default_balance', 2000));
+
                     return $s;
                 });
 
@@ -304,7 +316,7 @@ class DashboardController extends Controller
             $recentCases = (clone $caseBase)->with(['violationCategory', 'student.currentEnrollment.schoolClass'])
                 ->latest('created_at')->limit(6)->get();
 
-            $achBase = \App\Models\AchievementRecord::whereIn('student_id', $studentIds);
+            $achBase = AchievementRecord::whereIn('student_id', $studentIds);
             $achievementStats = [
                 'verified' => (clone $achBase)->where('status', 'verified')->count(),
                 'pending' => (clone $achBase)->where('status', 'pending')->count(),
@@ -336,6 +348,7 @@ class DashboardController extends Controller
         if ($zone['max'] === null) {
             return '> '.$zone['min'];
         }
+
         return $zone['min'].' - '.$zone['max'];
     }
 }

@@ -7,6 +7,10 @@
                 <p class="text-muted text-sm" data-live-count>{{ $categories->total() }} total kategori</p>
             </div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
+                @if(auth()->user()->hasAnyRole(['admin', 'bk', 'kesiswaan', 'kepala_sekolah']))
+                    <a href="{{ route('violation-categories.template') }}" class="btn btn-secondary"><i data-lucide="download" class="icon-sm"></i> Template</a>
+                    <a href="{{ route('violation-categories.export') }}" class="btn btn-secondary"><i data-lucide="download" class="icon-sm"></i> Ekspor XLSX</a>
+                @endif
                 <a href="{{ route('violation-categories.create') }}" class="btn btn-primary"><i data-lucide="plus" class="icon-sm"></i> Tambah</a>
             </div>
         </div>
@@ -14,12 +18,23 @@
     <div class="main-wrap">
         @if(session('success'))<div class="alert alert-success"><i data-lucide="check-circle" class="icon-sm"></i> {{ session('success') }}</div>@endif
         @if(session('error'))<div class="alert alert-error"><i data-lucide="alert-circle" class="icon-sm"></i> {{ session('error') }}</div>@endif
-        <div class="toolbar">
-            <form method="GET" action="{{ route('violation-categories.index') }}" data-live="#categoryRegion" id="categoryFilter" style="display:flex;gap:var(--sp-sm)">
-                <input type="text" name="search" class="input" placeholder="Cari kode atau nama..." value="{{ $search ?? '' }}" style="max-width:280px">
+        <div class="toolbar" style="margin-bottom:var(--sp-md);display:flex;gap:var(--sp-sm);flex-wrap:wrap;align-items:flex-end">
+            <form method="GET" action="{{ route('violation-categories.index') }}" data-live="#categoryRegion" id="categoryFilter" style="display:flex;gap:var(--sp-sm);flex:1;flex-wrap:wrap;align-items:flex-end;min-width:260px">
+                <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:180px">
+                    <label for="category-search" style="font-size:.75rem;font-weight:700;color:var(--on-surface-muted);text-transform:uppercase;letter-spacing:.05em">Cari</label>
+                    <input id="category-search" type="text" name="search" class="input" placeholder="Cari kode atau nama..." value="{{ $search ?? '' }}">
+                </div>
                 <button type="submit" class="btn btn-secondary btn-sm"><i data-lucide="search" class="icon-sm"></i> Cari</button>
                 @if($search)<a href="{{ route('violation-categories.index') }}" class="btn btn-secondary btn-sm"><i data-lucide="x" class="icon-sm"></i> Reset</a>@endif
             </form>
+            @if(auth()->user()->hasAnyRole(['admin', 'bk', 'kesiswaan', 'kepala_sekolah']))
+                <form method="POST" action="{{ route('violation-categories.import') }}" enctype="multipart/form-data" style="display:flex;align-items:center;gap:var(--sp-sm);flex:1;flex-wrap:wrap;min-width:260px">
+                    @csrf
+                    <label class="text-sm text-muted" for="violation-category-file" style="white-space:nowrap">Impor CSV/XLSX:</label>
+                    <input id="violation-category-file" type="file" name="file" class="input" accept=".csv,.txt,.xlsx" required style="width:auto;padding:6px 10px;flex:1;min-width:0">
+                    <button type="submit" class="btn btn-primary btn-sm" style="flex-shrink:0"><i data-lucide="upload" class="icon-sm"></i> Unggah</button>
+                </form>
+            @endif
         </div>
         <div id="categoryRegion">
         <div class="table-wrap">

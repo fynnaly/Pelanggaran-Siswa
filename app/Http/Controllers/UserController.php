@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Student;
 use App\Models\User;
 use App\Support\Xlsx;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -48,6 +49,10 @@ class UserController extends Controller
         $type = request('type');
         $jabatan = request('jabatan');
         $q = request('q');
+        $deletionRequested = request()->boolean('deletion_requested');
+        $pendingDeletionCount = User::where('is_active', true)
+            ->whereNotNull('deletion_requested_at')
+            ->count();
 
         $roles = Role::whereIn('name', self::STAFF_ROLES)->orderBy('name')->pluck('name');
 
@@ -77,11 +82,14 @@ class UserController extends Controller
                 'roles',
                 fn ($role) => $role->where('name', $jabatan),
             ))
+            ->when($deletionRequested, fn ($query) => $query
+                ->where('is_active', true)
+                ->whereNotNull('deletion_requested_at'))
             ->orderBy($sort, $order)
             ->paginate(20)
             ->withQueryString();
 
-        return view('users.index', compact('users', 'roles', 'type', 'jabatan', 'q', 'sort', 'order'));
+        return view('users.index', compact('users', 'roles', 'type', 'jabatan', 'q', 'sort', 'order', 'deletionRequested', 'pendingDeletionCount'));
     }
 
     /**
@@ -134,7 +142,7 @@ class UserController extends Controller
         });
 
         return redirect()->route('users.index')
-            ->with('success', 'User ' . $user->name . ' berhasil dibuat.');
+            ->with('success', 'User '.$user->name.' berhasil dibuat.');
     }
 
     /**
@@ -176,7 +184,7 @@ class UserController extends Controller
 
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
-            'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
+            'email' => 'sometimes|required|email|unique:users,email,'.$user->id,
             'password' => 'nullable|string|min:8',
             'role' => 'sometimes|required|exists:roles,name',
             'student_id' => 'nullable|integer|exists:students,id',
@@ -203,11 +211,11 @@ class UserController extends Controller
         });
 
         return redirect()->route('users.index')
-            ->with('success', 'User ' . $user->name . ' berhasil diperbarui.');
+            ->with('success', 'User '.$user->name.' berhasil diperbarui.');
     }
 
     /**
-     * Delete a user after detaching its student identity.
+     * Deactivate a user account while retaining its student identity.
      */
     public function destroy(User $user)
     {
@@ -218,13 +226,63 @@ class UserController extends Controller
                 ->with('error', 'Akun yang sedang digunakan tidak dapat dihapus.');
         }
 
-        DB::transaction(function () use ($user) {
-            Student::where('user_id', $user->id)->update(['user_id' => null]);
-            $user->delete();
-        });
+        $this->deactivateAccount($user, request()->user());
 
         return redirect()->route('users.index')
-            ->with('success', 'User berhasil dihapus. Identitas siswa tetap tersimpan.');
+            ->with('success', 'Akun dinonaktifkan. Data dan identitas siswa tetap tersimpan.');
+    }
+
+    /** Approve a pending request by deactivating the account without deleting it. */
+    public function approveDeletionRequest(User $user): RedirectResponse
+    {
+        $this->authorizeManagement();
+
+        if ($user->is(request()->user())) {
+            return redirect()->route('users.index')
+                ->with('error', 'Permintaan akun sendiri harus diproses oleh pengelola lain.');
+        }
+
+        if (! $user->deletion_requested_at) {
+            return redirect()->route('users.index')
+                ->with('error', 'Akun ini tidak memiliki permintaan penghapusan yang menunggu.');
+        }
+
+        $this->deactivateAccount($user, request()->user());
+
+        return redirect()->route('users.index')
+            ->with('success', 'Permintaan disetujui. Akun dinonaktifkan dan seluruh data tetap tersimpan.');
+    }
+
+    /** Reactivate an account that has not been soft-deleted. */
+    public function activate(User $user): RedirectResponse
+    {
+        $this->authorizeManagement();
+
+        $user->forceFill([
+            'is_active' => true,
+            'deletion_requested_at' => null,
+            'deletion_approved_at' => null,
+            'deletion_approved_by' => null,
+        ])->save();
+
+        return redirect()->route('users.index')
+            ->with('success', 'Akun '.$user->name.' berhasil diaktifkan kembali.');
+    }
+
+    public function rejectDeletionRequest(User $user): RedirectResponse
+    {
+        $this->authorizeManagement();
+
+        if (! $user->deletion_requested_at) {
+            return redirect()->route('users.index')
+                ->with('error', 'Akun ini tidak memiliki permintaan penghapusan yang menunggu.');
+        }
+
+        $user->deletion_requested_at = null;
+        $user->save();
+
+        return redirect()->route('users.index')
+            ->with('success', 'Permintaan penghapusan akun ditolak.');
     }
 
     // ────────────────────────────────────────────────
@@ -250,7 +308,7 @@ class UserController extends Controller
 
         return response()->streamDownload(function () use ($headers, $example) {
             $out = fopen('php://output', 'w');
-            fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fprintf($out, chr(0xEF).chr(0xBB).chr(0xBF));
             fputcsv($out, $headers);
             fputcsv($out, $example);
             fclose($out);
@@ -273,13 +331,13 @@ class UserController extends Controller
 
         foreach ($users as $u) {
             $role = $u->roles->first()?->name ?? '-';
-            $studentInfo = $u->student ? $u->student->nisn . ' - ' . $u->student->full_name : '-';
+            $studentInfo = $u->student ? $u->student->nisn.' - '.$u->student->full_name : '-';
             $kelas = $u->student?->currentEnrollment?->schoolClass?->name ?? '-';
             $rows[] = [$u->name, $u->email, $role, $studentInfo, $kelas];
         }
 
         $path = Xlsx::write($rows, 'Daftar Pengguna', true);
-        $filename = 'pengguna-' . now()->format('Ymd-His') . '.xlsx';
+        $filename = 'pengguna-'.now()->format('Ymd-His').'.xlsx';
 
         return response()->download($path, $filename, [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -307,8 +365,8 @@ class UserController extends Controller
         $allowed = ['csv', 'txt', 'xlsx'];
 
         if (! in_array($ext, $allowed, true)) {
-            return back()->with('error', 'Format tidak didukung: .' . ($ext ?: '(tanpa ekstensi)')
-                . ' — gunakan berkas .csv, .txt, atau .xlsx.');
+            return back()->with('error', 'Format tidak didukung: .'.($ext ?: '(tanpa ekstensi)')
+                .' — gunakan berkas .csv, .txt, atau .xlsx.');
         }
 
         try {
@@ -316,7 +374,7 @@ class UserController extends Controller
                 ? Xlsx::read($file->getRealPath())
                 : $this->readDelimitedRows(file_get_contents($file->getRealPath()));
         } catch (\Throwable $e) {
-            return back()->with('error', 'Gagal membaca berkas: ' . $e->getMessage());
+            return back()->with('error', 'Gagal membaca berkas: '.$e->getMessage());
         }
 
         if ($rows === []) {
@@ -327,10 +385,10 @@ class UserController extends Controller
         $header = array_map(fn ($h) => mb_strtolower(trim((string) $h)), $header);
         $idx = fn ($name) => array_search(mb_strtolower($name), $header, true);
 
-        $iNama  = $idx('nama');
+        $iNama = $idx('nama');
         $iEmail = $idx('email');
-        $iPass  = $idx('password');
-        $iRole  = $idx('role');
+        $iPass = $idx('password');
+        $iRole = $idx('role');
 
         if ($iNama === false || $iEmail === false || $iPass === false || $iRole === false) {
             $seen = array_values(array_filter($header, fn ($h) => $h !== ''));
@@ -338,9 +396,9 @@ class UserController extends Controller
                 fn ($want) => array_search(mb_strtolower($want), $header, true) === false);
 
             return back()->with('error',
-                'Header tidak valid. Ditemukan: [' . ($seen ? implode(', ', $seen) : 'tidak ada kolom terbaca') . ']'
-                . '. Kolom wajib yang belum ada: [' . implode(', ', $missing) . '].'
-                . ' Pemisah kolom harus koma (,) atau titik koma (;).');
+                'Header tidak valid. Ditemukan: ['.($seen ? implode(', ', $seen) : 'tidak ada kolom terbaca').']'
+                .'. Kolom wajib yang belum ada: ['.implode(', ', $missing).'].'
+                .' Pemisah kolom harus koma (,) atau titik koma (;).');
         }
 
         $validRoles = Role::pluck('name')->all();
@@ -352,7 +410,9 @@ class UserController extends Controller
         try {
             foreach ($rows as $offset => $row) {
                 $rowNum = $offset + 2;
-                if (count(array_filter($row, fn ($v) => trim((string) $v) !== '')) === 0) continue;
+                if (count(array_filter($row, fn ($v) => trim((string) $v) !== '')) === 0) {
+                    continue;
+                }
 
                 $name = trim((string) ($row[$iNama] ?? ''));
                 $email = trim((string) ($row[$iEmail] ?? ''));
@@ -363,21 +423,25 @@ class UserController extends Controller
                 if ($name === '' || $email === '' || $password === '') {
                     $skipped++;
                     $issues[] = "Baris {$rowNum}: Nama/Email/Password wajib terisi.";
+
                     continue;
                 }
                 if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
                     $skipped++;
                     $issues[] = "Baris {$rowNum}: email '{$email}' tidak valid.";
+
                     continue;
                 }
                 if (! in_array($role, $validRoles, true)) {
                     $skipped++;
-                    $issues[] = "Baris {$rowNum}: role '{$role}' tidak dikenal. Role tersedia: " . implode(', ', $validRoles) . '.';
+                    $issues[] = "Baris {$rowNum}: role '{$role}' tidak dikenal. Role tersedia: ".implode(', ', $validRoles).'.';
+
                     continue;
                 }
                 if (User::where('email', $email)->exists()) {
                     $skipped++;
                     $issues[] = "Baris {$rowNum}: email '{$email}' sudah terdaftar.";
+
                     continue;
                 }
 
@@ -392,14 +456,15 @@ class UserController extends Controller
             DB::commit();
         } catch (\Throwable $e) {
             DB::rollBack();
-            return back()->with('error', 'Import gagal: ' . $e->getMessage());
+
+            return back()->with('error', 'Import gagal: '.$e->getMessage());
         }
 
-        $msg = "Import selesai — {$imported} pengguna ditambahkan" . ($skipped ? ", {$skipped} dilewati" : "") . ".";
+        $msg = "Import selesai — {$imported} pengguna ditambahkan".($skipped ? ", {$skipped} dilewati" : '').'.';
         if ($issues !== []) {
-            $msg .= "\n" . implode("\n", array_slice($issues, 0, 10));
+            $msg .= "\n".implode("\n", array_slice($issues, 0, 10));
             if (count($issues) > 10) {
-                $msg .= "\n... dan " . (count($issues) - 10) . " baris bermasalah lainnya.";
+                $msg .= "\n... dan ".(count($issues) - 10).' baris bermasalah lainnya.';
             }
         }
 
@@ -435,7 +500,9 @@ class UserController extends Controller
 
         $rows = [];
         foreach (preg_split('/\r\n|\n|\r/', $content) as $line) {
-            if (trim($line) === '') continue;
+            if (trim($line) === '') {
+                continue;
+            }
             $rows[] = str_getcsv($line, $delimiter, '"', '');
         }
 
@@ -450,6 +517,21 @@ class UserController extends Controller
             403,
             'Anda tidak memiliki izin mengelola pengguna.',
         );
+    }
+
+    /** Persist account deactivation and revoke every Sanctum token atomically. */
+    private function deactivateAccount(User $user, User $manager): void
+    {
+        DB::transaction(function () use ($user, $manager) {
+            $user->forceFill([
+                'is_active' => false,
+                'deletion_requested_at' => null,
+                'deletion_approved_at' => now(),
+                'deletion_approved_by' => $manager->id,
+            ])->save();
+
+            $user->tokens()->delete();
+        });
     }
 
     /** Enforce one account-to-one student identity relationship. */

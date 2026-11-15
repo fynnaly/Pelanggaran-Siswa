@@ -8,21 +8,25 @@
         </div>
     </x-slot>
     <div class="main-wrap">
-        <div class="card card-form">
+        <div class="card card-form" x-data="{ parentSelected: {{ filled(old('parent_id', $achievementCategory->parent_id)) ? 'true' : 'false' }} }">
             @if($errors->any())<div class="alert alert-error" style="margin-bottom:var(--sp-lg)"><i data-lucide="alert-circle" class="icon-sm"></i> {{ $errors->first() }}</div>@endif
             <form action="{{ route('achievement-categories.update', $achievementCategory) }}" method="POST">
                 @csrf @method('PUT')
                 <div class="field"><label class="field-label">Kode <span class="text-danger">*</span></label><input type="text" name="code" value="{{ old('code', $achievementCategory->code) }}" class="field-input" required></div>
                 <div class="field"><label class="field-label">Nama <span class="text-danger">*</span></label><input type="text" name="name" value="{{ old('name', $achievementCategory->name) }}" class="field-input" required></div>
                 <div class="field"><label class="field-label">Induk Kategori</label>
-                    <select name="parent_id" class="field-input">
+                    <select name="parent_id" class="field-input" @change="parentSelected = $event.target.value !== ''">
                         <option value="">Tidak ada — kategori induk</option>
                         @foreach($parents as $parent)
                             <option value="{{ $parent->id }}" {{ old('parent_id', $achievementCategory->parent_id)==$parent->id?'selected':'' }}>{{ $parent->code }} — {{ $parent->name }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div class="field"><label class="field-label">Poin <span class="text-danger">*</span></label><input type="number" name="points" value="{{ old('points', $achievementCategory->points) }}" class="field-input" required min="1"></div>
+                <div class="field"><label class="field-label">Poin <span class="text-danger">*</span></label><input type="number" name="points" value="{{ old('points', $achievementCategory->points) }}" class="field-input" required min="0"><span class="help-text">Kategori induk bernilai 0; sub-kategori harus bernilai minimal 1.</span></div>
+                <div class="field" x-show="parentSelected" x-cloak>
+                    <label class="field-label">Padanan Pelanggaran</label>
+                    <span class="help-text">Sub-kategori pelanggaran dengan nama kategori induk yang sama akan dipadankan otomatis. Poin pemulihan mengikuti poin prestasi.</span>
+                </div>
                 <div class="field"><label class="field-label">Status <span class="text-danger">*</span></label>
                     <select name="status" class="field-input" required>
                         <option value="active" {{ old('status', $achievementCategory->status) === 'active' ? 'selected' : '' }}>Aktif</option>

@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\Concerns\ScopesWaliKelas;
+use App\Models\AchievementRecord;
 use App\Models\PointLedger;
 use App\Models\Student;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Http\Request;
 
 class PointLedgerController extends Controller
 {
-    use \App\Http\Controllers\Concerns\ScopesWaliKelas;
+    use ScopesWaliKelas;
 
     /** Daftar role yang dianggap staf sekolah. */
     private const STAFF_ROLES = ['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'];
@@ -54,12 +57,11 @@ class PointLedgerController extends Controller
             );
         }
 
-        $query->when($search, fn($q, $s) => $q->whereHas('student', fn($sq) =>
-                $sq->where('full_name', 'like', "%{$s}%")
-                    ->orWhere('nisn', 'like', "%{$s}%")
-            ))
-            ->when($direction, fn($q, $d) => $q->where('direction', $d))
-            ->when($type, fn($q, $t) => $q->where('transaction_type', $t));
+        $query->when($search, fn ($q, $s) => $q->whereHas('student', fn ($sq) => $sq->where('full_name', 'like', "%{$s}%")
+            ->orWhere('nisn', 'like', "%{$s}%")
+        ))
+            ->when($direction, fn ($q, $d) => $q->where('direction', $d))
+            ->when($type, fn ($q, $t) => $q->where('transaction_type', $t));
 
         $ledgers = $sort === 'created_at'
             ? $query->latest()->paginate(20)->withQueryString()
@@ -109,8 +111,12 @@ class PointLedgerController extends Controller
             ->latest('id')
             ->value('academic_year_id');
 
-        $student->load('currentEnrollment.schoolClass');
-        $ledger = PointLedger::with(['source'])
+        $student->load(['user', 'currentEnrollment.schoolClass']);
+        $ledger = PointLedger::with(['source' => function (MorphTo $morphTo) {
+            $morphTo->morphWith([
+                AchievementRecord::class => ['disciplineCase'],
+            ]);
+        }])
             ->where('student_id', $student->id)
             ->when($yearId, fn ($q) => $q->where('academic_year_id', $yearId))
             ->latest()
@@ -148,12 +154,16 @@ class PointLedgerController extends Controller
             );
         }
 
-        $pointLedger->load(['student.currentEnrollment.schoolClass', 'academicYear', 'creator', 'verifier']);
+        $pointLedger->load(['student.user', 'student.currentEnrollment.schoolClass', 'academicYear', 'creator', 'verifier']);
 
         $student = $pointLedger->student;
 
         // Ambil semua transaksi siswa di tahun ajaran yang sama
-        $ledger = PointLedger::with(['source'])
+        $ledger = PointLedger::with(['source' => function (MorphTo $morphTo) {
+            $morphTo->morphWith([
+                AchievementRecord::class => ['disciplineCase'],
+            ]);
+        }])
             ->where('student_id', $student->id)
             ->where('academic_year_id', $pointLedger->academic_year_id)
             ->latest()

@@ -31,6 +31,29 @@ test('users can not authenticate with invalid password', function () {
     $this->assertGuest();
 });
 
+test('inactive accounts cannot authenticate through the login screen', function () {
+    $user = User::factory()->create(['is_active' => false]);
+
+    $response = $this->post('/login', [
+        'email' => $user->email,
+        'password' => 'password',
+    ]);
+
+    $response->assertSessionHasErrors('email');
+    $this->assertGuest();
+});
+
+test('active sessions are ended when the account becomes inactive', function () {
+    $user = User::factory()->create(['is_active' => true]);
+    $user->is_active = false;
+    $user->save();
+
+    $response = $this->actingAs($user)->get('/profile');
+
+    $response->assertRedirect('/login');
+    $this->assertGuest();
+});
+
 test('users can logout', function () {
     $user = User::factory()->create();
 

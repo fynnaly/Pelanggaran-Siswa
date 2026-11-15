@@ -11,7 +11,7 @@ class MenuHelper
 
         if ($isSiswa) {
             $student = $user->student;
-            $poinPath = $student ? '/point-ledgers/siswa/' . $student->id : '/point-ledgers';
+            $poinPath = $student ? '/point-ledgers/siswa/'.$student->id : '/point-ledgers';
 
             return [
                 [
@@ -21,12 +21,12 @@ class MenuHelper
                 ],
                 [
                     'icon' => 'shield-alert',
-                    'name' => 'Catatan Kedisiplinan',
+                    'name' => 'Riwayat Pelanggaran',
                     'path' => '/kasus-pelanggaran',
                 ],
                 [
                     'icon' => 'award',
-                    'name' => 'Buku Saku Poin',
+                    'name' => 'Riwayat Poin',
                     'path' => $poinPath,
                 ],
             ];
@@ -53,12 +53,12 @@ class MenuHelper
             }
             $guruMenu[] = [
                 'icon' => 'shield-alert',
-                'name' => 'Kasus Disiplin',
+                'name' => 'Catat Kasus',
                 'path' => '/kasus-pelanggaran',
             ];
             $guruMenu[] = [
                 'icon' => 'trophy',
-                'name' => 'Rekam Prestasi',
+                'name' => 'Catat Prestasi',
                 'path' => '/achievement-records',
             ];
             $guruMenu[] = [
@@ -92,18 +92,26 @@ class MenuHelper
                 'path' => '/dashboard',
             ],
             [
-                'icon' => 'shield-alert',
-                'name' => 'Pelanggaran',
-                'subItems' => [
-                    ['name' => 'Daftar Pelanggaran', 'path' => '/violation-categories', 'pro' => false],
-                    ['name' => 'Kasus Disiplin', 'path' => '/kasus-pelanggaran', 'pro' => false],
-                ],
+                'icon' => 'database',
+                'name' => 'Data Referensi',
+                'subItems' => $dataReferensi,
             ],
             [
                 'icon' => 'charts',
                 'name' => 'Laporan',
                 'subItems' => [
                     ['name' => 'Statistik Pelanggaran', 'path' => '/laporan/pelanggaran', 'pro' => false],
+                    ['name' => 'Statistik Kelas', 'path' => '/laporan/per-kelas', 'pro' => false],
+                    ['name' => 'Laporan Kelas', 'path' => '/laporan/kelas', 'pro' => false],
+                    ['name' => 'Laporan Siswa', 'path' => '/laporan/siswa', 'pro' => false],
+                ],
+            ],
+            [
+                'icon' => 'shield-alert',
+                'name' => 'Pelanggaran',
+                'subItems' => [
+                    ['name' => 'Kategori Pelanggaran', 'path' => '/violation-categories', 'pro' => false],
+                    ['name' => 'Catat Kasus', 'path' => '/kasus-pelanggaran', 'pro' => false],
                 ],
             ],
             [
@@ -111,7 +119,7 @@ class MenuHelper
                 'name' => 'Prestasi',
                 'subItems' => [
                     ['name' => 'Kategori Prestasi', 'path' => '/achievement-categories', 'pro' => false],
-                    ['name' => 'Rekam Prestasi', 'path' => '/achievement-records', 'pro' => false],
+                    ['name' => 'Catat Prestasi', 'path' => '/achievement-records', 'pro' => false],
                 ],
             ],
             [
@@ -121,11 +129,6 @@ class MenuHelper
                     ['name' => 'Monitor Poin', 'path' => '/monitor-poin', 'pro' => false],
                     ['name' => 'Riwayat Poin', 'path' => '/point-ledgers', 'pro' => false],
                 ],
-            ],
-            [
-                'icon' => 'database',
-                'name' => 'Data Referensi',
-                'subItems' => $dataReferensi,
             ],
         ];
     }
@@ -179,7 +182,14 @@ class MenuHelper
 
     public static function isActive($path)
     {
-        return request()->is(ltrim($path, '/'));
+        // Abaikan #fragment supaya menu ber-anchor (mis. /laporan/riwayat#siswa) tetap ter-highlight.
+        // Prefix match: /laporan/kelas juga meng-highlight /laporan/kelas/1 (halaman detail).
+        $clean = strtok(ltrim($path, '/'), '#');
+        if ($clean === '' || $clean === false) {
+            return request()->is('/');
+        }
+
+        return request()->is($clean) || request()->is($clean.'/*');
     }
 
     public static function getIconSvg($iconName)
@@ -230,7 +240,7 @@ class MenuHelper
             'layout' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M9.33301 9.33301V19.9998M20 9.33301H4M5.5 20H18.5C19.3284 20 20 19.3284 20 18.5V5.5C20 4.67157 19.3284 4 18.5 4H5.5C4.67157 4 4 4.67157 4 5.5V18.5C4 19.3284 4.67157 20 5.5 20Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 
-            'maps' => '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M8.87646 19.4561C8.99463 19.4563 9.11281 19.4425 9.22852 19.4147L14.771 18.0845C14.889 18.0561 15.0095 18.0423 15.13 18.0431C15.2468 18.0438 15.3636 18.0581 15.4779 18.0861L19.3927 19.0448C20.3377 19.2763 21.2495 18.5608 21.2495 17.5879V7.17656C21.2495 6.48557 20.7775 5.88398 20.1063 5.71961L18.2299 5.26008M15.13 18.0431V13.158M8.87646 19.4561C8.75732 19.456 8.63819 19.4416 8.52164 19.4131L3.89319 18.2796C3.22203 18.1152 2.75 17.5136 2.75 16.8226V6.41127C2.75 5.43838 3.66185 4.7229 4.60681 4.95432L5.76839 5.2388M8.87646 19.4561V13.1446M15.2819 6.03146C15.2819 9.34375 12.0091 11.9984 12.0091 11.9984C12.0091 11.9984 8.71896 9.34375 8.71896 6.03146C8.71896 4.21916 10.1881 2.75 12.0004 2.75C13.8127 2.75 15.2819 4.21916 15.2819 6.03146Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 6.03125H12.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+            'maps' => '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M8.87646 19.4561C8.99463 19.4563 9.11281 19.4425 9.22852 19.4147L14.771 18.0845C14.889 18.0561 15.0095 18.0423 15.13 18.0431C15.2468 18.0438 15.3636 18.0581 15.4779 18.0861L19.3927 19.0448C20.3377 19.2763 21.2495 18.5608 21.2495 17.5879V7.17656C21.2495 6.48557 20.7775 5.88398 20.1063 5.71961L18.2299 5.26008M15.13 18.0431V13.158M8.87646 19.4561C8.75732 19.456 8.63819 19.4416 8.52164 19.4131L3.89319 18.2796C3.22203 18.1152 2.75 17.5136 2.75 16.8226V6.41127C2.75 5.43838 3.66185 4.7229 4.60681 4.95432L5.76839 5.2388M8.87646 19.4561V13.1446M15.2819 6.03146C15.2819 9.34375 12.0091 11.9984 12.0091 11.9984C12.0091 11.9984 8.71896 9.34375 8.71896 6.03146C8.71896 4.21916 10.1881 2.75 12.0004 2.75C13.8127 2.75 15.2819 4.21916 15.2819 6.03146Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 6.03125H12.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
         ];
 
         return $icons[$iconName] ?? '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/></svg>';

@@ -121,7 +121,7 @@
                                 @else<span class="badge badge-danger"><i data-lucide="x-circle" style="width:12px;height:12px"></i> Dibuang</span>@endif
                             </td>
                             <td class="text-sm text-muted">
-                                <div>{{ $incDate?->format('d M Y') }}</div>
+                                <div>{{ $incDate?->copy()->setTimezone('Asia/Jakarta')->locale('id')->translatedFormat('d M Y') }}</div>
                                 @if($case->incident_time)
                                     <div class="mono" style="font-size:0.75rem;color:var(--on-surface-muted)">{{ \Carbon\Carbon::parse($case->incident_time)->format('H:i') }} WIB</div>
                                 @endif

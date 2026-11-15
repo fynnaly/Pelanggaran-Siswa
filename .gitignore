@@ -39,3 +39,5 @@ CLAUDE.md
 /resources/views/components copy/
 resources/views/auth/temp-login.blade.php
 resources/views/layouts1/
+anti-slop/
+.superpowers/

@@ -42,6 +42,15 @@
             ],
         ],
     ];
+    if (Auth::user()?->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])) {
+        $groups[] = [
+            'label' => 'Laporan',
+            'icon' => 'file-text',
+            'items' => [
+                ['route' => 'laporan.riwayat', 'label' => 'Riwayat Siswa & Kelas', 'pattern' => 'laporan.*', 'icon' => 'file-text'],
+            ],
+        ];
+    }
     $isActive = fn($p) => request()->routeIs($p);
     $groupActive = fn($g) => collect($g['items'])->contains(fn($i) => $isActive($i['pattern']));
 @endphp

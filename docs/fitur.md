@@ -27,6 +27,8 @@ Dokumen ini menguraikan seluruh modul fungsional yang tersedia pada aplikasi Pel
 
 ### 2.1 Tahun Ajaran Aktif (`AcademicYear`)
 - Menyimpan nama periode (contoh: `2026/2027`), tanggal mulai, status operasional, dan penanda status aktif (`is_active`).
+- **Tombol Aktifkan Cepat**: Tahun ajaran nonaktif dapat diaktifkan langsung dari baris daftar (ikon `power`) dengan konfirmasi dua tahap — peringatan ringan, lalu peringatan final yang menjelaskan konsekuensi (kelas baru dibuat, siswa naik tingkat, XII lulus).
+- **Nonaktif Otomatis saat Berlalu**: Tahun ajaran yang periodenya sudah lewat (akhir periode = `end_date` bila diisi, atau `start_date` + 1 tahun) otomatis dinonaktifkan saat halaman daftar dibuka, sehingga `is_active` tidak pernah "nyangkut" pada periode yang sudah selesai. Tabel daftar menampilkan kolom Tanggal Selesai dan tanda *Berlalu*.
 - **Pemicu Kenaikan Kelas Otomatis (`PromotionService`)**: Pengaktifan tahun ajaran baru secara otomatis menyalin struktur kelas ke tahun ajaran baru, memperbarui pendaftaran siswa (*enrollments*), menandai siswa tingkat XII sebagai lulus, dan membawa saldo poin berjalan sebagai saldo awal tahun baru.
 
 ### 2.2 Rombongan Belajar / Kelas (`SchoolClass`)
@@ -94,7 +96,9 @@ Dokumen ini menguraikan seluruh modul fungsional yang tersedia pada aplikasi Pel
 
 ### 4.2 Aturan Penebusan Poin Kanonik (`redemption_rules`)
 - Menghubungkan satu jenis pelanggaran dengan sub-prestasi wajib yang harus diraih siswa sebagai wujud pemulihan perilaku.
-- Sistem secara otomatis menampilkan saran sub-prestasi yang dapat diambil saat melihat detail kasus pelanggaran.
+- Sistem secara otomatis menampilkan saran sub-prestasi yang dapat diambil saat melihat detail kasus pelanggaran (tabel *Rekomendasi Pemulihan Poin* berisi kode, nama kategori, dan poin penebus).
+- **Fallback Kategori Universal**: Bila kasus tidak memiliki pasangan khusus, sistem menawarkan kategori universal "Tidak pernah melanggar tata tertib minimal 3/6/9/12 bulan berturut-turut" (R4.2-R4.5, +20/+30/+40/+50 poin) sebagai jalur pemulihan alternatif.
+- **Zero Tolerance Tetap Tidak Dapat Ditebus**: Kasus berbobot 64 poin tidak mendapatkan saran penebusan apa pun dan ditandai eksplisit di detail kasus.
 
 ---
 
@@ -123,6 +127,11 @@ Dokumen ini menguraikan seluruh modul fungsional yang tersedia pada aplikasi Pel
 
 ### 5.4 Pelapor Otomatis dan Terkunci
 - Kolom pelapor otomatis membaca identitas akun staf yang sedang membuka form dan terkunci dalam status *disabled* (`cursor-not-allowed`). Staf tidak dapat memalsukan nama pelapor atas nama orang lain.
+
+### 5.5 Tanggal Kejadian Otomatis dan Transparansi Validasi
+- **Tanggal Kejadian Terkunci Hari Ini**: Form pelaporan kasus mengunci kolom tanggal kejadian pada hari pencatatan (input *disabled*, nilai server-side), sehingga kasus selalu dihitung pada hari pelaporannya.
+- **Wali Kelas pada Detail Kasus**: Panel siswa di detail kasus menampilkan baris Wali Kelas sesuai rombel snapshot kasus.
+- **Verifikator Tercatat**: Transisi ke Penanganan mencatat siapa yang memvalidasi (`validator_id`/`validated_at`) dan menempelkan identitas verifikator yang sama pada transaksi debit poin (`verified_by`), sehingga kolom Verifikator pada riwayat poin selalu terisi.
 
 ---
 
@@ -179,3 +188,26 @@ Dokumen ini menguraikan seluruh modul fungsional yang tersedia pada aplikasi Pel
 ### 8.3 Cetak Sertifikat dan Lembar Kasus
 - Template cetak dokumen legalitas formal siap cetak langsung melalui fungsi peramban (`window.print()`).
 - Tata letak otomatis menyesuaikan margin lembar resmi dengan kop dinas pendidikan, logo sekolah, nomor registrasi surat, dan kolom tanda tangan ganda.
+
+---
+
+## 9. Modul Laporan dan Rekapitulasi
+
+### 9.1 Laporan Pelanggaran Ringkas
+- Rekapitulasi agregat pelanggaran dengan filter tahun ajaran, rentang tanggal (mulai s/d selesai), kelas, dan scope wali kelas.
+- Menampilkan kategori pelanggaran teratas, siswa terdampak, dan drill-down ke detail kategori dengan sortir (tanggal/nama/kelas).
+
+### 9.2 Laporan per Kelas (Bar Chart + Ekspor)
+- Ringkasan SEMUA kelas tahun ajaran terpilih: jumlah siswa, jumlah kasus pelanggaran, jumlah prestasi, dan wali kelas — kelas tanpa kasus tetap tampil sebagai bar kosong.
+- Ekspor XLSX native (`App\Support\Xlsx`, tanpa library eksternal) dengan kolom identik tabel halaman; bila tidak ada kelas pada filter, berkas berisi pesan eksplisit "Tidak ada data kelas pada filter ini."
+
+### 9.3 Indeks Laporan Kelas dan Laporan Siswa
+- **Indeks Laporan Kelas**: daftar kelas dengan chip hitung kasus/prestasi; membuka halaman detail riwayat kelas.
+- **Indeks Laporan Siswa**: pencarian siswa (nama/NIS/NISN) dengan hitung kasus & prestasi per siswa sesuai filter aktif; membuka halaman detail riwayat siswa.
+
+### 9.4 Riwayat Terperinci per Siswa / per Kelas
+- Dikelompokkan per siswa dalam kontainer berkepala abu (nama + counter Pelanggaran/Prestasi) yang otomatis berulang saat dicetak menyeberang halaman.
+- Tiga tabel isi: Riwayat pelanggaran (tanggal, kasus, kelas, kategori, status, pelapor, keterangan), Riwayat prestasi (termasuk kolom Verifikator dan bukti), dan Transaksi poin (khusus layar; termasuk Verifikator — untuk debit lama memakai fallback validator kasus).
+- Keterangan periode aktif ditampilkan sebagai baris informatif; perubahan filter dilakukan dari halaman indeks (filter form di detail dihapus demi konsistensi).
+- **Cetak/PDF** via `window.print()`: kepala tabel abu dipaksa ke printer, section dilindungi `break-inside: avoid`, baris tabel tidak terpotong; section yang lebih panjang dari satu halaman tetap diteruskan browser secara native.
+- **Ekspor XLSX**: berisi NIS/NISN/nama, kelas snapshot, tahun ajaran, tanggal (kejadian/event, fallback tanggal dicatat), jenis aktivitas, nomor kasus, kategori, status, perubahan poin, catatan, dan bukti prestasi; filter tanpa hasil menghasilkan baris "Tidak ada data pada filter ini."

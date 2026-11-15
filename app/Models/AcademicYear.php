@@ -36,6 +36,23 @@ class AcademicYear extends Model
         return $this->hasMany(SchoolClass::class);
     }
 
+    /**
+     * Tanggal berakhir efektif: end_date jika diisi, jika tidak start_date + 1 tahun
+     * (form tidak menginput end_date, jadi periode standar dipakai sebagai batas).
+     */
+    public function effectiveEndDate(): ?\Carbon\Carbon
+    {
+        return $this->end_date ?? $this->start_date?->copy()->addYear();
+    }
+
+    /** Sudah berlalu = tanggal berakhir efektifnya sudah lewat dari hari ini. */
+    public function isExpired(): bool
+    {
+        $end = $this->effectiveEndDate();
+
+        return $end !== null && $end->isPast();
+    }
+
     public function pointLedgers(): HasMany
     {
         return $this->hasMany(PointLedger::class);

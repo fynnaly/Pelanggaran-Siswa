@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -20,7 +21,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable, HasRoles, SoftDeletes;
+    use HasApiTokens, HasFactory, HasRoles, Notifiable, SoftDeletes;
 
     /**
      * Get the attributes that should be cast.
@@ -31,8 +32,17 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'deletion_requested_at' => 'datetime',
+            'deletion_approved_at' => 'datetime',
+            'is_active' => 'boolean',
             'password' => 'hashed',
         ];
+    }
+
+    /** Pengelola yang menyetujui penonaktifan akun ini. */
+    public function deletionApprover(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'deletion_approved_by');
     }
 
     /** Relasi akun siswa. */

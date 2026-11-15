@@ -1,7 +1,9 @@
 <section>
+    @php($isStudent = $user->hasRole('siswa'))
+
     <header>
         <h2 style="font-size:1.125rem;font-weight:600;margin-bottom:4px">Informasi Profil</h2>
-        <p class="text-sm text-muted">Perbarui data identitas diri, foto profil, dan alamat email Anda.</p>
+        <p class="text-sm text-muted">{{ $isStudent ? 'Perbarui foto profil. Nama dan email dikelola sekolah.' : 'Perbarui data identitas diri, foto profil, dan alamat email Anda.' }}</p>
     </header>
 
     <form id="send-verification" method="post" action="{{ route('verification.send') }}">
@@ -26,9 +28,10 @@
                 <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
                     <span class="help-text">Format JPG/PNG/WebP, maks. 2MB</span>
                     @if($user->avatar_path)
-                        <label class="help-text" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;color:var(--danger)">
-                            <input type="checkbox" name="remove_avatar" value="1"> Hapus foto
-                        </label>
+                        <button type="submit" name="remove_avatar" value="1" aria-label="Hapus foto profil" class="help-text" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;color:var(--danger);background:none;border:0;padding:0;font:inherit">
+                            <i data-lucide="trash-2" class="icon-sm" aria-hidden="true"></i>
+                            <span>Hapus foto</span>
+                        </button>
                     @endif
                 </div>
                 @error('avatar')<span class="help-text" style="color:var(--danger)">{{ $message }}</span>@enderror
@@ -37,20 +40,24 @@
 
         <div class="field">
             <label class="field-label" for="name">Nama Lengkap</label>
-            <input id="name" name="name" type="text" class="field-input" value="{{ old('name', $user->name) }}" required autofocus autocomplete="name">
+            <input id="name" name="name" type="text" class="field-input {{ $isStudent ? 'cursor-not-allowed bg-slate-100 dark:bg-zinc-800 text-slate-500' : '' }}" value="{{ old('name', $user->name) }}" {{ $isStudent ? 'disabled' : 'required autofocus' }} autocomplete="name" style="{{ $isStudent ? 'background:var(--surface);color:var(--on-surface-muted);cursor:not-allowed' : '' }}">
+            @if($isStudent)<span class="help-text">Perubahan nama hanya dapat dilakukan oleh petugas sekolah.</span>@endif
             @error('name')<span class="help-text" style="color:var(--danger)">{{ $message }}</span>@enderror
         </div>
 
-        <div class="field">
-            <label class="field-label" for="nip">Nomor Induk Pegawai (NIP)</label>
-            <input id="nip" name="nip" type="text" class="field-input" value="{{ old('nip', $user->nip) }}" placeholder="Contoh: 198001012005011001 (opsional)">
-            <span class="help-text">Digunakan untuk keperluan tanda tangan dokumen penanganan dan rekap</span>
-            @error('nip')<span class="help-text" style="color:var(--danger)">{{ $message }}</span>@enderror
-        </div>
+        @unless($isStudent)
+            <div class="field">
+                <label class="field-label" for="nip">Nomor Induk Pegawai (NIP)</label>
+                <input id="nip" name="nip" type="text" class="field-input" value="{{ old('nip', $user->nip) }}" placeholder="Contoh: 198001012005011001 (opsional)">
+                <span class="help-text">Digunakan untuk keperluan tanda tangan dokumen penanganan dan rekap</span>
+                @error('nip')<span class="help-text" style="color:var(--danger)">{{ $message }}</span>@enderror
+            </div>
+        @endunless
 
         <div class="field">
             <label class="field-label" for="email">Alamat Email</label>
-            <input id="email" name="email" type="email" class="field-input" value="{{ old('email', $user->email) }}" required autocomplete="username">
+            <input id="email" name="email" type="email" class="field-input {{ $isStudent ? 'cursor-not-allowed bg-slate-100 dark:bg-zinc-800 text-slate-500' : '' }}" value="{{ old('email', $user->email) }}" {{ $isStudent ? 'disabled' : 'required' }} autocomplete="username" style="{{ $isStudent ? 'background:var(--surface);color:var(--on-surface-muted);cursor:not-allowed' : '' }}">
+            @if($isStudent)<span class="help-text">Perubahan email hanya dapat dilakukan oleh petugas sekolah.</span>@endif
             @error('email')<span class="help-text" style="color:var(--danger)">{{ $message }}</span>@enderror
 
             @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())

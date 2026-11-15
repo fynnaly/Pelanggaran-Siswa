@@ -2,19 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ScopesWaliKelas;
+use App\Models\AcademicYear;
 use App\Models\AchievementCategory;
 use App\Models\AchievementRecord;
-use App\Models\AcademicYear;
 use App\Models\DisciplineCase;
 use App\Models\PointLedger;
 use App\Models\SchoolClass;
 use App\Models\Student;
+use App\Support\AchievementRecordVerifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class AchievementRecordController extends Controller
 {
-    use \App\Http\Controllers\Concerns\ScopesWaliKelas;
+    use ScopesWaliKelas;
 
     /** Daftar role yang dianggap staf sekolah. User tanpa role apa pun = DITOLAK. */
     private const STAFF_ROLES = ['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'];
@@ -89,9 +91,16 @@ class AchievementRecordController extends Controller
 
         // Hanya sub-kategori (punya induk) — kategori induk berpoin 0 tidak dipilih
         // saat mencatat prestasi.
-        $categories = AchievementCategory::where('status', 'active')
+        $categories = AchievementCategory::with('parent')
+            ->where('status', 'active')
             ->whereNotNull('parent_id')
             ->get();
+        $categoryOptions = $categories->map(fn (AchievementCategory $category) => [
+            'id' => $category->id,
+            'code' => $category->code,
+            'name' => $category->name,
+            'points' => (int) $category->points,
+        ])->values();
 
         $classes = SchoolClass::where('academic_year_id', AcademicYear::where('is_active', true)->value('id'))
             ->orderBy('name')
@@ -139,7 +148,14 @@ class AchievementRecordController extends Controller
             ],
         ];
 
-        return view('achievement-records.create', compact('categories', 'selectedStudent', 'classes', 'hasPrerequisites', 'prerequisites'));
+        return view('achievement-records.create', compact(
+            'categories',
+            'categoryOptions',
+            'selectedStudent',
+            'classes',
+            'hasPrerequisites',
+            'prerequisites',
+        ));
     }
 
     /**
@@ -151,7 +167,7 @@ class AchievementRecordController extends Controller
     {
         $this->authorizeStaff();
 
-        $cases = DisciplineCase::with(['violationCategory', 'schoolClass'])
+        $cases = DisciplineCase::with(['violationCategory.parent', 'schoolClass'])
             ->where('student_id', $student->id)
             ->whereNotIn('status', ['closed', 'dismissed'])
             ->whereNotExists(function ($q) {
@@ -160,18 +176,28 @@ class AchievementRecordController extends Controller
             })
             ->orderByDesc('incident_date')
             ->get()
-            ->map(fn (DisciplineCase $c) => [
-                'id' => $c->id,
-                'label' => "{$c->case_number} — {$c->violationCategory?->name} (" . match ($c->status) {
-                    'found' => 'Ditemukan',
-                    'clarifying' => 'Klarifikasi',
-                    'classifying' => 'Klasifikasi',
-                    'handling' => 'Penanganan',
-                    'monitoring' => 'Monitoring',
-                    default => $c->status,
-                } . ')',
-                'required_achievement' => $c->violationCategory?->recoveryOptions() ?? [],
-            ]);
+            ->map(function (DisciplineCase $c) {
+                $category = $c->violationCategory;
+                $isZeroTolerance = $category && ($category->is_zero_tolerance || (int) $category->points >= 64);
+                $matched = $isZeroTolerance ? [] : ($category?->recoveryOptions() ?? []);
+
+                // Penebusan kasus: pasangan khusus dulu; kalau tidak ada, pakai
+                // kategori universal "Tidak pernah melanggar tata tertib minimal N bulan".
+                // Zero tolerance tidak bisa ditebus — tetap kosong.
+                return [
+                    'id' => $c->id,
+                    'label' => "{$c->case_number} — {$category?->name} (".match ($c->status) {
+                        'found' => 'Ditemukan',
+                        'clarifying' => 'Klarifikasi',
+                        'classifying' => 'Klasifikasi',
+                        'handling' => 'Penanganan',
+                        'monitoring' => 'Monitoring',
+                        default => $c->status,
+                    }.')',
+                    'required_achievement' => $matched ?: AchievementCategory::universalRecoveryOptions(),
+                    'is_universal_recovery' => ! $isZeroTolerance && $matched === [],
+                ];
+            });
 
         return response()->json($cases);
     }
@@ -209,8 +235,41 @@ class AchievementRecordController extends Controller
         }
 
         $category = AchievementCategory::findOrFail($validated['achievement_category_id']);
+        if ($category->parent_id === null || $category->status !== 'active') {
+            return back()->withInput()->withErrors([
+                'achievement_category_id' => 'Pilih sub-kategori prestasi yang aktif.',
+            ]);
+        }
+
         $activeYear = AcademicYear::where('is_active', true)->first();
         $caseId = $validated['discipline_case_id'] ?? null;
+
+        if ($caseId !== null) {
+            if ($studentIds->count() !== 1) {
+                return back()->withInput()->withErrors([
+                    'discipline_case_id' => 'Kasus hanya dapat ditautkan pada prestasi untuk satu siswa.',
+                ]);
+            }
+
+            $case = DisciplineCase::with('violationCategory.parent')->findOrFail($caseId);
+            if (
+                (int) $case->student_id !== (int) $studentIds->first()
+                || in_array($case->status, ['closed', 'dismissed'], true)
+            ) {
+                return back()->withInput()->withErrors([
+                    'discipline_case_id' => 'Kasus tidak aktif atau bukan milik siswa yang dipilih.',
+                ]);
+            }
+
+            $isMappedCategory = collect($case->violationCategory?->recoveryOptions() ?? [])
+                ->contains(fn (array $option) => (int) $option['id'] === (int) $category->id);
+            if (! $isMappedCategory) {
+                return back()->withInput()->withErrors([
+                    'achievement_category_id' => 'Kategori prestasi tidak dipadankan dengan kategori pelanggaran pada kasus ini.',
+                ]);
+            }
+        }
+
         $createdRecords = [];
 
         // BK & Kesiswaan: rekam prestasi langsung diverifikasi (kredit poin),
@@ -227,24 +286,12 @@ class AchievementRecordController extends Controller
 
                 $academicYearId = $enrollment?->academic_year_id ?? $activeYear?->id;
 
-                // Tautkan kasus hanya jika input kasus cocok dengan siswa ini
-                $linkedCaseId = null;
-                if ($caseId !== null) {
-                    $ownsCase = DisciplineCase::whereKey($caseId)
-                        ->where('student_id', $student->id)
-                        ->whereNotIn('status', ['closed', 'dismissed'])
-                        ->exists();
-                    if ($ownsCase) {
-                        $linkedCaseId = $caseId;
-                    }
-                }
-
                 $createdRecords[] = AchievementRecord::create([
                     'student_id' => $sid,
                     'enrollment_id' => $enrollment?->id,
                     'class_id' => $enrollment?->class_id,
                     'achievement_category_id' => $validated['achievement_category_id'],
-                    'discipline_case_id' => $linkedCaseId,
+                    'discipline_case_id' => $caseId,
                     'academic_year_id' => $academicYearId,
                     'recorded_by' => auth()->id(),
                     'status' => 'pending',
@@ -269,10 +316,10 @@ class AchievementRecordController extends Controller
         if ($count === 1) {
             $record = $createdRecords[0];
             if ($autoVerify) {
-                $pesan = 'Rekam prestasi dicatat dan langsung diverifikasi (poin +' . number_format((int) $record->points_awarded) . ' ditambahkan).';
+                $pesan = 'Rekam prestasi dicatat dan langsung diverifikasi (poin +'.number_format((int) $record->points_awarded).' ditambahkan).';
             } else {
                 $pesan = $record->isRedemption()
-                    ? 'Rekam prestasi dicatat sebagai penebusan kasus ' . $record->disciplineCase?->case_number . ' (status: pending).'
+                    ? 'Rekam prestasi dicatat sebagai penebusan kasus '.$record->disciplineCase?->case_number.' (status: pending).'
                     : 'Rekam prestasi berhasil dicatat (status: pending).';
             }
 
@@ -282,6 +329,7 @@ class AchievementRecordController extends Controller
         }
 
         $statusAkhir = $autoVerify ? 'langsung diverifikasi' : 'status: pending';
+
         return redirect()
             ->route('achievement-records.index')
             ->with('success', "{$count} catatan prestasi berhasil direkam secara kolektif ({$statusAkhir}).");
@@ -340,7 +388,7 @@ class AchievementRecordController extends Controller
 
         return redirect()
             ->route('achievement-records.index')
-            ->with('success', 'Rekam prestasi diverifikasi, poin +' . $achievementRecord->points_awarded . ' berhasil ditambahkan.');
+            ->with('success', 'Rekam prestasi diverifikasi, poin +'.$achievementRecord->points_awarded.' berhasil ditambahkan.');
     }
 
     /**
@@ -350,38 +398,7 @@ class AchievementRecordController extends Controller
      */
     private function verifyRecord(AchievementRecord $achievementRecord): void
     {
-        $points = $achievementRecord->points_awarded;
-
-        DB::transaction(function () use ($achievementRecord, $points) {
-            $academicYearId = $achievementRecord->academic_year_id
-                ?? $achievementRecord->student?->academic_year_id
-                ?? AcademicYear::where('is_active', true)->first()?->id;
-
-            $lastBalance = PointLedger::getLastBalance($achievementRecord->student_id, $academicYearId);
-
-            $balanceAfter = $lastBalance + $points;
-
-            $achievementRecord->update([
-                'status' => 'verified',
-                'verified_by' => auth()->id(),
-                'verified_at' => now(),
-            ]);
-
-            PointLedger::create([
-                'student_id' => $achievementRecord->student_id,
-                'academic_year_id' => $academicYearId,
-                'direction' => PointLedger::DIR_CREDIT,
-                'amount' => $points,
-                'balance_after' => $balanceAfter,
-                'transaction_type' => PointLedger::TYPE_ACHIEVEMENT,
-                'source_type' => AchievementRecord::class,
-                'source_id' => $achievementRecord->id,
-                'reason' => 'Prestasi: ' . ($achievementRecord->event_name ?? $achievementRecord->achievementCategory->code),
-                'created_by' => auth()->id(),
-                'verified_by' => auth()->id(),
-                'verified_at' => now(),
-            ]);
-        });
+        app(AchievementRecordVerifier::class)->verify($achievementRecord, auth()->user());
     }
 
     public function dismiss(Request $request, AchievementRecord $achievementRecord)
@@ -458,7 +475,7 @@ class AchievementRecordController extends Controller
                     'transaction_type' => PointLedger::TYPE_ACHIEVEMENT,
                     'source_type' => AchievementRecord::class,
                     'source_id' => $record->id,
-                    'reason' => 'Prestasi: ' . ($record->event_name ?? $record->achievementCategory?->code),
+                    'reason' => 'Prestasi: '.($record->event_name ?? $record->achievementCategory?->code),
                     'created_by' => auth()->id(),
                     'verified_by' => auth()->id(),
                     'verified_at' => now(),
@@ -467,9 +484,9 @@ class AchievementRecordController extends Controller
         });
 
         $skipped = count($ids) - $records->count();
-        $msg = $records->count() . ' rekam prestasi berhasil divalidasi (total +' . $totalPoints . ' poin).';
+        $msg = $records->count().' rekam prestasi berhasil divalidasi (total +'.$totalPoints.' poin).';
         if ($skipped > 0) {
-            $msg .= ' (' . $skipped . ' dilewati karena bukan pending)';
+            $msg .= ' ('.$skipped.' dilewati karena bukan pending)';
         }
 
         return redirect()->back()->with('success', $msg);

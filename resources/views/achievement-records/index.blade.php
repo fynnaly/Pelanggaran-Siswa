@@ -74,7 +74,7 @@
                                 @elseif($rec->status==='verified')<span class="badge badge-success"><i data-lucide="check-circle" style="width:12px;height:12px"></i> Divalidasi</span>
                                 @else<span class="badge badge-danger"><i data-lucide="x-circle" style="width:12px;height:12px"></i> Ditolak</span>@endif
                             </td>
-                            <td class="text-sm text-muted">{{ $rec->created_at?->format('d M Y') }}</td>
+                            <td class="text-sm text-muted">{{ $rec->created_at?->copy()->setTimezone('Asia/Jakarta')->locale('id')->translatedFormat('d M Y') }}</td>
                             <td><div class="action-cell">
                                 <a href="{{ route('achievement-records.show', $rec) }}" class="action-btn" title="Lihat"><i data-lucide="eye" style="width:14px;height:14px"></i></a>
                                 @if($rec->status==='pending' && auth()->user()?->hasAnyRole(['bk', 'kesiswaan', 'admin', 'kepala_sekolah']))

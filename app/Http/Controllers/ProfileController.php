@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
@@ -29,30 +28,39 @@ class ProfileController extends Controller
     {
         $user = $request->user();
         $validated = $request->validated();
+        $oldAvatarPath = $user->avatar_path;
 
-        $user->fill([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'nip' => $validated['nip'] ?? null,
-        ]);
+        if (! $user->hasRole('siswa')) {
+            $user->fill([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'nip' => $validated['nip'] ?? null,
+            ]);
+
+            if ($user->isDirty('email')) {
+                $user->email_verified_at = null;
+            }
+        }
 
         if ($request->hasFile('avatar')) {
-            if ($user->avatar_path && Storage::disk('public')->exists($user->avatar_path)) {
-                Storage::disk('public')->delete($user->avatar_path);
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+
+            if ($avatarPath === false) {
+                return back()
+                    ->withErrors(['avatar' => 'Foto profil gagal disimpan. Silakan coba lagi.'])
+                    ->withInput();
             }
-            $user->avatar_path = $request->file('avatar')->store('avatars', 'public');
-        } elseif (! empty($validated['remove_avatar'])) {
-            if ($user->avatar_path && Storage::disk('public')->exists($user->avatar_path)) {
-                Storage::disk('public')->delete($user->avatar_path);
-            }
+
+            $user->avatar_path = $avatarPath;
+        } elseif ($request->boolean('remove_avatar')) {
             $user->avatar_path = null;
         }
 
-        if ($user->isDirty('email')) {
-            $user->email_verified_at = null;
-        }
-
         $user->save();
+
+        if ($oldAvatarPath && $user->avatar_path !== $oldAvatarPath && Storage::disk('public')->exists($oldAvatarPath)) {
+            Storage::disk('public')->delete($oldAvatarPath);
+        }
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
@@ -63,7 +71,7 @@ class ProfileController extends Controller
     public function destroy(Request $request): RedirectResponse
     {
         $request->validateWithBag('userDeletion', [
-            'confirm_name' => ['required', 'string', 'in:' . $request->user()->name],
+            'confirm_name' => ['required', 'string', 'in:'.$request->user()->name],
             'password' => ['required', 'current_password'],
         ], [
             'confirm_name.in' => 'Nama konfirmasi tidak cocok dengan nama akun Anda.',
@@ -72,13 +80,13 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
-        Auth::logout();
+        if ($user->deletion_requested_at) {
+            return Redirect::route('profile.edit')->with('status', 'deletion-request-pending');
+        }
 
-        $user->delete();
+        $user->deletion_requested_at = now();
+        $user->save();
 
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
-        return Redirect::to('/');
+        return Redirect::route('profile.edit')->with('status', 'deletion-requested');
     }
 }

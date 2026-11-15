@@ -6,6 +6,9 @@
                 <p class="text-muted text-sm" data-live-count>{{ $users->total() }} akun terdaftar</p>
             </div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
+                <a href="{{ route('users.index', ['deletion_requested' => '1']) }}" class="btn btn-secondary btn-sm">
+                    Permintaan hapus ({{ $pendingDeletionCount }})
+                </a>
                 <a href="{{ route('users.template') }}" class="btn btn-secondary btn-sm"><i data-lucide="file-down" class="icon-sm"></i> Template</a>
                 <a href="{{ route('users.export') }}" class="btn btn-secondary btn-sm"><i data-lucide="download" class="icon-sm"></i> Export</a>
                 @if(auth()->user()?->hasAnyRole(['admin','kepala_sekolah','kesiswaan']))
@@ -46,6 +49,13 @@
                     <label style="font-size:.75rem;font-weight:700;color:var(--on-surface-muted);text-transform:uppercase;letter-spacing:.05em">Cari</label>
                     <input type="text" name="q" value="{{ $q ?? '' }}" placeholder="Nama, email, NISN, atau NIS..." class="input">
                 </div>
+                <div style="display:flex;flex-direction:column;gap:4px">
+                    <label style="font-size:.75rem;font-weight:700;color:var(--on-surface-muted);text-transform:uppercase;letter-spacing:.05em">Permintaan Akun</label>
+                    <select name="deletion_requested" class="input" style="min-width:190px" onchange="this.form.submit()">
+                        <option value="" {{ ! $deletionRequested ? 'selected' : '' }}>Semua akun</option>
+                        <option value="1" {{ $deletionRequested ? 'selected' : '' }}>Menunggu persetujuan</option>
+                    </select>
+                </div>
             </form>
             <div style="display:flex;align-items:center;gap:var(--sp-sm);flex-wrap:wrap">
                 <form action="{{ route('users.import') }}" method="POST" enctype="multipart/form-data" style="display:flex;align-items:center;gap:var(--sp-sm);flex:1;min-width:0">
@@ -66,7 +76,9 @@
                         <th><x-sortable-header column="name" label="Nama" :sort="$sort" :order="$order" route="users.index" :params="request()->except('sort','order','page')" /></th>
                         <th><x-sortable-header column="email" label="Email" :sort="$sort" :order="$order" route="users.index" :params="request()->except('sort','order','page')" /></th>
                         <th>Role / Jabatan</th>
+                        <th>Status Akun</th>
                         <th>Identitas</th>
+                        <th>Permintaan Hapus</th>
                         <th style="width:100px">Aksi</th>
                     </tr>
                 </thead>
@@ -89,6 +101,13 @@
                                     @endforelse
                                 </div>
                             </td>
+                            <td>
+                                @if($user->is_active)
+                                    <span class="badge badge-success">Aktif</span>
+                                @else
+                                    <span class="badge badge-neutral">Nonaktif</span>
+                                @endif
+                            </td>
                             <td class="text-sm">
                                 @if($user->student)
                                     <a href="{{ route('students.show', $user->student) }}" style="font-weight:600">{{ $user->student->nisn }}</a>
@@ -99,7 +118,39 @@
                                 @endif
                             </td>
                             <td>
+                                @if($user->deletion_requested_at)
+                                    <span class="badge badge-warning">Menunggu persetujuan</span>
+                                    <div class="text-xs text-muted" style="margin-top:4px">
+                                        {{ $user->deletion_requested_at->copy()->setTimezone('Asia/Jakarta')->locale('id')->translatedFormat('d M Y, H:i') }} WIB
+                                    </div>
+                                    @if($user->is(auth()->user()))
+                                        <span class="text-xs text-muted">Perlu diproses pengelola lain.</span>
+                                    @endif
+                                @else
+                                    <span class="text-sm text-muted">-</span>
+                                @endif
+                            </td>
+                            <td>
                                 <div class="action-cell">
+                                    @if($user->deletion_requested_at && ! $user->is(auth()->user()))
+                                        <form action="{{ route('users.deletion-requests.approve', $user) }}" method="POST" class="inline" onsubmit="return confirm('Setujui dan nonaktifkan akun ini?')">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button class="action-btn" title="Setujui penghapusan" style="color:var(--success)"><i data-lucide="check" style="width:14px;height:14px"></i></button>
+                                        </form>
+                                        <form action="{{ route('users.deletion-requests.reject', $user) }}" method="POST" class="inline" onsubmit="return confirm('Tolak permintaan penghapusan akun ini?')">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button class="action-btn" title="Tolak penghapusan" style="color:var(--danger)"><i data-lucide="x" style="width:14px;height:14px"></i></button>
+                                        </form>
+                                    @endif
+                                    @if(! $user->is_active)
+                                        <form action="{{ route('users.activate', $user) }}" method="POST" class="inline" onsubmit="return confirm('Aktifkan kembali akun ini?')">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button class="action-btn" title="Aktifkan akun" aria-label="Aktifkan akun"><i data-lucide="user-check" style="width:14px;height:14px"></i></button>
+                                        </form>
+                                    @endif
                                     <a href="{{ route('users.show', $user) }}" class="action-btn" title="Detail"><i data-lucide="eye" style="width:14px;height:14px"></i></a>
                                     <a href="{{ route('users.edit', $user) }}" class="action-btn" title="Edit"><i data-lucide="pencil" style="width:14px;height:14px"></i></a>
                                 </div>
@@ -107,9 +158,9 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" style="padding:40px;text-align:center;color:var(--on-surface-muted)">
+                            <td colspan="8" style="padding:40px;text-align:center;color:var(--on-surface-muted)">
                                 <i data-lucide="inbox" style="width:40px;height:40px;display:block;margin:0 auto var(--sp-sm);opacity:.4"></i>
-                                Belum ada pengguna.
+                                {{ $deletionRequested ? 'Belum ada permintaan penghapusan yang menunggu.' : 'Belum ada pengguna.' }}
                             </td>
                         </tr>
                     @endforelse

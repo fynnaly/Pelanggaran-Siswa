@@ -17,9 +17,9 @@
             <div class="profile-sidebar" style="width:240px;flex-shrink:0">
                 <div class="card" style="padding:var(--sp-sm)">
                     <div style="display:flex;flex-direction:column;gap:4px">
-                        <button type="button" 
-                                @click="activeTab = 'account'" 
-                                class="profile-tab-btn" 
+                        <button type="button"
+                                @click="activeTab = 'account'"
+                                class="profile-tab-btn"
                                 :class="activeTab === 'account' ? 'is-active' : ''"
                                 style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--r-sm);border:none;cursor:pointer;font-family:inherit;font-size:.875rem;width:100%;text-align:left;transition:background .15s">
                             <i data-lucide="user" class="icon-sm" style="flex-shrink:0"></i>
@@ -28,9 +28,9 @@
 
                         <div style="height:1px;background:var(--border);margin:4px 0"></div>
 
-                        <button type="button" 
-                                @click="activeTab = 'danger'" 
-                                class="profile-tab-btn tab-danger" 
+                        <button type="button"
+                                @click="activeTab = 'danger'"
+                                class="profile-tab-btn tab-danger"
                                 :class="activeTab === 'danger' ? 'is-active-danger' : ''"
                                 style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--r-sm);border:none;cursor:pointer;font-family:inherit;font-size:.875rem;width:100%;text-align:left;transition:background .15s">
                             <i data-lucide="alert-triangle" class="icon-sm" style="flex-shrink:0"></i>
@@ -56,9 +56,6 @@
                         <div style="flex:1">
                             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                                 <h2 style="font-size:1.125rem;font-weight:600;margin:0">{{ $user->name }}</h2>
-                                @if(method_exists($user, 'getRoleNames') && $user->getRoleNames()->isNotEmpty())
-                                    <span class="badge badge-info" style="font-size:.75rem">{{ ucfirst($user->getRoleNames()->first()) }}</span>
-                                @endif
                                 @php
                                     $activeClass = method_exists($user, 'activeHomeroomClass') ? $user->activeHomeroomClass() : null;
                                 @endphp
@@ -68,7 +65,7 @@
                             </div>
                             <div style="display:flex;align-items:center;gap:12px;margin-top:2px;flex-wrap:wrap">
                                 <span class="text-sm text-muted">{{ $user->email }}</span>
-                                @if($user->nip)
+                                @if(!$user->hasRole('siswa') && $user->nip)
                                     <span class="text-sm text-muted">&bull; NIP: {{ $user->nip }}</span>
                                 @endif
                             </div>

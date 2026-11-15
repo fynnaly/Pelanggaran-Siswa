@@ -2,23 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\DisciplineCase;
-use App\Models\ViolationCategory;
-use App\Models\Student;
 use App\Models\AcademicYear;
-use App\Models\SchoolClass;
+use App\Models\DisciplineCase;
 use App\Models\PointLedger;
+use App\Models\SchoolClass;
+use App\Models\Student;
 use App\Models\User;
-use Illuminate\Support\Facades\Notification;
+use App\Models\ViolationCategory;
 use App\Notifications\NewDisciplineCase;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Schema;
 
 class DisciplineCaseController extends Controller
 {
     use AuthorizesRequests;
-    use \App\Http\Controllers\Concerns\ScopesWaliKelas;
 
     /** Daftar role yang dianggap staf sekolah. */
     private const STAFF_ROLES = ['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'];
@@ -53,16 +54,10 @@ class DisciplineCaseController extends Controller
             $query->where('student_id', $studentId);
         }
 
-        // Scope wali kelas: pelanggaran siswa di kelas binaan + kasus yang ia laporkan
-        // sendiri (guru non-wali tetap bisa melacak status laporannya).
-        $waliScope = $this->waliKelasScope();
-        if ($waliScope !== null) {
-            $query->where(function ($q) use ($waliScope, $user) {
-                $q->whereHas(
-                    'student.currentEnrollment',
-                    fn ($eq) => $eq->whereIn('class_id', $waliScope)
-                )->orWhere('reporter_id', $user->id);
-            });
+        $isReporterOnly = $user->hasAnyRole(['guru', 'wali_kelas'])
+            && ! $user->hasAnyRole(['bk', 'kesiswaan', 'admin', 'kepala_sekolah']);
+        if ($isReporterOnly) {
+            $query->where('reporter_id', $user->id);
         }
 
         if ($status) {
@@ -72,7 +67,7 @@ class DisciplineCaseController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('case_number', 'like', "%{$search}%")
-                  ->orWhereHas('student', fn ($sq) => $sq->where('full_name', 'like', "%{$search}%"));
+                    ->orWhereHas('student', fn ($sq) => $sq->where('full_name', 'like', "%{$search}%"));
             });
         }
 
@@ -167,7 +162,7 @@ class DisciplineCaseController extends Controller
             'student_ids.*' => 'exists:students,id',
             'violation_category_id' => ['required', 'exists:violation_categories,id', function ($attr, $value, $fail) {
                 // Kasus wajib menunjuk sub-kategori; kategori induk yang masih punya anak tidak boleh dipilih.
-                if (\App\Models\ViolationCategory::whereNull('parent_id')->whereKey($value)->whereHas('children')->exists()) {
+                if (ViolationCategory::whereNull('parent_id')->whereKey($value)->whereHas('children')->exists()) {
                     $fail('Pilih sub-kategori, bukan kategori induk.');
                 }
             }],
@@ -237,7 +232,7 @@ class DisciplineCaseController extends Controller
                 ]);
 
                 if ($autoHandling) {
-                    $this->applyStatusChange($case, 'handling', 'Dikonfirmasi otomatis oleh ' . auth()->user()->name);
+                    $this->applyStatusChange($case, 'handling', 'Dikonfirmasi otomatis oleh '.auth()->user()->name);
                 }
 
                 $createdCases[] = $case;
@@ -248,14 +243,14 @@ class DisciplineCaseController extends Controller
         $statusLabel = $autoHandling ? 'Penanganan' : 'Temuan';
         $msg = $count > 1
             ? "{$count} laporan pelanggaran berhasil dicatat secara kolektif (status: {$statusLabel})."
-            : 'Laporan pelanggaran ' . $createdCases[0]->case_number . ' berhasil dicatat (status: ' . $statusLabel . ').';
+            : 'Laporan pelanggaran '.$createdCases[0]->case_number.' berhasil dicatat (status: '.$statusLabel.').';
 
         // Notifikasi ke BK & Kesiswaan bila kasus dicatat
         try {
-            if (\Illuminate\Support\Facades\Schema::hasTable('notifications')) {
+            if (Schema::hasTable('notifications')) {
                 $createdUserId = $validated['reporter_id'] ?? auth()->id();
                 $bkAndKesiswaan = User::role(['bk', 'kesiswaan'])->get();
-                if ($bkAndKesiswaan->isNotEmpty() && !$bkAndKesiswaan->contains('id', $createdUserId)) {
+                if ($bkAndKesiswaan->isNotEmpty() && ! $bkAndKesiswaan->contains('id', $createdUserId)) {
                     $first = $createdCases[0];
                     Notification::send($bkAndKesiswaan, new NewDisciplineCase(
                         caseId: $first->id,
@@ -267,7 +262,7 @@ class DisciplineCaseController extends Controller
                 }
             }
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('Gagal kirim notifikasi kasus baru: ' . $e->getMessage());
+            Log::warning('Gagal kirim notifikasi kasus baru: '.$e->getMessage());
         }
 
         return redirect()
@@ -290,17 +285,13 @@ class DisciplineCaseController extends Controller
             abort_if(! $studentId || $disciplineCase->student_id !== $studentId, 403, 'Akses ditolak. Anda hanya dapat melihat kasus Anda sendiri.');
         }
 
-        // Scope wali kelas: boleh melihat jika siswa adalah anggota kelas binaan,
-        // ATAU jika ia sendiri yang melaporkan kasus tersebut.
-        $waliScope = $this->waliKelasScope();
-        if ($waliScope !== null) {
-            $studentClassId = $disciplineCase->student?->currentEnrollment?->class_id ?? $disciplineCase->class_id;
-            $isOwnClass = $studentClassId && in_array($studentClassId, $waliScope, true);
-            $isReporter = $disciplineCase->reporter_id === $user->id;
-            abort_unless(
-                $isOwnClass || $isReporter,
+        $isReporterOnly = $user->hasAnyRole(['guru', 'wali_kelas'])
+            && ! $user->hasAnyRole(['bk', 'kesiswaan', 'admin', 'kepala_sekolah']);
+        if ($isReporterOnly) {
+            abort_if(
+                $disciplineCase->reporter_id !== $user->id,
                 403,
-                'Akses ditolak. Anda hanya dapat memantau kasus siswa di kelas binaan atau yang Anda laporkan sendiri.'
+                'Akses ditolak. Anda hanya dapat melihat kasus yang Anda laporkan.'
             );
         }
 
@@ -308,10 +299,12 @@ class DisciplineCaseController extends Controller
             'student.currentEnrollment.schoolClass', 'enrollment.schoolClass', 'schoolClass',
             'violationCategory.parent', 'violationCategory.redemptionRules.achievementCategory',
             'reporter', 'academicYear', 'assignedOfficer', 'validator', 'closer',
+            'schoolClass.homeroomTeacher',
         ]);
         $recovery = $disciplineCase->violationCategory
-            ? app(\App\Http\Controllers\ViolationCategoryController::class)->recoveryFor($disciplineCase->violationCategory)
+            ? app(ViolationCategoryController::class)->recoveryFor($disciplineCase->violationCategory)
             : [];
+
         return view('discipline-cases.show', compact('disciplineCase', 'recovery'));
     }
 
@@ -378,8 +371,10 @@ class DisciplineCaseController extends Controller
             'transaction_type' => PointLedger::TYPE_VIOLATION,
             'source_type' => DisciplineCase::class,
             'source_id' => $case->id,
-            'reason' => 'Pelanggaran: ' . $case->violationCategory->code,
+            'reason' => 'Pelanggaran: '.$case->violationCategory->code,
             'created_by' => auth()->id(),
+            // Yang memotong poin = yang memvalidasi kasus ke Penanganan (verifikator debit).
+            'verified_by' => auth()->id(),
         ]);
     }
 
@@ -405,7 +400,7 @@ class DisciplineCaseController extends Controller
             );
 
             $message = $debited
-                ? 'Kasus divalidasi, poin ' . $disciplineCase->getEffectivePoints() . ' berhasil dikurang.'
+                ? 'Kasus divalidasi, poin '.$disciplineCase->getEffectivePoints().' berhasil dikurang.'
                 : 'Kasus kembali ke penanganan — poin sudah dipotong sebelumnya.';
 
             return redirect()
@@ -417,7 +412,7 @@ class DisciplineCaseController extends Controller
 
         return redirect()
             ->route('kasus-pelanggaran.show', $disciplineCase)
-            ->with('success', 'Kasus diperbarui ke status: ' . $newStatus);
+            ->with('success', 'Kasus diperbarui ke status: '.$newStatus);
     }
 
     /**
@@ -484,12 +479,12 @@ class DisciplineCaseController extends Controller
             'monitoring' => 'Monitoring',
         ];
 
-        $message = $advanceable->count() . ' kasus dimajukan ke ' . $labels[$newStatus] . '.';
+        $message = $advanceable->count().' kasus dimajukan ke '.$labels[$newStatus].'.';
         if ($deducted > 0) {
-            $message .= ' ' . $deducted . ' debit poin dibuat.';
+            $message .= ' '.$deducted.' debit poin dibuat.';
         }
         if ($skipped > 0) {
-            $message .= ' ' . $skipped . ' kasus dilewati.';
+            $message .= ' '.$skipped.' kasus dilewati.';
         }
 
         return redirect()->back()->with('success', $message);
@@ -509,6 +504,6 @@ class DisciplineCaseController extends Controller
 
         return redirect()
             ->route('kasus-pelanggaran.index')
-            ->with('warning', 'Pelanggaran ' . $disciplineCase->case_number . ' ditolak.');
+            ->with('warning', 'Pelanggaran '.$disciplineCase->case_number.' ditolak.');
     }
 }

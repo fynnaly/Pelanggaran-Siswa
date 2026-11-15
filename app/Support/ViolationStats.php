@@ -42,6 +42,17 @@ class ViolationStats
         return $q;
     }
 
+    /** Jumlah kasus (status != dismissed) per kelas — hanya kelas yang punya kasus.
+     *  Kelas tanpa kasus tetap ditampilkan dengan nilai 0 oleh pemanggil. */
+    public static function countsPerClass(array $f): Collection
+    {
+        return self::base($f)
+            ->whereNotNull('dc.class_id')
+            ->groupBy('dc.class_id')
+            ->selectRaw('dc.class_id, COUNT(*) AS total')
+            ->pluck('total', 'class_id');
+    }
+
     public static function topCategories(array $f, ?int $limit = null): Collection
     {
         return self::base($f)

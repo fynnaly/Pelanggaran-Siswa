@@ -57,7 +57,8 @@
                                     <button type="button" @click="toggleSubmenu('{{ $menuKey }}')"
                                         data-submenu-key="{{ $menuKey }}"
                                         class="menu-item cursor-pointer group flex items-center justify-between w-full h-10 px-3 rounded-lg text-sm font-medium transition-colors"
-                                        :class="isGroupActive(@js($item['subItems'])) || isSubmenuOpen('{{ $menuKey }}') ?
+                                        {{-- Warna aktif HANYA saat halaman saat ini termasuk kategori ini, bukan saat submenu dibuka/ditutup --}}
+                                        :class="isGroupActive(@js($item['subItems'])) ?
                                             'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400' :
                                             'text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white'"
                                         title="{{ $item['name'] }}">
@@ -75,7 +76,8 @@
                                         <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"
                                             class="shrink-0 transition-transform duration-200 pointer-events-none"
                                             :class="[
-                                                isSubmenuOpen('{{ $menuKey }}') ? 'rotate-180 text-brand-600 dark:text-brand-400' : 'text-gray-400',
+                                                isGroupActive(@js($item['subItems'])) ? 'text-brand-600 dark:text-brand-400' : 'text-gray-400',
+                                                isSubmenuOpen('{{ $menuKey }}') ? 'rotate-180' : '',
                                                 isOpen() ? 'block' : 'hidden'
                                             ]">
                                             <path d="M4.792 7.396L10 12.604l5.208-5.208" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
@@ -212,9 +214,12 @@
                 },
 
                 isActive(path) {
-                    const clean = path.replace(/^\/+/, '');
+                    // Abaikan #fragment agar menu ber-anchor tetap ter-highlight.
+                    // Prefix match: /laporan/kelas juga meng-highlight /laporan/kelas/1 (halaman detail).
+                    const clean = path.split('#')[0].replace(/^\/+/, '').replace(/\/+$/, '');
                     const current = window.location.pathname.replace(/^\/+/, '');
-                    return current === clean;
+                    if (clean === '') return current === '';
+                    return current === clean || current.startsWith(clean + '/');
                 },
 
                 isGroupActive(subItems) {

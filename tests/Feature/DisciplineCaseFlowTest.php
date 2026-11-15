@@ -8,10 +8,13 @@ use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\User;
 use App\Models\ViolationCategory;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
+use Illuminate\Support\Carbon;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function () {
-    app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+    app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
     Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
     Role::firstOrCreate(['name' => 'bk', 'guard_name' => 'web']);
@@ -67,7 +70,7 @@ beforeEach(function () {
     $this->adminUser = User::factory()->create();
     $this->adminUser->assignRole('admin');
     $this->actingAs($this->adminUser, 'web');
-    $this->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class);
+    $this->withoutMiddleware(PreventRequestForgery::class);
 });
 
 it('creates case with initial found status and does not deduct points yet', function () {
@@ -275,6 +278,8 @@ it('scopes discipline cases and point history for siswa role', function () {
         'incident_date' => '2026-11-12',
         'incident_time' => '07:30',
     ]);
+    $caseMy->created_at = Carbon::parse('2026-08-14 21:37:00', 'UTC');
+    $caseMy->save();
 
     $caseOther = DisciplineCase::create([
         'case_number' => 'KAS-OTHER-002',
@@ -300,7 +305,10 @@ it('scopes discipline cases and point history for siswa role', function () {
     $response->assertSee('07:30 WIB');
 
     // Siswa bisa melihat rincian kasusnya sendiri
-    $this->get(route('kasus-pelanggaran.show', $caseMy))->assertOk()->assertSee('07:30 WIB');
+    $this->get(route('kasus-pelanggaran.show', $caseMy))
+        ->assertOk()
+        ->assertSee('07:30 WIB')
+        ->assertSee('15 Agt 2026 04:37 WIB');
 
     // Siswa ditolak jika mencoba mengintip rincian kasus siswa lain
     $this->get(route('kasus-pelanggaran.show', $caseOther))->assertForbidden();
@@ -310,4 +318,52 @@ it('scopes discipline cases and point history for siswa role', function () {
 
     // Siswa membuka buku kas miliknya sendiri berhasil
     $this->get(route('point-ledgers.siswa', $this->student))->assertOk();
+});
+
+it('limits guru and wali kelas to cases they reported', function () {
+    foreach (['guru', 'wali_kelas'] as $roleName) {
+        Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
+
+        $reporter = User::factory()->create();
+        $reporter->assignRole($roleName);
+        $this->class->update(['homeroom_teacher_id' => $reporter->id]);
+
+        $ownCase = DisciplineCase::create([
+            'case_number' => 'KAS-OWN-'.$roleName,
+            'student_id' => $this->student->id,
+            'enrollment_id' => $this->enrollment->id,
+            'class_id' => $this->class->id,
+            'violation_category_id' => $this->category->id,
+            'academic_year_id' => $this->year->id,
+            'reporter_id' => $reporter->id,
+            'description' => 'Kasus yang dilaporkan sendiri',
+            'status' => 'found',
+        ]);
+
+        $otherCase = DisciplineCase::create([
+            'case_number' => 'KAS-OTHER-'.$roleName,
+            'student_id' => $this->student->id,
+            'enrollment_id' => $this->enrollment->id,
+            'class_id' => $this->class->id,
+            'violation_category_id' => $this->category->id,
+            'academic_year_id' => $this->year->id,
+            'reporter_id' => $this->adminUser->id,
+            'description' => 'Kasus yang dilaporkan orang lain',
+            'status' => 'found',
+        ]);
+
+        $this->actingAs($reporter)
+            ->get(route('kasus-pelanggaran.index'))
+            ->assertOk()
+            ->assertSee($ownCase->case_number)
+            ->assertDontSee($otherCase->case_number);
+
+        $this->get(route('kasus-pelanggaran.show', $ownCase))->assertOk();
+        $this->get(route('kasus-pelanggaran.show', $otherCase))->assertForbidden();
+    }
+
+    $this->actingAs($this->adminUser)
+        ->get(route('kasus-pelanggaran.index'))
+        ->assertSee('KAS-OTHER-guru')
+        ->assertSee('KAS-OTHER-wali_kelas');
 });
