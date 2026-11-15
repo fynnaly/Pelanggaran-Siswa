@@ -87,6 +87,7 @@ class ApiDisciplineCaseController extends Controller
 
                 return [
                     'id' => $case->id,
+                    'student_id' => $case->student_id,
                     'case_number' => $case->case_number,
                     'student_name' => $case->student?->full_name ?? '-',
                     'class_name' => $className,
