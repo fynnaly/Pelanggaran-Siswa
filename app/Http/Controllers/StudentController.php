@@ -14,9 +14,36 @@ use Illuminate\Support\Facades\Hash;
 
 class StudentController extends Controller
 {
+    private const MANAGER_ROLES = ['admin', 'bk', 'kesiswaan', 'kepala_sekolah'];
+
+    use \App\Http\Controllers\Concerns\ScopesWaliKelas;
+
+    /** Daftar role yang dianggap staf sekolah. User tanpa role apa pun = DITOLAK. */
+    private const STAFF_ROLES = ['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'];
+
+    private function authorizeStaff(): void
+    {
+        abort_unless(
+            request()->user()?->hasAnyRole(self::STAFF_ROLES),
+            403,
+            'Akses ditolak. Fitur ini hanya untuk staf sekolah.'
+        );
+    }
+
+    private function authorizeManagement(): void
+    {
+        abort_unless(
+            request()->user()?->hasAnyRole(self::MANAGER_ROLES),
+            403,
+            'Hanya admin / kesiswaan / kepala sekolah yang boleh mengubah data siswa.',
+        );
+    }
+
     /** Daftar siswa, terpisah dari data poin. */
     public function index()
     {
+        $this->authorizeStaff();
+
         $q = request('q');
         $classId = request('class_id');
         $sort = request('sort', 'created_at');
@@ -32,12 +59,19 @@ class StudentController extends Controller
 
         $allClasses = SchoolClass::where('academic_year_id', $filterYearId)->orderBy('name')->get();
 
+        $waliScope = $this->waliKelasScope();
+        if ($waliScope !== null) {
+            $allClasses = $allClasses->filter(fn ($c) => in_array($c->id, $waliScope, true))->values();
+        }
+
         $students = Student::with([
                 'currentEnrollment.schoolClass',
                 'currentEnrollment.academicYear',
                 'enrollments.schoolClass',
                 'enrollments.academicYear',
             ])
+            ->when($waliScope !== null, fn ($query) => $query
+                ->whereHas('currentEnrollment', fn ($sub) => $sub->whereIn('class_id', $waliScope)))
             ->whereHas('enrollments', fn ($q) => $q
                 ->when($selectedYearId, fn ($sub) => $sub->where('academic_year_id', $selectedYearId))
                 ->when($classId, fn ($sub) => $sub->where('class_id', $classId)))
@@ -76,6 +110,8 @@ class StudentController extends Controller
     /** Form tambah siswa — kirim daftar kelas dari controller (jangan query di Blade). */
     public function create()
     {
+        $this->authorizeManagement();
+
         $activeYear = AcademicYear::where('is_active', true)->first();
         // Hanya kelas aktif — kelas arsip (nonaktif/tahun lama) tidak boleh dipakai mendaftar.
         $classes = SchoolClass::with('academicYear')
@@ -108,8 +144,10 @@ class StudentController extends Controller
 
     /** Simpan siswa baru + buat saldo awal 2000 (OPENING_BALANCE) sekali per tahun ajaran. */
     public function store(Request $request)
-        {
-            $validated = $request->validate([
+    {
+        $this->authorizeManagement();
+
+        $validated = $request->validate([
                 // NISN standar Kemendikbud: 10 digit angka. NIS sekolah: YYYYMMDD+urutan = 12 digit.
                 'nisn'      => 'required|digits:10|unique:students',
                 'nis'       => 'required|digits:12|unique:students',
@@ -168,6 +206,8 @@ class StudentController extends Controller
     /** Form edit siswa */
     public function edit(Student $student)
     {
+        $this->authorizeManagement();
+
         // Hanya kelas aktif — kelas arsip tidak boleh dipilih ulang.
         $classes = SchoolClass::with('academicYear')
             ->where('academic_year_id', AcademicYear::where('is_active', true)->value('id'))
@@ -181,6 +221,28 @@ class StudentController extends Controller
     /** Detail siswa (master only) */
     public function show(Student $student)
     {
+        $user = request()->user();
+        abort_unless(
+            $user?->hasAnyRole(array_merge(self::STAFF_ROLES, ['siswa'])),
+            403,
+            'Akses ditolak. Fitur ini hanya untuk pengguna terdaftar.'
+        );
+
+        if ($user && $user->hasRole('siswa') && ! $user->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'])) {
+            abort_unless($user->student?->id === $student->id, 403, 'Akses ditolak. Anda hanya dapat melihat profil Anda sendiri.');
+        }
+
+        // Scope wali kelas: hanya boleh melihat siswa di kelas binaan
+        $waliScope = $this->waliKelasScope();
+        if ($waliScope !== null) {
+            $studentClassId = $student->currentEnrollment?->class_id;
+            abort_unless(
+                $studentClassId && in_array($studentClassId, $waliScope, true),
+                403,
+                'Akses ditolak. Anda hanya dapat melihat data siswa di kelas yang Anda bimbing.'
+            );
+        }
+
         $student->load([
             'currentEnrollment.schoolClass',
             'currentEnrollment.academicYear',
@@ -193,6 +255,8 @@ class StudentController extends Controller
     /** Update data siswa */
     public function update(Request $request, Student $student)
     {
+        $this->authorizeManagement();
+
         $validated = $request->validate([
             'nisn'      => 'sometimes|digits:10|unique:students,nisn,' . $student->id,
             'nis'       => 'sometimes|digits:12|unique:students,nis,' . $student->id,
@@ -241,6 +305,8 @@ class StudentController extends Controller
      */
     public function search(Request $request)
     {
+        $this->authorizeStaff();
+
         $classId = $request->input('class_id');
         $q = $request->input('q', '');
 
@@ -299,6 +365,8 @@ class StudentController extends Controller
     /** Download template XLSX untuk import siswa (file asli ber-style, siap unduh). */
     public function downloadTemplate()
     {
+        $this->authorizeManagement();
+
         $path = public_path('template-siswa.xlsx');
 
         if (is_file($path)) {
@@ -320,40 +388,44 @@ class StudentController extends Controller
         ])->deleteFileAfterSend(true);
     }
 
-    /** Export daftar siswa ke CSV (paginate 5000, include poin terkini) */
+    /** Export daftar siswa ke XLSX (paginate 5000, include poin terkini) */
     public function export()
     {
+        $this->authorizeManagement();
+
         $students = Student::with(['currentEnrollment.schoolClass', 'currentEnrollment.academicYear', 'pointLedgers' => fn ($q) => $q->orderByDesc('id')])
             ->latest('nisn')
             ->limit(5000)
             ->get();
 
-        $filename = 'siswa-' . now()->format('Ymd-His') . '.csv';
+        $rows = [
+            ['NISN', 'NIS', 'Nama Lengkap', 'Jenis Kelamin', 'Telepon', 'Alamat', 'Nama Orang Tua', 'No. HP Orang Tua', 'Kelas', 'Tahun Ajaran', 'Status', 'Poin Saat Ini'],
+        ];
 
-        return response()->streamDownload(function () use ($students) {
-            $out = fopen('php://output', 'w');
-            fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
-            fputcsv($out, ['NISN', 'NIS', 'Nama Lengkap', 'Jenis Kelamin', 'Telepon', 'Alamat', 'Nama Orang Tua', 'No. HP Orang Tua', 'Kelas', 'Tahun Ajaran', 'Status', 'Poin Saat Ini']);
+        foreach ($students as $s) {
+            $poin = $s->pointLedgers->first()?->balance_after ?? 2000;
+            $rows[] = [
+                $s->nisn,
+                $s->nis,
+                $s->full_name,
+                $s->gender === 'L' ? 'Laki-laki' : 'Perempuan',
+                $s->phone ?? '',
+                $s->address ?? '',
+                $s->parent_name ?? '',
+                $s->parent_phone ?? '',
+                $s->currentEnrollment?->schoolClass?->name ?? '-',
+                $s->currentEnrollment?->academicYear?->name ?? '-',
+                $s->status,
+                (string) $poin,
+            ];
+        }
 
-            foreach ($students as $s) {
-                $poin = $s->pointLedgers->first()?->balance_after ?? 2000;
-                fputcsv($out, [
-                    $s->nisn,
-                    $s->nis,
-                    $s->full_name,
-                    $s->gender === 'L' ? 'Laki-laki' : 'Perempuan',
-                    $s->phone ?? '',
-                    $s->address ?? '',
-                    $s->parent_name ?? '',
-                    $s->parent_phone ?? '',
-                    $s->currentEnrollment?->schoolClass?->name ?? '-',
-                    $s->currentEnrollment?->academicYear?->name ?? '-',
-                    $s->status,
-                    $poin,
-                ]);
-            }
-            fclose($out);
-        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+        $path = Xlsx::write($rows, 'Daftar Siswa', true);
+        $filename = 'siswa-' . now()->format('Ymd-His') . '.xlsx';
+
+        return response()->download($path, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend(true);
     }
 
     /**
@@ -367,6 +439,8 @@ class StudentController extends Controller
      */
     public function import(Request $request)
     {
+        $this->authorizeManagement();
+
         $request->validate([
             'file' => 'required|file|mimes:csv,txt,xlsx|max:5120',
         ]);

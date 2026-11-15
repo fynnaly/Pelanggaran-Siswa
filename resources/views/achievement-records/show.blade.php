@@ -3,7 +3,7 @@
         <div class="page-header">
             <div><h1 style="display:flex;align-items:center;gap:var(--sp-sm)"><i data-lucide="award" class="icon"></i> Rekam Prestasi</h1></div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
-                @if($achievementRecord->status==='pending')
+                @if($achievementRecord->status==='pending' && auth()->user()?->hasAnyRole(['bk', 'kesiswaan', 'admin', 'kepala_sekolah']))
                     <form action="{{ route('achievement-records.validate', $achievementRecord) }}" method="POST" onsubmit="return confirm('Validasi prestasi ini? Poin akan ditambahkan.')">@csrf @method('PATCH')<button class="btn btn-primary btn-sm"><i data-lucide="check" class="icon-sm"></i> Validasi</button></form>
                     <form action="{{ route('achievement-records.dismiss', $achievementRecord) }}" method="POST" onsubmit="return confirm('Tolak rekam prestasi ini?')">@csrf @method('PATCH')<button class="btn btn-danger btn-sm"><i data-lucide="x" class="icon-sm"></i> Tolak</button></form>
                 @endif
@@ -24,8 +24,8 @@
                             @elseif($achievementRecord->status==='verified')<span class="badge badge-success"><i data-lucide="check-circle" style="width:12px;height:12px"></i> Divalidasi</span>
                             @else<span class="badge badge-danger"><i data-lucide="x-circle" style="width:12px;height:12px"></i> Ditolak</span>@endif
                         </td></tr>
-                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Tanggal Dicatat</td><td style="padding:8px 0">{{ $achievementRecord->created_at?->format('d M Y H:i') }}</td></tr>
-                        @if($achievementRecord->verified_at)<tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Divalidasi</td><td style="padding:8px 0">{{ $achievementRecord->verified_at?->format('d M Y H:i') }}</td></tr>@endif
+                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Tanggal Dicatat</td><td style="padding:8px 0">{{ $achievementRecord->created_at?->copy()->setTimezone('Asia/Jakarta')->locale('id')->translatedFormat('d M Y H:i') }} WIB</td></tr>
+                        @if($achievementRecord->verified_at)<tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Divalidasi</td><td style="padding:8px 0">{{ $achievementRecord->verified_at?->copy()->setTimezone('Asia/Jakarta')->locale('id')->translatedFormat('d M Y H:i') }} WIB</td></tr>@endif
                     </table>
                 </div>
                 <div class="card" style="margin-bottom:var(--sp-lg)">
@@ -40,7 +40,7 @@
                         <p class="text-muted text-sm">Prestasi biasa — tidak menaut ke kasus pelanggaran.</p>
                     @endif
                 </div>
-                <div class="card">
+                <div class="card" style="margin-bottom:var(--sp-lg)">
                     <h2 style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)"><i data-lucide="file-text" class="icon"></i> Keterangan</h2>
                     @if($achievementRecord->description)<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--sp-md);line-height:1.7">{{ nl2br(e($achievementRecord->description)) }}</div>@else<p class="text-muted text-sm">Tidak ada keterangan.</p>@endif
                 </div>

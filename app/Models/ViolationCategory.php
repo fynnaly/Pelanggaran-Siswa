@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -116,9 +117,10 @@ class ViolationCategory extends Model
     }
 
     /**
-     * Daftar prestasi pemulihan untuk kategori ini.
-     * Sumber: redemption_rules (padanan kanonik per sub). Zero tolerance
-     * → [] (tidak ada jalur penebusan via prestasi).
+     * Daftar sub-kategori prestasi aktif yang induknya bernama sama.
+     * Zero tolerance tidak memiliki jalur penebusan melalui prestasi.
+     *
+     * @return array<int, array{id: int, code: string, name: string, poin: int}>
      */
     public function recoveryOptions(): array
     {
@@ -126,23 +128,38 @@ class ViolationCategory extends Model
             return [];
         }
 
-        $rules = $this->redemptionRules()->with('achievementCategory')->get();
-
-        if ($rules->isNotEmpty()) {
-            return $rules->map(fn ($rule) => [
-                'code' => $rule->achievementCategory?->code,
-                'name' => $rule->achievementCategory?->name,
-                'poin' => $rule->poin_penebus,
-            ])->filter(fn ($row) => $row['name'] !== null)->values()->all();
+        $parentName = trim((string) $this->parent?->name);
+        if ($parentName === '') {
+            return [];
         }
 
-        return [];
+        $normalizedParentName = mb_strtolower($parentName);
+
+        return AchievementCategory::query()
+            ->whereNotNull('parent_id')
+            ->where('status', 'active')
+            ->where(function (Builder $query) {
+                $query->whereNull('effective_date')->orWhereDate('effective_date', '<=', today());
+            })
+            ->where(function (Builder $query) {
+                $query->whereNull('expiry_date')->orWhereDate('expiry_date', '>=', today());
+            })
+            ->whereHas('parent', fn (Builder $query) => $query
+                ->whereRaw('LOWER(TRIM(name)) = ?', [$normalizedParentName]))
+            ->orderBy('code')
+            ->get(['id', 'code', 'name', 'points'])
+            ->map(fn (AchievementCategory $category) => [
+                'id' => $category->id,
+                'code' => $category->code,
+                'name' => $category->name,
+                'poin' => (int) $category->points,
+            ])
+            ->all();
     }
 
     /**
-     * Teks sanksi: daftar prestasi wajib untuk memulihkan poin.
-     * Bukan label statis — mengikuti redemption rules.
-     * Tanpa prestasi divalidasi, poin tidak naik (poin tertahan).
+     * Teks sanksi beserta pilihan prestasi pemulihan yang cocok.
+     * Tanpa prestasi tervalidasi, poin tidak naik.
      */
     public function resolveSanksi(): string
     {
@@ -177,7 +194,7 @@ class ViolationCategory extends Model
     public function isActive(): bool
     {
         return $this->status === 'active'
-            && (!$this->effective_date || $this->effective_date->isPast())
-            && (!$this->expiry_date || $this->expiry_date->isFuture());
+            && (! $this->effective_date || $this->effective_date->isPast())
+            && (! $this->expiry_date || $this->expiry_date->isFuture());
     }
 }

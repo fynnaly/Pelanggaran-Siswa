@@ -5,15 +5,43 @@ namespace App\Http\Controllers;
 use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\AcademicYear;
+use App\Models\Department;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class SchoolClassController extends Controller
 {
+    private const MANAGER_ROLES = ['admin', 'bk', 'kesiswaan', 'kepala_sekolah'];
+
+    use \App\Http\Controllers\Concerns\ScopesWaliKelas;
+
+    /** Daftar role yang dianggap staf sekolah. User tanpa role apa pun = DITOLAK. */
+    private const STAFF_ROLES = ['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'];
+
+    private function authorizeStaff(): void
+    {
+        abort_unless(
+            request()->user()?->hasAnyRole(self::STAFF_ROLES),
+            403,
+            'Akses ditolak. Fitur ini hanya untuk staf sekolah.'
+        );
+    }
+
+    private function authorizeManagement(): void
+    {
+        abort_unless(
+            request()->user()?->hasAnyRole(self::MANAGER_ROLES),
+            403,
+            'Hanya admin / kesiswaan / kepala sekolah yang boleh mengubah data kelas.',
+        );
+    }
+
     /** Menampilkan daftar semua kelas */
     public function index(Request $request)
     {
+        $this->authorizeStaff();
+
         $academicYears = AcademicYear::orderBy('start_date')->get();
         $activeYearId = AcademicYear::where('is_active', true)->value('id');
         $selectedYearId = request('year_id') ?: $activeYearId;
@@ -23,9 +51,16 @@ class SchoolClassController extends Controller
         $allowed = ['id', 'name', 'grade_level', 'academic_year_id', 'status', 'students_count'];
         $sort = in_array($sort, $allowed, true) ? $sort : 'id';
 
-        $classes = SchoolClass::with(['academicYear', 'homeroomTeacher', 'assistantTeacher'])->withCount('students')
-            ->where('academic_year_id', $selectedYearId)
-            ->orderBy($sort, $order)
+        $query = SchoolClass::with(['academicYear', 'homeroomTeacher', 'assistantTeacher'])->withCount('students')
+            ->where('academic_year_id', $selectedYearId);
+
+        // Scope wali kelas: null = role pengawas/penuh, array = wajib filter (bisa kosong = tidak ada kelas binaan)
+        $waliScope = $this->waliKelasScope();
+        if ($waliScope !== null) {
+            $query->whereIn('id', $waliScope);
+        }
+
+        $classes = $query->orderBy($sort, $order)
             ->paginate(20)
             ->withQueryString();
         // Hanya role 'guru' yang bisa jadi wali kelas (skill: filter whereHas('roles')).
@@ -38,6 +73,18 @@ class SchoolClassController extends Controller
     /** Menampilkan detail satu kelas beserta daftarnya */
     public function show(SchoolClass $class)
     {
+        $this->authorizeStaff();
+
+        // Wali kelas hanya boleh membuka detail kelas binaannya sendiri
+        $waliScope = $this->waliKelasScope();
+        if ($waliScope !== null) {
+            abort_unless(
+                in_array($class->id, $waliScope, true),
+                403,
+                'Akses ditolak. Anda hanya dapat memantau kelas yang Anda bimbing sebagai wali kelas.'
+            );
+        }
+
         $class->load(['academicYear', 'homeroomTeacher', 'assistantTeacher']);
         $students = $class->students()
             ->with(['currentEnrollment', 'pointLedgers'])
@@ -62,8 +109,11 @@ class SchoolClassController extends Controller
     /** Menampilkan form pembuatan kelas baru */
     public function create()
     {
+        $this->authorizeManagement();
+
         $academicYears = AcademicYear::orderBy('name', 'desc')->get();
         $users = User::whereHas('roles', fn ($q) => $q->where('name', 'guru'))->orderBy('name')->get();
+        $departments = Department::where('status', 'active')->orderBy('code')->get();
 
         $activeYear = $academicYears->firstWhere('is_active', true) ?? $academicYears->first();
         $hasPrerequisites = (bool) $activeYear;
@@ -76,26 +126,40 @@ class SchoolClassController extends Controller
             ],
         ];
 
-        return view('classes.create', compact('academicYears', 'users', 'hasPrerequisites', 'prerequisites'));
+        return view('classes.create', compact('academicYears', 'users', 'departments', 'hasPrerequisites', 'prerequisites'));
     }
 
     /** Menyimpan kelas baru ke database */
     public function store(Request $request)
     {
+        $this->authorizeManagement();
+
         $validated = $request->validate([
             'academic_year_id' => 'required|exists:academic_years,id',
-            'name' => ['required', 'string', 'max:50',
-                Rule::unique('classes', 'name')->where(function ($query) use ($request) {
-                    return $query->where('academic_year_id', $request->academic_year_id);
-                })
-            ],
-            'grade_level' => 'nullable|in:X,XI,XII',
-            'major' => 'nullable|string|max:50',
+            'grade_level' => ['required', 'in:X,XI,XII'],
+            'department_id' => ['required', 'exists:departments,id'],
+            'number' => ['required', 'integer', 'min:1', 'max:99'],
             'homeroom_teacher_id' => 'nullable|exists:users,id',
             'assistant_teacher_id' => 'nullable|exists:users,id|different:homeroom_teacher_id',
             'status' => 'nullable|in:active,inactive',
         ]);
         $validated['status'] ??= 'active';
+
+        // Nama kelas = Tingkatan + Kode Jurusan + Nomor, mis. "X PPLG 1"
+        $department = Department::find($validated['department_id']);
+        $validated['name'] = trim($validated['grade_level'].' '.$department->code.' '.$validated['number']);
+        $validated['major'] = $department->code;
+        unset($validated['number']);
+
+        // Cegah duplikat nama kelas pada tahun ajaran yang sama
+        $duplicate = SchoolClass::where('academic_year_id', $validated['academic_year_id'])
+            ->where('name', $validated['name'])
+            ->exists();
+        if ($duplicate) {
+            return back()->withInput()->withErrors([
+                'number' => "Kelas {$validated['name']} sudah ada pada tahun ajaran ini. Gunakan nomor lain.",
+            ]);
+        }
 
         SchoolClass::create($validated);
 
@@ -107,31 +171,51 @@ class SchoolClassController extends Controller
     /** Menampilkan form edit kelas */
     public function edit(SchoolClass $class)
     {
+        $this->authorizeManagement();
+
         $academicYears = AcademicYear::orderBy('name', 'desc')->get();
         $users = User::whereHas('roles', fn ($q) => $q->where('name', 'guru'))->orderBy('name')->get();
-        return view('classes.edit', compact('class', 'academicYears', 'users'));
+        $departments = Department::where('status', 'active')->orderBy('code')->get();
+        return view('classes.edit', compact('class', 'academicYears', 'users', 'departments'));
     }
 
     /** Memperbarui data kelas */
     public function update(Request $request, SchoolClass $class)
     {
+        $this->authorizeManagement();
+
         // amvil data ID tahun ajaran
         $academicYearId = $request->input('academic_year_id', $class->academic_year_id);
 
         $validated = $request->validate([
             'academic_year_id' => 'sometimes|exists:academic_years,id',
-            'name' => ['sometimes', 'required', 'string', 'max:50',
-                Rule::unique('classes', 'name')
-                ->ignore($class->id)
-                ->where('academic_year_id', $academicYearId),
-            ],
-            'grade_level' => 'sometimes|nullable|in:X,XI,XII',
-            'major' => 'sometimes|nullable|string|max:50',
+            'grade_level' => ['required', 'in:X,XI,XII'],
+            'department_id' => ['required', 'exists:departments,id'],
+            'number' => ['required', 'integer', 'min:1', 'max:99'],
             'capacity' => 'sometimes|nullable|integer|min:1|max:100',
             'status' => 'sometimes|nullable|in:active,inactive',
             'homeroom_teacher_id' => 'nullable|exists:users,id',
             'assistant_teacher_id' => 'nullable|exists:users,id|different:homeroom_teacher_id',
         ]);
+
+        // Nama kelas = Tingkatan + Kode Jurusan + Nomor, mis. "X PPLG 1"
+        $department = Department::find($validated['department_id']);
+        $name = trim($validated['grade_level'].' '.$department->code.' '.$validated['number']);
+
+        // Cegah duplikat nama kelas pada tahun ajaran yang sama (kecuali dirinya sendiri)
+        $duplicate = SchoolClass::where('academic_year_id', $academicYearId)
+            ->where('name', $name)
+            ->where('id', '!=', $class->id)
+            ->exists();
+        if ($duplicate) {
+            return back()->withInput()->withErrors([
+                'number' => "Kelas {$name} sudah ada pada tahun ajaran ini. Gunakan nomor lain.",
+            ]);
+        }
+
+        $validated['name'] = $name;
+        $validated['major'] = $department->code;
+        unset($validated['number']);
 
         $class->update($validated);
 
@@ -144,6 +228,8 @@ class SchoolClassController extends Controller
     /** Pindahkan massal (naik kelas) sekumpulan siswa ke satu kelas target — via enrollments. */
     public function promote(Request $request)
     {
+        $this->authorizeManagement();
+
         $validated = $request->validate([
             'student_ids' => 'required|array|min:1',
             'student_ids.*' => 'exists:students,id',
@@ -189,6 +275,7 @@ class SchoolClassController extends Controller
     /** Menghapus kelas */
     public function destroy(SchoolClass $class)
     {
+        $this->authorizeManagement();
 
     // cek relasi siswa sebelum hapus (kelas)
         if ($class->students()->count() > 0) {

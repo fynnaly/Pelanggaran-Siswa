@@ -67,7 +67,7 @@
                     @forelse($ledgers as $l)
                         <tr>
                             <td class="text-sm text-muted">{{ $l->id }}</td>
-                            <td class="text-sm text-muted" style="white-space:nowrap">{{ $l->created_at?->format('d/m/Y H:i') }}</td>
+                            <td class="text-sm text-muted" style="white-space:nowrap">{{ $l->created_at?->copy()->setTimezone('Asia/Jakarta')->locale('id')->translatedFormat('d/m/Y H:i') }} WIB</td>
                             <td>
                                 <div style="display:flex;align-items:center;gap:var(--sp-sm)">
                                     <div style="width:32px;height:32px;border-radius:var(--r-full);background:var(--primary);color:var(--on-primary);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0">

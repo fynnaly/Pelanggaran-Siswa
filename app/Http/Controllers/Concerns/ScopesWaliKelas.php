@@ -22,11 +22,15 @@ trait ScopesWaliKelas
         $user = request()->user();
 
         if (! $user
-            || ! $user->hasRole('wali_kelas')
-            || $user->hasAnyRole(['admin', 'kesiswaan', 'kepala_sekolah'])) {
+            || ! $user->hasAnyRole(['wali_kelas', 'guru'])
+            || $user->hasAnyRole(['admin', 'kesiswaan', 'kepala_sekolah', 'bk'])) {
             return null;
         }
 
-        return SchoolClass::where('homeroom_teacher_id', $user->id)->pluck('id')->all();
+        // Cari kelas di mana user menjadi wali kelas (homeroom_teacher_id) atau guru pendamping (assistant_teacher_id)
+        return SchoolClass::where('homeroom_teacher_id', $user->id)
+            ->orWhere('assistant_teacher_id', $user->id)
+            ->pluck('id')
+            ->all();
     }
 }

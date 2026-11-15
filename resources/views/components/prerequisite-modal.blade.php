@@ -8,9 +8,9 @@
 @if(! $hasPrerequisites)
 <div x-data="{ open: true }" x-init="$nextTick(() => { if (window.lucide) lucide.createIcons(); })">
     <template x-teleport="body">
-        <div x-show="open" x-cloak class="modal-overlay" style="display:flex">
-            <div style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1001" @click="open = false"></div>
-            <div x-transition style="background:var(--neutral);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--sp-lg);max-width:520px;width:100%;position:relative;z-index:1002;box-shadow:var(--sh-md);margin:auto">
+        <div x-show="open" x-cloak class="modal-overlay">
+            <div style="position:fixed;inset:0;z-index:1" @click="open = false"></div>
+            <div x-transition style="background:var(--neutral);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--sp-lg);max-width:520px;width:100%;position:relative;z-index:2;box-shadow:var(--sh-md)">
                 <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:var(--sp-sm)">
                     <div style="width:40px;height:40px;border-radius:var(--r-full);background:var(--ws);color:var(--wt);display:flex;align-items:center;justify-content:center;flex-shrink:0">
                         <i data-lucide="alert-triangle" class="icon-sm"></i>

@@ -42,9 +42,15 @@
                             @elseif($disciplineCase->status==='closed')<span class="badge badge-success"><i data-lucide="check-circle" style="width:12px;height:12px"></i> Selesai</span>
                             @else<span class="badge badge-danger"><i data-lucide="x-circle" style="width:12px;height:12px"></i> Dibuang</span>@endif
                         </td></tr>
-                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Tanggal Dilaporkan</td><td style="padding:8px 0">{{ $disciplineCase->created_at?->format('d M Y H:i') }}</td></tr>
-                        @if($disciplineCase->validated_at)<tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Divalidasi</td><td style="padding:8px 0">{{ $disciplineCase->validated_at?->format('d M Y H:i') }}</td></tr>@endif
-                        @if($disciplineCase->closed_at)<tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Selesai</td><td style="padding:8px 0">{{ $disciplineCase->closed_at?->format('d M Y H:i') }}</td></tr>@endif
+                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Waktu Kejadian</td><td style="padding:8px 0">
+                            {{ $disciplineCase->incident_date ? \Carbon\Carbon::parse($disciplineCase->incident_date)->locale('id')->translatedFormat('d M Y') : '-' }}
+                            @if($disciplineCase->incident_time)
+                                &middot; <span class="mono">{{ \Carbon\Carbon::parse($disciplineCase->incident_time)->format('H:i') }} WIB</span>
+                            @endif
+                        </td></tr>
+                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Tanggal Dilaporkan</td><td style="padding:8px 0">{{ $disciplineCase->created_at?->copy()->setTimezone('Asia/Jakarta')->locale('id')->translatedFormat('d M Y H:i') }} WIB</td></tr>
+                        @if($disciplineCase->validated_at)<tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Divalidasi</td><td style="padding:8px 0">{{ $disciplineCase->validated_at?->copy()->setTimezone('Asia/Jakarta')->locale('id')->translatedFormat('d M Y H:i') }} WIB</td></tr>@endif
+                        @if($disciplineCase->closed_at)<tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Selesai</td><td style="padding:8px 0">{{ $disciplineCase->closed_at?->copy()->setTimezone('Asia/Jakarta')->locale('id')->translatedFormat('d M Y H:i') }} WIB</td></tr>@endif
                     </table>
                 </div>
                 <div class="card">
@@ -53,12 +59,13 @@
                 </div>
             </div>
             <div>
-                <div class="card" style="margin-bottom:var(--sp-lg)">
+                <div class="card mt-6" style="margin-bottom:var(--sp-lg)">
                     <h2 style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)"><i data-lucide="user" class="icon"></i> Siswa</h2>
                     <table style="width:100%;border-collapse:collapse">
                         <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted);width:140px">Nama</td><td style="padding:8px 0;font-weight:600">{{ $disciplineCase->student?->full_name }}</td></tr>
                         <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">NIS</td><td class="mono" style="padding:8px 0">{{ $disciplineCase->student?->nis }}</td></tr>
                         <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Kelas</td><td style="padding:8px 0">{{ $disciplineCase->schoolClass?->name ?? $disciplineCase->student?->currentEnrollment?->schoolClass?->name ?? '-' }}</td></tr>
+                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Wali Kelas</td><td style="padding:8px 0">{{ $disciplineCase->schoolClass?->homeroomTeacher?->name ?? '-' }}</td></tr>
                     </table>
                 </div>
                 <div class="card" style="margin-bottom:var(--sp-lg)">
@@ -82,22 +89,27 @@
                     @if($disciplineCase->violationCategory?->is_zero_tolerance)
                         <p class="text-sm" style="color:var(--danger);font-weight:600">Zero tolerance — Program Pembinaan Intensif, tidak bisa ditebus poin prestasi biasa.</p>
                     @elseif(count($recovery) > 0)
-                        <div class="recovery-cards">
-                            @foreach($recovery as $rec)
-                                <div class="recovery-card">
-                                    <div class="recovery-card-icon"><i data-lucide="trophy" style="width:18px;height:18px"></i></div>
-                                    <div class="recovery-card-body">
-                                        <div class="recovery-card-title">{{ $rec['name'] }}</div>
-                                        <div class="text-sm text-muted">{{ $rec['code'] }} &middot; +{{ $rec['poin'] }} poin penebus</div>
-                                    </div>
-                                </div>
-                            @endforeach
+                        <div class="table-wrap">
+                            <table>
+                                <thead><tr><th style="width:90px">Kode</th><th>Kategori Prestasi Penebus</th><th style="width:110px">Poin Penebus</th></tr></thead>
+                                <tbody>
+                                    @foreach($recovery as $rec)
+                                        <tr>
+                                            <td class="mono">{{ $rec['code'] }}</td>
+                                            {{-- Icon sebaris teks: inline-flex supaya trophy tidak turun baris --}}
+                                            <td><span style="display:inline-flex;align-items:center;gap:8px;white-space:normal"><i data-lucide="trophy" style="width:16px;height:16px;flex:none;color:var(--warning,#b45309)"></i> {{ $rec['name'] }}</span></td>
+                                            <td class="mono" style="font-weight:600;color:var(--success)">+{{ $rec['poin'] }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
                         </div>
+                        <p class="text-sm text-muted" style="margin:var(--sp-sm) 0 0">Poin penebus ditambahkan kembali saat prestasi terkait diverifikasi.</p>
                     @else
                         <p class="text-sm text-muted">Belum ada rekomendasi padanan untuk sub kategori ini.</p>
                     @endif
                 </div>
-                <div class="card">
+                <div class="card mt-5">
                     <h2 style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)"><i data-lucide="user-check" class="icon"></i> Pelapor</h2>
                     <table style="width:100%;border-collapse:collapse">
                         <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted);width:140px">Dilaporkan oleh</td><td style="padding:8px 0;font-weight:600">{{ $disciplineCase->reporter?->name }}</td></tr>

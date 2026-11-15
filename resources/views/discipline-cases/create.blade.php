@@ -78,19 +78,13 @@
                 </div>
 
                 <div class="field"><label class="field-label">Tanggal Kejadian</label>
-                    <input type="date" name="incident_date" class="field-input" value="{{ old('incident_date', date('Y-m-d')) }}">
-                    <span class="help-text">Tanggal terjadinya pelanggaran</span>
+                    {{-- Tanggal otomatis hari ini: input tidak dapat diubah (disabled, tidak ikut disubmit — controller memakai tanggal pencatatan) --}}
+                    <input type="date" name="incident_date" class="field-input" value="{{ old('incident_date', date('Y-m-d')) }}" disabled style="background:var(--surface);color:var(--on-surface-muted);cursor:not-allowed">
+                    <span class="help-text">Otomatis tanggal hari ini (hari pencatatan kasus)</span>
                 </div>
                 @error('incident_date')<span class="text-danger text-sm">{{ $message }}</span>@enderror
 
-                <div class="field">
-                    <label class="field-label">Kelas Saat Kejadian</label>
-                    <div style="padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--on-surface-muted);font-size:.875rem;display:flex;align-items:center;gap:8px">
-                        <i data-lucide="check-circle" class="icon-sm" style="color:var(--tertiary);flex-shrink:0"></i>
-                        <span>Otomatis terhubung dengan kelas aktif masing-masing siswa pada tahun ajaran berjalan.</span>
-                    </div>
-                </div>
-
+                {{-- Kelas siswa diambil otomatis dari kelas aktif siswa pada tahun ajaran berjalan --}}
                 <div class="field"><label class="field-label">Kategori <span class="text-danger">*</span></label>
                     <select class="field-input" x-model="groupId" @change="onGroupChange()">
                         <option value="">Pilih kategori...</option>

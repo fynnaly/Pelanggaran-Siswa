@@ -6,7 +6,10 @@
                 <p class="text-muted text-sm" data-live-count>{{ $records->total() }} total rekam</p>
             </div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
-                <a href="{{ route('achievement-records.create') }}" class="btn btn-primary"><i data-lucide="plus" class="icon-sm"></i> Tambah</a>
+                @php $isSiswaMurni = auth()->user()?->hasRole('siswa') && ! auth()->user()->hasAnyRole(['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah']); @endphp
+                @unless($isSiswaMurni)
+                    <a href="{{ route('achievement-records.create') }}" class="btn btn-primary"><i data-lucide="plus" class="icon-sm"></i> Tambah</a>
+                @endunless
             </div>
         </div>
     </x-slot>
@@ -27,10 +30,23 @@
                 </div>
             </form>
         </div>
+
+        @php $canBulk = auth()->user()?->hasAnyRole(['bk','kesiswaan','admin']); @endphp
+        @if($canBulk)
+        <form id="bulkForm" method="POST" action="{{ route('achievement-records.bulk-validate') }}" style="display:none;align-items:center;gap:var(--sp-sm);flex-wrap:wrap;margin-bottom:var(--sp-md);padding:var(--sp-sm) var(--sp-md);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm)">
+            @csrf
+            <span class="text-sm" style="font-weight:600"><span id="bulkCount">0</span> dipilih</span>
+            <button type="submit" class="btn btn-primary btn-sm" id="bulkSubmit"><i data-lucide="check" class="icon-sm"></i> Verifikasi Terpilih (+ Poin)</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="clearBulk()">Batal</button>
+            <span class="text-xs text-muted">Hanya rekam prestasi berstatus pending yang akan diproses.</span>
+        </form>
+        @endif
+
         <div id="recordRegion">
         <div class="table-wrap">
             <table>
                 <thead><tr>
+                    @if($canBulk)<th style="width:36px;text-align:center"><input type="checkbox" id="selectAll" title="Pilih semua di halaman ini"></th>@endif
                     <th style="width:48px"><x-sortable-header column="id" label="No" :sort="$sort" :order="$order" route="achievement-records.index" :params="request()->except('sort','order','page')" /></th>
                     <th><x-sortable-header column="student_id" label="Siswa" :sort="$sort" :order="$order" route="achievement-records.index" :params="request()->except('sort','order','page')" /></th>
                     <th><x-sortable-header column="achievement_category_id" label="Kategori" :sort="$sort" :order="$order" route="achievement-records.index" :params="request()->except('sort','order','page')" /></th>
@@ -43,6 +59,11 @@
                 <tbody>
                     @forelse($records as $rec)
                         <tr>
+                            @if($canBulk)
+                                <td style="text-align:center">
+                                    <input type="checkbox" class="record-check" name="ids[]" value="{{ $rec->id }}" form="bulkForm" {{ $rec->status !== 'pending' ? 'disabled' : '' }} title="{{ $rec->status !== 'pending' ? 'Hanya pending yang dapat dipilih' : 'Pilih rekam prestasi ini' }}">
+                                </td>
+                            @endif
                             <td class="text-sm text-muted">{{ $rec->id }}</td>
                             <td><strong>{{ $rec->student?->full_name ?? '-' }}</strong><br><span class="text-muted text-sm">{{ $rec->schoolClass?->name ?? $rec->student?->currentEnrollment?->schoolClass?->name ?? '' }}</span></td>
                             <td>{{ $rec->achievementCategory?->name ?? '-' }}@if($rec->discipline_case_id) <span class="badge badge-info" style="margin-left:6px;font-size:.65rem">Penebus {{ $rec->disciplineCase?->case_number ?? '#' }}</span>@endif</td>
@@ -53,16 +74,16 @@
                                 @elseif($rec->status==='verified')<span class="badge badge-success"><i data-lucide="check-circle" style="width:12px;height:12px"></i> Divalidasi</span>
                                 @else<span class="badge badge-danger"><i data-lucide="x-circle" style="width:12px;height:12px"></i> Ditolak</span>@endif
                             </td>
-                            <td class="text-sm text-muted">{{ $rec->created_at?->format('d M Y') }}</td>
+                            <td class="text-sm text-muted">{{ $rec->created_at?->copy()->setTimezone('Asia/Jakarta')->locale('id')->translatedFormat('d M Y') }}</td>
                             <td><div class="action-cell">
                                 <a href="{{ route('achievement-records.show', $rec) }}" class="action-btn" title="Lihat"><i data-lucide="eye" style="width:14px;height:14px"></i></a>
-                                @if($rec->status==='pending')
+                                @if($rec->status==='pending' && auth()->user()?->hasAnyRole(['bk', 'kesiswaan', 'admin', 'kepala_sekolah']))
                                     <form action="{{ route('achievement-records.validate', $rec) }}" method="POST" class="inline" onsubmit="return confirm('Validasi prestasi ini? Poin akan ditambahkan.')">@csrf @method('PATCH')<button class="action-btn" title="Validasi" style="color:var(--tertiary)"><i data-lucide="check" style="width:14px;height:14px"></i></button></form>
                                 @endif
                             </div></td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" style="padding:40px;text-align:center;color:var(--on-surface-muted)"><i data-lucide="inbox" class="icon-lg" style="display:block;margin:0 auto var(--sp-sm)"></i>Belum ada rekam prestasi.</td></tr>
+                        <tr><td colspan="{{ $canBulk ? 9 : 8 }}" style="padding:40px;text-align:center;color:var(--on-surface-muted)"><i data-lucide="inbox" class="icon-lg" style="display:block;margin:0 auto var(--sp-sm)"></i>Belum ada rekam prestasi.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -73,5 +94,55 @@
         </div>
         </div>
     </div>
-    <script>document.addEventListener('DOMContentLoaded',()=>{lucide.createIcons()})</script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        lucide.createIcons();
+        const bulkForm = document.getElementById('bulkForm');
+        if (!bulkForm) return;
+        const selectAll = document.getElementById('selectAll');
+        const countEl = document.getElementById('bulkCount');
+        const submitBtn = document.getElementById('bulkSubmit');
+        const recordRegion = document.getElementById('recordRegion');
+
+        function getChecks() { return document.querySelectorAll('.record-check:not(:disabled)'); }
+
+        function refresh() {
+            const checks = getChecks();
+            const checked = document.querySelectorAll('.record-check:checked');
+            const n = checked.length;
+            countEl.textContent = n;
+            bulkForm.style.display = n ? 'flex' : 'none';
+            submitBtn.disabled = !n;
+            if (selectAll) {
+                selectAll.checked = checks.length > 0 && n === checks.length;
+                selectAll.indeterminate = n > 0 && n < checks.length;
+            }
+        }
+
+        window.clearBulk = () => {
+            getChecks().forEach(c => c.checked = false);
+            refresh();
+        };
+
+        if (selectAll) selectAll.addEventListener('change', () => {
+            getChecks().forEach(c => c.checked = selectAll.checked);
+            refresh();
+        });
+
+        recordRegion.addEventListener('change', e => {
+            if (e.target.classList.contains('record-check')) refresh();
+        });
+
+        const obs = new MutationObserver(() => { lucide.createIcons(); refresh(); });
+        obs.observe(recordRegion, { childList: true, subtree: true });
+
+        bulkForm.addEventListener('submit', e => {
+            const n = document.querySelectorAll('.record-check:checked').length;
+            if (!n) { e.preventDefault(); return; }
+            if (!confirm('Verifikasi ' + n + ' rekam prestasi terpilih dan tambahkan poinnya?')) {
+                e.preventDefault();
+            }
+        });
+    });
+    </script>
 </x-app-layout>

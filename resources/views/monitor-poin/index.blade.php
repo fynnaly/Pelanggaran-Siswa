@@ -6,7 +6,7 @@
                 <p class="text-muted text-sm" data-live-count>{{ $paginated->total() }} siswa &middot; tahun ajaran aktif</p>
             </div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap" class="no-print">
-                <a href="{{ route('monitor-poin.export') }}?{{ http_build_query(request()->only(['q','year_id','class_id','zone'])) }}" class="btn btn-secondary btn-sm"><i data-lucide="download" class="icon-sm"></i> Export CSV</a>
+                <a href="{{ route('monitor-poin.export') }}?{{ http_build_query(request()->only(['q','year_id','class_id','zone'])) }}" class="btn btn-secondary btn-sm"><i data-lucide="download" class="icon-sm"></i> Export</a>
                 <button type="button" onclick="window.print()" class="btn btn-secondary btn-sm"><i data-lucide="printer" class="icon-sm"></i> Cetak Rekap</button>
             </div>
         </div>
@@ -42,19 +42,19 @@
         <div class="toolbar no-print">
             <form id="poinFilter" action="{{ route('monitor-poin.index') }}" method="GET" data-live="#poinRegion" style="display:flex;gap:var(--sp-sm);flex:1;align-items:stretch;flex-wrap:wrap">
                 <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nama / NISN / NIS..." class="input" style="flex:1;min-width:180px" id="poinSearch">
-                <select name="year_id" class="input no-print" style="width:auto;min-width:110px;flex-shrink:0">
+                <select name="year_id" class="input no-print" style="width:auto;min-width:110px;flex-shrink:0" onchange="this.form.submit()">
                     <option value="">Semua Tahun</option>
                     @foreach($academicYears as $ay)
                         <option value="{{ $ay->id }}" {{ (string)($selectedYearId ?? '')===(string)$ay->id?'selected':'' }}>{{ $ay->name }}</option>
                     @endforeach
                 </select>
-                <select name="class_id" class="input no-print" style="width:auto;min-width:140px;flex-shrink:0">
+                <select name="class_id" class="input no-print" style="width:auto;min-width:140px;flex-shrink:0" onchange="this.form.submit()">
                     <option value="">Semua Kelas</option>
                     @foreach($allClasses as $cls)
                         <option value="{{ $cls->id }}" {{ (string)request('class_id')===(string)$cls->id?'selected':'' }}>{{ $cls->name }}</option>
                     @endforeach
                 </select>
-                <select name="zone" class="input no-print" style="width:auto;min-width:160px;flex-shrink:0">
+                <select name="zone" class="input no-print" style="width:auto;min-width:160px;flex-shrink:0" onchange="this.form.submit()">
                     <option value="">Semua Zona</option>
                     @foreach(config('zones.zones',[]) as $z)
                         <option value="{{ $z['name'] }}" {{ request('zone')===$z['name']?'selected':'' }}>{{ $z['name'] }}</option>

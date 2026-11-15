@@ -7,7 +7,9 @@
             </div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
                 <a href="{{ route('classes.index') }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" class="icon-sm"></i> Kembali</a>
-                <a href="{{ route('classes.edit', $class) }}" class="btn btn-primary btn-sm"><i data-lucide="pencil" class="icon-sm"></i> Edit</a>
+                @if(auth()->user()?->hasAnyRole(['admin', 'bk', 'kesiswaan', 'kepala_sekolah']))
+                    <a href="{{ route('classes.edit', $class) }}" class="btn btn-primary btn-sm"><i data-lucide="pencil" class="icon-sm"></i> Edit</a>
+                @endif
             </div>
         </div>
     </x-slot>

@@ -8,6 +8,13 @@
         </div>
     </x-slot>
     <div class="main-wrap">
+        @php
+            // Nomor rombel diambil dari angka di akhir nama kelas yang tersimpan
+            preg_match('/(\d+)\s*$/', $class->name ?? '', $nameNum);
+            $classNumber = old('number', $nameNum[1] ?? 1);
+            // Jurusan terpilih: prioritas department_id tersimpan; fallback dari kode major lama
+            $selectedDeptId = old('department_id', $class->department_id ?? \App\Models\Department::where('code', $class->major)->value('id'));
+        @endphp
         <div class="card card-form">
             @if($errors->any())<div class="alert alert-error" style="margin-bottom:var(--sp-lg)"><i data-lucide="alert-circle" class="icon-sm"></i> {{ $errors->first() }}</div>@endif
             <form action="{{ route('classes.update', $class) }}" method="POST">
@@ -20,19 +27,30 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="field"><label class="field-label">Nama Kelas <span class="text-danger">*</span></label>
-                    <input type="text" name="name" value="{{ old('name', $class->name) }}" class="field-input" required>
-                </div>
-                <div class="field"><label class="field-label">Tingkat</label>
-                    <select name="grade_level" class="field-input">
-                        <option value="">Pilih tingkat...</option>
-                        <option value="X" {{ old('grade_level', $class->grade_level)==='X'?'selected':'' }}>X/10</option>
-                        <option value="XI" {{ old('grade_level', $class->grade_level)==='XI'?'selected':'' }}>XI/11</option>
-                        <option value="XII" {{ old('grade_level', $class->grade_level)==='XII'?'selected':'' }}>XII/12</option>
+                <div class="field"><label class="field-label">Tingkatan <span class="text-danger">*</span></label>
+                    <select name="grade_level" class="field-input" id="gradeLevel" required>
+                        <option value="">Pilih tingkatan...</option>
+                        <option value="X" {{ old('grade_level', $class->grade_level)==='X'?'selected':'' }}>X</option>
+                        <option value="XI" {{ old('grade_level', $class->grade_level)==='XI'?'selected':'' }}>XI</option>
+                        <option value="XII" {{ old('grade_level', $class->grade_level)==='XII'?'selected':'' }}>XII</option>
                     </select>
                 </div>
-                <div class="field"><label class="field-label">Program Keahlian</label>
-                    <input type="text" name="major" value="{{ old('major', $class->major) }}" class="field-input" placeholder="Contoh: RPL">
+                <div class="field"><label class="field-label">Jurusan <span class="text-danger">*</span></label>
+                    <select name="department_id" class="field-input" id="departmentSelect" required>
+                        <option value="">Pilih jurusan...</option>
+                        @foreach($departments as $dept)
+                            <option value="{{ $dept->id }}" data-code="{{ $dept->code }}" {{ (string) $selectedDeptId === (string) $dept->id ? 'selected' : '' }}>{{ $dept->code }} — {{ $dept->name }}</option>
+                        @endforeach
+                    </select>
+                    <span class="help-text">Diambil dari data referensi Jurusan.</span>
+                </div>
+                <div class="field"><label class="field-label">Nomor <span class="text-danger">*</span></label>
+                    <input type="number" name="number" value="{{ $classNumber }}" min="1" max="99" class="field-input" id="classNumber" required>
+                    <span class="help-text">Pembeda antar rombel satu jurusan.</span>
+                </div>
+                <div class="field"><label class="field-label">Nama Kelas</label>
+                    <input type="text" id="composedName" class="field-input cursor-not-allowed" value="{{ old('name', $class->name) }}" readonly style="background:var(--surface);color:var(--on-surface-muted)">
+                    <span class="help-text">Nama kelas tersusun otomatis: Tingkatan + Jurusan + Nomor (mis. X PPLG 1).</span>
                 </div>
                 <div class="field"><label class="field-label">Status</label>
                     <select name="status" class="field-input">
@@ -56,5 +74,23 @@
             </form>
         </div>
     </div>
-    <script>document.addEventListener('DOMContentLoaded',()=>{lucide.createIcons()})</script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            // Nama kelas tersusun live: Tingkatan + Kode Jurusan + Nomor
+            const compose = () => {
+                const grade = document.getElementById('gradeLevel')?.value || '';
+                const code = document.getElementById('departmentSelect')?.selectedOptions[0]?.dataset.code || '';
+                const num = document.getElementById('classNumber')?.value || '';
+                const name = [grade, code, num].filter(Boolean).join(' ');
+                const out = document.getElementById('composedName');
+                if (out) out.value = name || '';
+            };
+            ['gradeLevel', 'departmentSelect', 'classNumber'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('change', compose);
+            });
+            compose();
+        });
+    </script>
 </x-app-layout>

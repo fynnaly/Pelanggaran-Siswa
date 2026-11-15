@@ -14,9 +14,13 @@
         {{-- Student Info Card --}}
         <div class="card" style="margin-bottom:var(--sp-xl)">
             <div style="display:flex;align-items:center;gap:var(--sp-lg);flex-wrap:wrap">
-                <div style="width:56px;height:56px;border-radius:var(--r-full);background:var(--primary);color:var(--on-primary);display:flex;align-items:center;justify-content:center;font-size:1.25rem;font-weight:700;flex-shrink:0">
-                    {{ strtoupper(substr($student?->full_name ?? '?', 0, 2)) }}
-                </div>
+                @if($student?->user?->avatar_path)
+                    <img src="{{ asset('storage/' . $student->user->avatar_path) }}" alt="Foto {{ $student->full_name }}" style="width:56px;height:56px;border-radius:var(--r-full);object-fit:cover;flex-shrink:0">
+                @else
+                    <div style="width:56px;height:56px;border-radius:var(--r-full);background:var(--primary);color:var(--on-primary);display:flex;align-items:center;justify-content:center;font-size:1.25rem;font-weight:700;flex-shrink:0">
+                        {{ strtoupper(substr($student?->full_name ?? '?', 0, 2)) }}
+                    </div>
+                @endif
                 <div style="flex:1;min-width:200px">
                     <div style="font-weight:700;font-size:1.125rem">{{ $student?->full_name ?? '-' }}</div>
                     <div class="text-sm text-muted">NISN: {{ $student?->nisn ?? '-' }} &middot; Kelas: {{ $student?->currentEnrollment?->schoolClass?->name ?? '-' }}</div>
@@ -51,11 +55,18 @@
                     @forelse($ledger as $i => $entry)
                         <tr>
                             <td class="mono text-muted">{{ $i + 1 }}</td>
-                            <td class="text-sm text-muted" style="white-space:nowrap">{{ $entry->created_at?->format('d/m/Y H:i') }}</td>
+                            <td class="text-sm text-muted" style="white-space:nowrap">{{ $entry->created_at?->copy()->setTimezone('Asia/Jakarta')->locale('id')->translatedFormat('d/m/Y H:i') }} WIB</td>
                             <td>
-                                @if($entry->source_type === \App\Models\DisciplineCase::class && $entry->source_id)
-                                    <a href="{{ route('kasus-pelanggaran.show', $entry->source_id) }}" style="font-weight:600;display:inline-flex;align-items:center;gap:4px">
-                                        <i data-lucide="file-text" style="width:14px;height:14px"></i> {{ $entry->source?->case_number ?? '#' . $entry->source_id }}
+                                @php
+                                    $relatedCase = match ($entry->source_type) {
+                                        \App\Models\DisciplineCase::class => $entry->source,
+                                        \App\Models\AchievementRecord::class => $entry->source?->disciplineCase,
+                                        default => null,
+                                    };
+                                @endphp
+                                @if($relatedCase)
+                                    <a href="{{ route('kasus-pelanggaran.show', $relatedCase) }}" style="font-weight:600;display:inline-flex;align-items:center;gap:4px">
+                                        <i data-lucide="file-text" style="width:14px;height:14px"></i> {{ $relatedCase->case_number }}
                                     </a>
                                 @else
                                     <span class="text-muted">-</span>

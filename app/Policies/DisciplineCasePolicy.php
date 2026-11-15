@@ -14,18 +14,19 @@ class DisciplineCasePolicy
 
     /**
      * Update status kasus (alur ringkas: found → handling → closed).
-     * Hanya BK, Kesiswaan, dan admin yang boleh memajukan status sebelum closed/dismissed.
+     * BK, Kesiswaan, dan admin memiliki wewenang memajukan/memvalidasi kasus.
+     * Guru hanya bisa melapor.
      */
     public function update(User $user, DisciplineCase $case): bool
     {
         return in_array($case->status, ['found', 'handling', 'clarifying', 'classifying', 'monitoring'], true)
-            && $user->hasAnyRole(['bk', 'kesiswaan', 'admin']);
+            && $user->hasAnyRole(['bk', 'kesiswaan', 'admin', 'kepala_sekolah']);
     }
 
-    /** Buang kasus (dismissed): hanya sebelum masuk penanganan/potong poin. */
+    /** Buang kasus (dismissed): BK, Kesiswaan, dan admin sebelum masuk penanganan/potong poin. */
     public function dismiss(User $user, DisciplineCase $case): bool
     {
         return in_array($case->status, ['found', 'clarifying', 'classifying'], true)
-            && $user->hasAnyRole(['bk', 'kesiswaan', 'admin']);
+            && $user->hasAnyRole(['bk', 'kesiswaan', 'admin', 'kepala_sekolah']);
     }
 }

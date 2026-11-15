@@ -2,24 +2,40 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\DisciplineCase;
-use App\Models\ViolationCategory;
-use App\Models\Student;
 use App\Models\AcademicYear;
-use App\Models\SchoolClass;
+use App\Models\DisciplineCase;
 use App\Models\PointLedger;
+use App\Models\SchoolClass;
+use App\Models\Student;
 use App\Models\User;
+use App\Models\ViolationCategory;
+use App\Notifications\NewDisciplineCase;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Schema;
 
 class DisciplineCaseController extends Controller
 {
     use AuthorizesRequests;
 
+    /** Daftar role yang dianggap staf sekolah. */
+    private const STAFF_ROLES = ['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'];
+
     /** Menampilkan daftar semua pelanggaran berdasarkan status */
     public function index()
     {
+        $user = auth()->user();
+        abort_unless(
+            $user?->hasAnyRole(array_merge(self::STAFF_ROLES, ['siswa'])),
+            403,
+            'Akses ditolak. Fitur ini hanya untuk pengguna terdaftar.'
+        );
+
+        $isSiswa = $user?->hasRole('siswa') && ! $user->hasAnyRole(self::STAFF_ROLES);
+
         $status = request('status');
         $search = request('search');
         $sort = request()->string('sort')->toString();
@@ -32,6 +48,18 @@ class DisciplineCaseController extends Controller
             ->when($academicYearId, fn ($q) => $q->where('academic_year_id', $academicYearId))
             ->orderBy($sort, $order);
 
+        // Siswa hanya boleh melihat kasus miliknya sendiri
+        if ($isSiswa) {
+            $studentId = $user->student?->id ?? 0;
+            $query->where('student_id', $studentId);
+        }
+
+        $isReporterOnly = $user->hasAnyRole(['guru', 'wali_kelas'])
+            && ! $user->hasAnyRole(['bk', 'kesiswaan', 'admin', 'kepala_sekolah']);
+        if ($isReporterOnly) {
+            $query->where('reporter_id', $user->id);
+        }
+
         if ($status) {
             $query->where('status', $status);
         }
@@ -39,7 +67,7 @@ class DisciplineCaseController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('case_number', 'like', "%{$search}%")
-                  ->orWhereHas('student', fn ($sq) => $sq->where('full_name', 'like', "%{$search}%"));
+                    ->orWhereHas('student', fn ($sq) => $sq->where('full_name', 'like', "%{$search}%"));
             });
         }
 
@@ -90,7 +118,7 @@ class DisciplineCaseController extends Controller
         $hasActiveYear = (bool) $activeYear;
         $hasClasses = $classes->isNotEmpty();
         $hasStudents = Student::where('status', 'active')->exists();
-        $hasCategories = ViolationCategory::where('status', 'active')->whereNotNull('parent_id')->exists();
+        $hasCategories = ViolationCategory::where('status', 'active')->exists();
         $hasPrerequisites = $hasActiveYear && $hasClasses && $hasStudents && $hasCategories;
 
         $prerequisites = [
@@ -134,7 +162,7 @@ class DisciplineCaseController extends Controller
             'student_ids.*' => 'exists:students,id',
             'violation_category_id' => ['required', 'exists:violation_categories,id', function ($attr, $value, $fail) {
                 // Kasus wajib menunjuk sub-kategori; kategori induk yang masih punya anak tidak boleh dipilih.
-                if (\App\Models\ViolationCategory::whereNull('parent_id')->whereKey($value)->whereHas('children')->exists()) {
+                if (ViolationCategory::whereNull('parent_id')->whereKey($value)->whereHas('children')->exists()) {
                     $fail('Pilih sub-kategori, bukan kategori induk.');
                 }
             }],
@@ -171,7 +199,11 @@ class DisciplineCaseController extends Controller
         $cat = ViolationCategory::find($validated['violation_category_id']);
         $createdCases = [];
 
-        DB::transaction(function () use ($studentIds, $validated, $description, $incidentYear, $cat, &$createdCases) {
+        // BK & Kesiswaan: kasus baru langsung konfirmasi & masuk penanganan
+        // (debit poin), tanpa tahap validasi terpisah.
+        $autoHandling = (bool) auth()->user()?->hasAnyRole(['bk', 'kesiswaan']);
+
+        DB::transaction(function () use ($studentIds, $validated, $description, $incidentYear, $cat, $autoHandling, &$createdCases) {
             foreach ($studentIds as $sid) {
                 $student = Student::with(['enrollments.schoolClass'])->findOrFail($sid);
                 $enrollment = $student->enrollments
@@ -183,7 +215,7 @@ class DisciplineCaseController extends Controller
                 $classId = $validated['class_id'] ?? $enrollment?->class_id;
                 $academicYearId = $enrollment?->academic_year_id ?? $incidentYear?->id;
 
-                $createdCases[] = DisciplineCase::create([
+                $case = DisciplineCase::create([
                     'case_number' => DisciplineCase::generateCaseNumber(),
                     'student_id' => $sid,
                     'enrollment_id' => $enrollment?->id,
@@ -198,13 +230,40 @@ class DisciplineCaseController extends Controller
                     'status' => 'found',
                     'is_recurring' => $cat->is_recurring ?? false,
                 ]);
+
+                if ($autoHandling) {
+                    $this->applyStatusChange($case, 'handling', 'Dikonfirmasi otomatis oleh '.auth()->user()->name);
+                }
+
+                $createdCases[] = $case;
             }
         });
 
         $count = count($createdCases);
+        $statusLabel = $autoHandling ? 'Penanganan' : 'Temuan';
         $msg = $count > 1
-            ? "{$count} laporan pelanggaran berhasil dicatat secara kolektif (status: Temuan)."
-            : 'Laporan pelanggaran ' . $createdCases[0]->case_number . ' berhasil dicatat (status: Temuan).';
+            ? "{$count} laporan pelanggaran berhasil dicatat secara kolektif (status: {$statusLabel})."
+            : 'Laporan pelanggaran '.$createdCases[0]->case_number.' berhasil dicatat (status: '.$statusLabel.').';
+
+        // Notifikasi ke BK & Kesiswaan bila kasus dicatat
+        try {
+            if (Schema::hasTable('notifications')) {
+                $createdUserId = $validated['reporter_id'] ?? auth()->id();
+                $bkAndKesiswaan = User::role(['bk', 'kesiswaan'])->get();
+                if ($bkAndKesiswaan->isNotEmpty() && ! $bkAndKesiswaan->contains('id', $createdUserId)) {
+                    $first = $createdCases[0];
+                    Notification::send($bkAndKesiswaan, new NewDisciplineCase(
+                        caseId: $first->id,
+                        caseNumber: $first->case_number,
+                        studentName: $first->student->full_name ?? 'Siswa',
+                        violationCode: $first->violationCategory->code ?? '-',
+                        violationName: $first->violationCategory->name ?? 'Kategori pelanggaran'
+                    ));
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Gagal kirim notifikasi kasus baru: '.$e->getMessage());
+        }
 
         return redirect()
             ->route('kasus-pelanggaran.index')
@@ -214,14 +273,38 @@ class DisciplineCaseController extends Controller
     /** Menampilkan detail pelanggaran tertentu */
     public function show(DisciplineCase $disciplineCase)
     {
+        $user = auth()->user();
+        abort_unless(
+            $user?->hasAnyRole(array_merge(self::STAFF_ROLES, ['siswa'])),
+            403,
+            'Akses ditolak. Fitur ini hanya untuk pengguna terdaftar.'
+        );
+
+        if ($user && $user->hasRole('siswa') && ! $user->hasAnyRole(self::STAFF_ROLES)) {
+            $studentId = $user->student?->id;
+            abort_if(! $studentId || $disciplineCase->student_id !== $studentId, 403, 'Akses ditolak. Anda hanya dapat melihat kasus Anda sendiri.');
+        }
+
+        $isReporterOnly = $user->hasAnyRole(['guru', 'wali_kelas'])
+            && ! $user->hasAnyRole(['bk', 'kesiswaan', 'admin', 'kepala_sekolah']);
+        if ($isReporterOnly) {
+            abort_if(
+                $disciplineCase->reporter_id !== $user->id,
+                403,
+                'Akses ditolak. Anda hanya dapat melihat kasus yang Anda laporkan.'
+            );
+        }
+
         $disciplineCase->load([
             'student.currentEnrollment.schoolClass', 'enrollment.schoolClass', 'schoolClass',
             'violationCategory.parent', 'violationCategory.redemptionRules.achievementCategory',
             'reporter', 'academicYear', 'assignedOfficer', 'validator', 'closer',
+            'schoolClass.homeroomTeacher',
         ]);
         $recovery = $disciplineCase->violationCategory
-            ? app(\App\Http\Controllers\ViolationCategoryController::class)->recoveryFor($disciplineCase->violationCategory)
+            ? app(ViolationCategoryController::class)->recoveryFor($disciplineCase->violationCategory)
             : [];
+
         return view('discipline-cases.show', compact('disciplineCase', 'recovery'));
     }
 
@@ -288,8 +371,10 @@ class DisciplineCaseController extends Controller
             'transaction_type' => PointLedger::TYPE_VIOLATION,
             'source_type' => DisciplineCase::class,
             'source_id' => $case->id,
-            'reason' => 'Pelanggaran: ' . $case->violationCategory->code,
+            'reason' => 'Pelanggaran: '.$case->violationCategory->code,
             'created_by' => auth()->id(),
+            // Yang memotong poin = yang memvalidasi kasus ke Penanganan (verifikator debit).
+            'verified_by' => auth()->id(),
         ]);
     }
 
@@ -315,7 +400,7 @@ class DisciplineCaseController extends Controller
             );
 
             $message = $debited
-                ? 'Kasus divalidasi, poin ' . $disciplineCase->getEffectivePoints() . ' berhasil dikurang.'
+                ? 'Kasus divalidasi, poin '.$disciplineCase->getEffectivePoints().' berhasil dikurang.'
                 : 'Kasus kembali ke penanganan — poin sudah dipotong sebelumnya.';
 
             return redirect()
@@ -327,7 +412,7 @@ class DisciplineCaseController extends Controller
 
         return redirect()
             ->route('kasus-pelanggaran.show', $disciplineCase)
-            ->with('success', 'Kasus diperbarui ke status: ' . $newStatus);
+            ->with('success', 'Kasus diperbarui ke status: '.$newStatus);
     }
 
     /**
@@ -394,12 +479,12 @@ class DisciplineCaseController extends Controller
             'monitoring' => 'Monitoring',
         ];
 
-        $message = $advanceable->count() . ' kasus dimajukan ke ' . $labels[$newStatus] . '.';
+        $message = $advanceable->count().' kasus dimajukan ke '.$labels[$newStatus].'.';
         if ($deducted > 0) {
-            $message .= ' ' . $deducted . ' debit poin dibuat.';
+            $message .= ' '.$deducted.' debit poin dibuat.';
         }
         if ($skipped > 0) {
-            $message .= ' ' . $skipped . ' kasus dilewati.';
+            $message .= ' '.$skipped.' kasus dilewati.';
         }
 
         return redirect()->back()->with('success', $message);
@@ -419,6 +504,6 @@ class DisciplineCaseController extends Controller
 
         return redirect()
             ->route('kasus-pelanggaran.index')
-            ->with('warning', 'Pelanggaran ' . $disciplineCase->case_number . ' ditolak.');
+            ->with('warning', 'Pelanggaran '.$disciplineCase->case_number.' ditolak.');
     }
 }

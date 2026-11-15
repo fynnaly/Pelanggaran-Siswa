@@ -14,6 +14,8 @@ class ApiStudentPointController extends Controller
 {
     use ScopesWaliKelas;
 
+    private const STAFF_ROLES = ['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'];
+
     /**
      * Rekap saldo + zona poin (monitor-poin versi JSON untuk Android).
      * Filter identik dengan web: q, class_id, zone, year_id + sort.
@@ -22,11 +24,22 @@ class ApiStudentPointController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $user = $request->user();
+        $isStaff = $user?->hasAnyRole(self::STAFF_ROLES) ?? false;
+        $isStudent = $user?->hasRole('siswa') && ! $isStaff;
+
+        abort_unless($isStaff || $isStudent, 403, 'Akses ditolak. Fitur ini hanya untuk pengguna terdaftar.');
+
         $q = $request->string('q')->toString();
         $classId = $request->integer('class_id') ?: null;
         $zoneName = $request->string('zone')->toString();
         $selectedYearId = $request->integer('year_id') ?: null;
         $scopeClassIds = $this->waliKelasScope();
+        $studentId = null;
+        if ($isStudent) {
+            $studentId = $user->student?->id;
+            abort_unless($studentId, 403, 'Akun siswa Anda belum terhubung dengan data siswa.');
+        }
 
         $sort = in_array($request->string('sort')->toString(), ['poin', 'nama', 'kelas', 'zona', 'id'], true)
             ? $request->string('sort')->toString()
@@ -34,6 +47,7 @@ class ApiStudentPointController extends Controller
         $order = strtolower($request->string('order')->toString()) === 'asc' ? 'asc' : 'desc';
 
         $students = Student::with(['enrollments.schoolClass', 'enrollments.academicYear'])
+            ->when($studentId !== null, fn ($query) => $query->whereKey($studentId))
             ->when($scopeClassIds !== null, fn ($query) => $query
                 ->whereHas('currentEnrollment', fn ($qq) => $qq->whereIn('class_id', $scopeClassIds)))
             ->when($selectedYearId, fn ($query) => $query->whereHas('enrollments', fn ($qq) => $qq->where('academic_year_id', $selectedYearId)))
@@ -70,7 +84,7 @@ class ApiStudentPointController extends Controller
                 'total' => $students->count(),
                 'sort' => $sort,
                 'order' => $order,
-                'scope' => $scopeClassIds === null ? 'semua' : 'wali_kelas',
+                'scope' => $isStudent ? 'siswa' : ($scopeClassIds === null ? 'semua' : 'wali_kelas'),
                 'kelas' => $classes->map(fn ($c) => ['id' => $c->id, 'nama' => $c->name]),
             ],
             'data' => $students->map(fn ($s) => [

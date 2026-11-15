@@ -7,10 +7,10 @@
             </div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
                 <button type="button" @click="if (isEditing) { document.getElementById('settingsForm')?.reset(); } $dispatch('toggle-settings-edit', !isEditing)" class="btn btn-primary btn-sm" :class="{ 'btn-secondary': isEditing, 'btn-primary': !isEditing }">
-                    <span x-show="!isEditing" style="display:inline-flex;align-items:center;gap:6px">
+                    <span x-show="!isEditing" class="inline-flex items-center gap-1.5 whitespace-nowrap">
                         <i data-lucide="edit-3" class="icon-sm"></i> Ubah Pengaturan
                     </span>
-                    <span x-show="isEditing" x-cloak style="display:inline-flex;align-items:center;gap:6px">
+                    <span x-show="isEditing" x-cloak class="inline-flex items-center gap-1.5 whitespace-nowrap">
                         <i data-lucide="x" class="icon-sm"></i> Batal
                     </span>
                 </button>
@@ -20,7 +20,7 @@
     </x-slot>
 
     <div class="main-wrap" x-data="{ isEditing: false }" @toggle-settings-edit.window="isEditing = $event.detail; if (!isEditing) { document.getElementById('settingsForm')?.reset(); }">
-        <div class="card card-form" style="max-width:840px">
+        <div class="card card-form w-full">
             @if(session('success'))<div class="alert alert-success"><i data-lucide="check-circle" class="icon-sm"></i> {{ session('success') }}</div>@endif
             @if($errors->any())<div class="alert alert-error"><i data-lucide="alert-circle" class="icon-sm"></i> {{ $errors->first() }}</div>@endif
 
