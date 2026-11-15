@@ -29,10 +29,9 @@
                     @endforeach
                 </select>
                 <span class="text-muted text-sm" style="white-space:nowrap">Tanggal <strong>mulai</strong></span>
-                <input type="date" name="from" class="input" style="width:auto" value="{{ $filters['from'] }}" title="Tanggal mulai (start) — kasus pada tanggal ini ikut dihitung">
+                <input type="date" name="from" class="input" style="width:auto" value="{{ $filters['from'] }}" title="Tanggal mulai (start) — kasus pada tanggal ini ikut dihitung" onchange="this.form.submit()">
                 <span class="text-muted text-sm" style="white-space:nowrap">s/d <strong>selesai</strong></span>
-                <input type="date" name="to" class="input" style="width:auto" value="{{ $filters['to'] }}" title="Tanggal selesai (end) — kasus pada tanggal ini ikut dihitung">
-                <button type="submit" class="btn btn-primary btn-sm"><i data-lucide="filter" class="icon-sm"></i> Terapkan</button>
+                <input type="date" name="to" class="input" style="width:auto" value="{{ $filters['to'] }}" title="Tanggal selesai (end) — kasus pada tanggal ini ikut dihitung" onchange="this.form.submit()">
                 <a href="{{ route('laporan.pelanggaran') }}" class="btn btn-secondary btn-sm">Reset</a>
             </form>
         </div>
