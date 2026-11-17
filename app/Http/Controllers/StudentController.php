@@ -382,8 +382,9 @@ class StudentController extends Controller
 
         // Fallback darurat bila file template hilang: generate polos tanpa style.
         $rows = [
-            ['NISN', 'NIS', 'Nama Lengkap', 'Jenis Kelamin', 'Telepon', 'Alamat', 'Nama Orang Tua', 'No. HP Orang Tua', 'Kelas (nama)', 'Tahun Ajaran (nama)', 'Status'],
-            ['3690012345', '202412010001', 'Budi Santoso', 'Laki-laki', '08123456789', 'Jl. Merdeka No. 1', 'Bapak Santoso', '08987654321', 'VII A', '2025/2026', 'active'],
+            ['NISN', 'NIS', 'Nama Lengkap', 'Jenis Kelamin', 'Telepon', 'Alamat', 'Nama Orang Tua', 'No. HP Orang Tua', 'Kelas (nama)', 'Tingkatan', 'Tahun Ajaran (nama)', 'Status'],
+            ['1234567890', '2425.7.001', 'Budi Santoso', 'Laki-laki', '08123456789', 'Jl. Merdeka No. 1', 'Bapak Santoso', '08987654321', 'VII A', 'VII', '2026/2027', 'active'],
+            ['1234567891', '2425.8.001', 'Siti Aminah', 'Perempuan', '08123456780', 'Jl. Melati No. 2', 'Ibu Aminah', '08987654322', 'VIII B', 'VIII', '2026/2027', 'active'],
         ];
 
         $tmp = Xlsx::write($rows);
@@ -404,11 +405,12 @@ class StudentController extends Controller
             ->get();
 
         $rows = [
-            ['NISN', 'NIS', 'Nama Lengkap', 'Jenis Kelamin', 'Telepon', 'Alamat', 'Nama Orang Tua', 'No. HP Orang Tua', 'Kelas', 'Tahun Ajaran', 'Status', 'Poin Saat Ini'],
+            ['NISN', 'NIS', 'Nama Lengkap', 'Jenis Kelamin', 'Telepon', 'Alamat', 'Nama Orang Tua', 'No. HP Orang Tua', 'Kelas', 'Tingkatan', 'Tahun Ajaran', 'Status', 'Poin Saat Ini'],
         ];
 
         foreach ($students as $s) {
             $poin = $s->pointLedgers->first()?->balance_after ?? 2000;
+            $kelas = $s->currentEnrollment?->schoolClass;
             $rows[] = [
                 $s->nisn,
                 $s->nis,
@@ -418,7 +420,8 @@ class StudentController extends Controller
                 $s->address ?? '',
                 $s->parent_name ?? '',
                 $s->parent_phone ?? '',
-                $s->currentEnrollment?->schoolClass?->name ?? '-',
+                $kelas?->name ?? '-',
+                $kelas?->grade_level ?? $this->gradeLevelFromName($kelas?->name) ?? '-',
                 $s->currentEnrollment?->academicYear?->name ?? '-',
                 $s->status,
                 (string) $poin,
@@ -436,11 +439,12 @@ class StudentController extends Controller
     /**
      * Import siswa dari CSV atau XLSX.
      * Kolom wajib: NIS (maks. 20 karakter), Nama Lengkap.
-     * Opsional: NISN (10 digit), Kelas (nama), Tahun Ajaran (nama), Status.
+     * Opsional: NISN (10 digit), Kelas (nama), Tingkatan (VII/VIII/IX), Tahun Ajaran (nama), Status.
      * - Format NISN/NIS salah → baris dilewati dengan pesan (validasi dulu, bukan fatal).
      * - NISN boleh kosong; bila kosong disimpan sebagai null.
      * - Jika NISN/NIS sudah ada → skip (idempotent).
      * - Jika Kelas tidak ditemukan → buat otomatis di tahun ajaran aktif.
+     * - Tingkatan diambil dari nama kelas (mis. "VII A") atau kolom Tingkatan.
      * - CSV dibaca native fgetcsv (tanpa BOM); XLSX via App\Support\Xlsx (tanpa ext-gd).
      */
     public function import(Request $request)
@@ -493,6 +497,13 @@ class StudentController extends Controller
         $iParent = $idx('nama orang tua');
         $iParentHp = $idx('no. hp orang tua');
         $iKelas = $idx('kelas (nama)') !== false ? $idx('kelas (nama)') : $idx('kelas');
+        $iTingkat = $idx('tingkatan');
+        if ($iTingkat === false) {
+            $iTingkat = $idx('tingkat');
+        }
+        if ($iTingkat === false) {
+            $iTingkat = $idx('grade_level');
+        }
         $iTahun = $idx('tahun ajaran (nama)') !== false ? $idx('tahun ajaran (nama)') : $idx('tahun ajaran');
         $iStatus = $idx('status');
 
@@ -528,8 +539,14 @@ class StudentController extends Controller
                 $parentName = $iParent !== false ? trim($row[$iParent] ?? '') : '';
                 $parentHp = $iParentHp !== false ? trim($row[$iParentHp] ?? '') : '';
                 $kelasNama = $iKelas !== false ? trim($row[$iKelas] ?? '') : '';
+                $tingkatNama = $iTingkat !== false ? trim($row[$iTingkat] ?? '') : '';
                 $tahunNama = $iTahun !== false ? trim($row[$iTahun] ?? '') : '';
                 $status = $iStatus !== false ? trim(strtolower($row[$iStatus] ?? 'active')) : 'active';
+
+                // Tingkatan: utamakan dari nama kelas ("VIII B"), lalu kolom Tingkatan.
+                $grade = $this->gradeLevelFromName($kelasNama)
+                    ?? $this->normalizeGradeLevel($tingkatNama);
+                $kelasNama = $this->normalizeClassName($kelasNama, $grade);
 
                 if ($nis === '' || $nama === '') {
                     $errors[] = "Baris {$rowNum}: NIS/Nama kosong — dilewati.";
@@ -569,15 +586,31 @@ class StudentController extends Controller
                     if ($year) {
                         $kelas = SchoolClass::firstOrCreate(
                             ['name' => $kelasNama, 'academic_year_id' => $year->id],
-                            ['homeroom_teacher_id' => null]
+                            ['homeroom_teacher_id' => null, 'grade_level' => $grade]
                         );
+                        // Kelas lama hasil impor sebelumnya bisa belum punya tingkatan.
+                        if ($grade !== null && ! $kelas->grade_level) {
+                            $kelas->update(['grade_level' => $grade]);
+                        }
                         $classId = $kelas->id;
                         $yearId = $year->id;
                     }
                 }
-                // Fallback: pakai kelas pertama + tahun ajarannya
+                // Fallback: pakai kelas pertama pada tingkatan yang sama.
                 if (! $classId) {
-                    $fallback = SchoolClass::with('academicYear')->orderBy('name')->first();
+                    $fallback = SchoolClass::with('academicYear')
+                        ->when($grade !== null, fn ($query) => $query->where('grade_level', $grade))
+                        ->orderBy('name')
+                        ->first();
+
+                    if (! $fallback && $grade !== null) {
+                        $errors[] = "Baris {$rowNum} ({$nama}): belum ada kelas untuk tingkatan {$grade} — buat kelas dulu di menu Kelas.";
+                        $skipped++;
+
+                        continue;
+                    }
+
+                    $fallback ??= SchoolClass::with('academicYear')->orderBy('name')->first();
                     $classId = $fallback?->id;
                     $yearId = $fallback?->academic_year_id ?? $yearId;
                 }
@@ -618,6 +651,64 @@ class StudentController extends Controller
         }
 
         return back()->with('success', $msg);
+    }
+
+    /** Normalisasi tingkatan: VII/7 → VII, VIII/8 → VIII, IX/9 → IX. */
+    private function normalizeGradeLevel(?string $value): ?string
+    {
+        $value = preg_replace('/[^A-Z0-9]/', '', strtoupper(trim((string) $value)));
+
+        return match ($value) {
+            'VII', '7' => 'VII',
+            'VIII', '8' => 'VIII',
+            'IX', '9' => 'IX',
+            default => null,
+        };
+    }
+
+    /** Ambil tingkatan dari nama kelas, mis. "VIII B", "8B", atau "7.1". */
+    private function gradeLevelFromName(?string $name): ?string
+    {
+        $name = trim((string) $name);
+
+        if (preg_match('/^(IX|VIII|VII)\b/i', $name, $matches)) {
+            return $this->normalizeGradeLevel($matches[1]);
+        }
+
+        if (preg_match('/^([789])(?![0-9])/', $name, $matches)) {
+            return $this->normalizeGradeLevel($matches[1]);
+        }
+
+        return null;
+    }
+
+    /**
+     * Rapikan nama kelas hasil impor: "8B" / "VIII-B" / "7.1" → "VIII B" / "VII A".
+     * Bila nama belum memuat tingkatan, kolom Tingkatan dipakai sebagai awalan.
+     */
+    private function normalizeClassName(?string $name, ?string $grade): string
+    {
+        $name = trim(preg_replace('/\s+/', ' ', (string) $name));
+
+        if ($name === '') {
+            return '';
+        }
+
+        if (preg_match('/^(IX|VIII|VII)\b[\s._-]*/i', $name, $matches)
+            || preg_match('/^([789])(?![0-9])[\s._-]*/i', $name, $matches)) {
+            $rombel = trim(substr($name, strlen($matches[0])));
+            $prefix = $this->normalizeGradeLevel($matches[1]) ?? $grade;
+
+            // Rombel angka lama tetap diterima: 1 → A, 2 → B, dst.
+            if ($rombel !== '' && ctype_digit($rombel)) {
+                $number = (int) $rombel;
+                $rombel = $number >= 1 && $number <= 26 ? chr(64 + $number) : $rombel;
+            }
+
+            return trim(($prefix ?? '').' '.$rombel);
+        }
+
+        return $grade !== null ? trim($grade.' '.$name) : $name;
     }
 
     /**

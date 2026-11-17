@@ -42,7 +42,7 @@ Dokumen ini menguraikan seluruh modul fungsional yang tersedia pada aplikasi Pel
 - **Independen dari Kelas**: Siswa tidak lagi menyimpan `class_id` langsung di tabel `students`. Seluruh data kelas siswa berjalan melalui riwayat pendaftaran aktif (`enrollments`).
 
 ### 2.4 Impor dan Ekspor Data Siswa Berkinerja Tinggi
-- **Impor CSV Native**: Mengunggah berkas CSV/XLSX tanpa ketergantungan library eksternal yang berat, memvalidasi keunikan NIS (serta NISN bila diisi), dan otomatis mendaftarkan siswa ke kelas serta membuka saldo poin awal 2000. NISN boleh dikosongkan saat impor.
+- **Impor CSV Native**: Mengunggah berkas CSV/XLSX tanpa ketergantungan library eksternal yang berat, memvalidasi keunikan NIS (serta NISN bila diisi), dan otomatis mendaftarkan siswa ke kelas serta membuka saldo poin awal 2000. NISN boleh dikosongkan saat impor. Kolom **Kelas (nama)** boleh memuat tingkatan langsung (mis. `VIII B`) atau diisi rombel saja (mis. `B`) dengan kolom **Tingkatan** (`VII`/`VIII`/`IX`, boleh juga `7`/`8`/`9`); tingkatan otomatis tersimpan pada kelas.
 - **Ekspor XLSX Terproteksi**: Mendukung pengunduhan data siswa, pengguna, dan monitor poin berformat XLSX ber-style template native dengan proteksi *Formula Injection*.
 
 ### 2.5 Master Data Guru (`Teacher`)
