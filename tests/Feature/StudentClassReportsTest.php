@@ -40,18 +40,16 @@ beforeEach(function () {
     ]);
 
     $this->classA = SchoolClass::create([
-        'name' => 'X PPLG 1',
+        'name' => 'VII 1',
         'academic_year_id' => $this->activeYear->id,
-        'grade_level' => 'X',
-        'major' => 'PPLG',
+        'grade_level' => 'VII',
         'homeroom_teacher_id' => $this->wali->id,
         'status' => 'active',
     ]);
     $this->classB = SchoolClass::create([
-        'name' => 'IX PPLG 1',
+        'name' => 'IX 1',
         'academic_year_id' => $this->oldYear->id,
         'grade_level' => 'IX',
-        'major' => 'PPLG',
         'status' => 'active',
     ]);
 
@@ -176,7 +174,7 @@ it('supports all-year and date filters while retaining class snapshots', functio
         ->assertOk()
         ->assertSee('KAS-2026-0101')
         ->assertSee('KAS-2025-0099')
-        ->assertSee('IX PPLG 1');
+        ->assertSee('IX 1');
 
     $this->get(route('laporan.siswa', [
         'student' => $this->student->id,

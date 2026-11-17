@@ -4,7 +4,6 @@ use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\AchievementCategoryController;
 use App\Http\Controllers\AchievementRecordController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DisciplineCaseController;
 use App\Http\Controllers\NfcCardController;
 use App\Http\Controllers\NotificationController;
@@ -84,12 +83,6 @@ Route::middleware(['auth', 'active.account'])->group(function () {
     // Kelas — promote HARUS sebelum resource agar tidak tertelan sebagai {class}
     Route::post('classes/promote', [SchoolClassController::class, 'promote'])->name('classes.promote');
     Route::resource('classes', SchoolClassController::class);
-
-    // Jurusan / Program Keahlian (tanpa destroy — hanya aktif & nonaktif)
-    Route::patch('departments/{department}/toggle-status', [DepartmentController::class, 'toggleStatus'])->name('departments.toggle-status');
-    Route::resource('departments', DepartmentController::class)->except(['destroy']);
-    Route::patch('jurusan/{department}/toggle-status', [DepartmentController::class, 'toggleStatus'])->name('jurusan.toggle-status');
-    Route::resource('jurusan', DepartmentController::class)->except(['destroy'])->names('jurusan')->parameters(['jurusan' => 'department']);
 
     // PointLedger — siswa/{student} SEBELUM resource agar tidak tertelan {pointLedger}
     Route::get('point-ledgers/siswa/{student}', [PointLedgerController::class, 'forStudent'])->name('point-ledgers.siswa');

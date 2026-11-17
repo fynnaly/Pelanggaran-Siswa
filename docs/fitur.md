@@ -16,7 +16,7 @@ Dokumen ini menguraikan seluruh modul fungsional yang tersedia pada aplikasi Pel
 - **Foto Profil Pegawai (Avatar)**: Staf dapat mengunggah foto profil (JPG/PNG/WebP maks. 50MB) yang tersimpan aman pada storage publik lokal (`public/storage/avatars`). Bila belum mengunggah, sistem menampilkan gambar avatar default.
 - **Profil Siswa Hanya-Baca**: Akun siswa tidak dapat mengubah data apa pun dari halaman Pengaturan Akun — termasuk nama, email, NIP, foto profil, kata sandi, dan pengajuan penghapusan akun. Seluruh perubahan data siswa dilakukan oleh petugas sekolah. Menu Pengaturan global juga tidak tersedia untuk siswa.
 - **Nomor Induk Pegawai (NIP)**: Staf dapat melengkapi NIP resmi yang akan dicantumkan secara otomatis pada dokumen penanganan kasus dan berkas rekapitulasi.
-- **Deteksi Tugas Tambahan**: Sistem secara cerdas mendeteksi dan menampilkan lencana tugas struktural guru, seperti status *Wali Kelas X PPLG 1* berdasarkan tahun ajaran yang sedang aktif.
+- **Deteksi Tugas Tambahan**: Sistem secara cerdas mendeteksi dan menampilkan lencana tugas struktural guru, seperti status *Wali Kelas VII 1* berdasarkan tahun ajaran yang sedang aktif.
 
 ### 1.3 Pengamanan Zona Bahaya (Penghapusan Akun)
 - **Soft Deletes Eloquent**: Akun pengguna yang dihapus tidak langsung dihilangkan dari tabel basis data secara permanen, melainkan diberi stempel waktu `deleted_at`. Seluruh riwayat audit (kasus yang pernah dilaporkan atau divalidasi) tetap utuh.
@@ -28,12 +28,12 @@ Dokumen ini menguraikan seluruh modul fungsional yang tersedia pada aplikasi Pel
 
 ### 2.1 Tahun Ajaran Aktif (`AcademicYear`)
 - Menyimpan nama periode (contoh: `2026/2027`), tanggal mulai, status operasional, dan penanda status aktif (`is_active`).
-- **Tombol Aktifkan Cepat**: Tahun ajaran nonaktif dapat diaktifkan langsung dari baris daftar (ikon `power`) dengan konfirmasi dua tahap — peringatan ringan, lalu peringatan final yang menjelaskan konsekuensi (kelas baru dibuat, siswa naik tingkat, XII lulus).
+- **Tombol Aktifkan Cepat**: Tahun ajaran nonaktif dapat diaktifkan langsung dari baris daftar (ikon `power`) dengan konfirmasi dua tahap — peringatan ringan, lalu peringatan final yang menjelaskan konsekuensi (kelas baru dibuat, siswa naik tingkat, IX lulus).
 - **Nonaktif Otomatis saat Berlalu**: Tahun ajaran yang periodenya sudah lewat (akhir periode = `end_date` bila diisi, atau `start_date` + 1 tahun) otomatis dinonaktifkan saat halaman daftar dibuka, sehingga `is_active` tidak pernah "nyangkut" pada periode yang sudah selesai. Tabel daftar menampilkan kolom Tanggal Selesai dan tanda *Berlalu*.
-- **Pemicu Kenaikan Kelas Otomatis (`PromotionService`)**: Pengaktifan tahun ajaran baru secara otomatis menyalin struktur kelas ke tahun ajaran baru, memperbarui pendaftaran siswa (*enrollments*), menandai siswa tingkat XII sebagai lulus, dan membawa saldo poin berjalan sebagai saldo awal tahun baru.
+- **Pemicu Kenaikan Kelas Otomatis (`PromotionService`)**: Pengaktifan tahun ajaran baru secara otomatis menyalin struktur kelas ke tahun ajaran baru, memperbarui pendaftaran siswa (*enrollments*), menandai siswa tingkat IX sebagai lulus, dan membawa saldo poin berjalan sebagai saldo awal tahun baru.
 
 ### 2.2 Rombongan Belajar / Kelas (`SchoolClass`)
-- Menyimpan data nama rombel (contoh: `X PPLG 1`), tingkat kelas (`X`, `XI`, `XII`), dan Program Keahlian (`major`, e.g. `PPLG`, `DKV`).
+- Menyimpan data nama rombel (contoh: `VII 1`), tingkat kelas (`VII`, `VIII`, `IX`), dan rombel (angka atau huruf).
 - Mengaitkan guru sebagai **Wali Kelas** (`homeroom_teacher_id`) untuk keperluan pendampingan siswa di Zona Pembinaan.
 - Mendukung penetapan guru wali kelas secara cepat langsung dari baris tabel data (*inline quick-assign*).
 
@@ -130,7 +130,7 @@ Dokumen ini menguraikan seluruh modul fungsional yang tersedia pada aplikasi Pel
 
 ### 5.3 Pelaporan Siswa Kolektif (Bulk Input)
 - **Pencarian Multi-Siswa**: Mengetik dan menambahkan banyak siswa dalam satu laporan insiden yang sama.
-- **Pilihan Cepat Satu Kelas**: Opsi memilih satu rombel kelas (misal: "X PPLG 1") untuk memasukkan seluruh siswa aktif di rombel tersebut ke dalam berkas laporan secara instan.
+- **Pilihan Cepat Satu Kelas**: Opsi memilih satu rombel kelas (misal: "VII 1") untuk memasukkan seluruh siswa aktif di rombel tersebut ke dalam berkas laporan secara instan.
 - **Tombol Kosongkan Semua**: Mereset daftar siswa terpilih dalam 1 klik jika staf salah memilih rombel.
 
 ### 5.4 Pelapor Otomatis dan Terkunci

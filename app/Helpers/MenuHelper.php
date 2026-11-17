@@ -79,8 +79,6 @@ class MenuHelper
             ['name' => 'Guru', 'path' => '/teachers', 'pro' => false],
             ['name' => 'Nametag NFC', 'path' => '/nametag-nfc', 'pro' => false],
             ['name' => 'Kelas', 'path' => '/classes', 'pro' => false],
-            // ! Nonaktifkan Master Data.
-            // ['name' => 'Jurusan', 'path' => '/departments', 'pro' => false],
             ['name' => 'Tahun Ajaran', 'path' => '/academic-years', 'pro' => false],
         ];
         if ($isManagement) {

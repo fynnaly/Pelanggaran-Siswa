@@ -71,7 +71,6 @@ erDiagram
         bigint academic_year_id FK
         string name
         string grade_level
-        string major
         integer capacity
         bigint homeroom_teacher_id FK
         bigint assistant_teacher_id FK
@@ -197,7 +196,7 @@ erDiagram
 2. **`academic_years` ke `classes` (1 ke N)**:
    - Setiap rombongan belajar (kelas) terikat persis ke satu tahun ajaran. Saat tahun ajaran berganti, kelas baru dibentuk untuk menjaga arsip historis.
 3. **`students` ke `enrollments` ke `classes` (Many-to-Many melalui `enrollments`)**:
-   - `enrollments` adalah tabel penghubung (*pivot with history*). Satu siswa dapat memiliki banyak riwayat pendaftaran kelas (kelas X, XI, XII), namun hanya **1 pendaftaran yang berstatus `active`** pada tahun ajaran aktif.
+   - `enrollments` adalah tabel penghubung (*pivot with history*). Satu siswa dapat memiliki banyak riwayat pendaftaran kelas (kelas VII, VIII, IX), namun hanya **1 pendaftaran yang berstatus `active`** pada tahun ajaran aktif.
 4. **`violation_categories` (Self-Referencing 1 ke N)**:
    - Kategori induk (misal: *P1 Seragam*) memiliki banyak sub-kategori turunan (misal: *P1.1 Tidak Memakai Dasi*).
 5. **`violation_categories` dan `achievement_categories` ke `redemption_rules` (Many-to-Many)**:

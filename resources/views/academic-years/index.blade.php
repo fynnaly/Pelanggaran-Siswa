@@ -60,7 +60,7 @@
             <ul class="text-sm text-muted" style="margin:8px 0 16px;padding-left:20px">
                 <li>Membuat kelas-kelas baru sesuai struktur tahun ajaran sebelumnya</li>
                 <li>Menaikkan seluruh siswa aktif ke tingkat berikutnya</li>
-                <li>Meluluskan siswa kelas XII (tahun sebelumnya)</li>
+                <li>Meluluskan siswa kelas IX (tahun sebelumnya)</li>
             </ul>
             <div style="display:flex;gap:8px;justify-content:flex-end">
                 <button type="button" class="btn btn-secondary btn-sm" onclick="closeActivateModals()">Kembali</button>

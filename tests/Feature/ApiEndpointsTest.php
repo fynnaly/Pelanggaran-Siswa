@@ -32,9 +32,9 @@ beforeEach(function () {
     ]);
 
     $this->class = SchoolClass::create([
-        'name' => 'X RPL 1',
+        'name' => 'VII 1',
         'academic_year_id' => $this->year->id,
-        'grade_level' => 'X',
+        'grade_level' => 'VII',
         'status' => 'active',
     ]);
 
@@ -104,7 +104,7 @@ it('searches students for autocomplete', function () {
         ])
         ->assertJsonPath('data.0.id', $this->student->id)
         ->assertJsonPath('data.0.nama', 'Budi Santoso')
-        ->assertJsonPath('data.0.kelas', 'X RPL 1');
+        ->assertJsonPath('data.0.kelas', 'VII 1');
 });
 
 it('returns empty array when search query is shorter than 2 chars', function () {
@@ -278,9 +278,9 @@ it('creates new discipline case from field report', function () {
 
 it('prevents a class teacher from reporting a case for a student outside their class', function () {
     $otherClass = SchoolClass::create([
-        'name' => 'X RPL 2',
+        'name' => 'VII 2',
         'academic_year_id' => $this->year->id,
-        'grade_level' => 'X',
+        'grade_level' => 'VII',
         'homeroom_teacher_id' => $this->guruUser->id,
         'status' => 'active',
     ]);
@@ -636,9 +636,9 @@ it('returns a student report and restricts class reports to a wali kelas scope',
     $wali->assignRole('wali_kelas');
     $this->class->update(['homeroom_teacher_id' => $wali->id]);
     $otherClass = SchoolClass::create([
-        'name' => 'X RPL 2',
+        'name' => 'VII 2',
         'academic_year_id' => $this->year->id,
-        'grade_level' => 'X',
+        'grade_level' => 'VII',
         'status' => 'active',
     ]);
     Sanctum::actingAs($wali);

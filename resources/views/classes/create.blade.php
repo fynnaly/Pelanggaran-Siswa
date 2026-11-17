@@ -30,27 +30,18 @@
                 <div class="field"><label class="field-label">Tingkatan <span class="text-danger">*</span></label>
                     <select name="grade_level" class="field-input" id="gradeLevel" required>
                         <option value="">Pilih tingkatan...</option>
-                        <option value="X" {{ old('grade_level')==='VII'?'selected':'' }}>VII/7</option>
-                        <option value="XI" {{ old('grade_level')==='VIII'?'selected':'' }}>VIII/8</option>
-                        <option value="XII" {{ old('grade_level')==='IX'?'selected':'' }}>IX/9</option>
-                    </select>
-                </div>
-                <div class="field"><label class="field-label">Jurusan <span class="text-danger">*</span></label>
-                    <select name="department_id" class="field-input" id="departmentSelect" required>
-                        <option value="">Pilih jurusan...</option>
-                        @foreach($departments as $dept)
-                            <option value="{{ $dept->id }}" data-code="{{ $dept->code }}" {{ old('department_id')==$dept->id?'selected':'' }}>{{ $dept->code }} — {{ $dept->name }}</option>
+                        @foreach(['VII' => 'VII/7', 'VIII' => 'VIII/8', 'IX' => 'IX/9'] as $value => $label)
+                            <option value="{{ $value }}" {{ old('grade_level')===$value?'selected':'' }}>{{ $label }}</option>
                         @endforeach
                     </select>
-                    <span class="help-text">Diambil dari data referensi Jurusan.</span>
                 </div>
-                <div class="field"><label class="field-label">Nomor <span class="text-danger">*</span></label>
-                    <input type="number" name="number" value="{{ old('number', 1) }}" min="1" max="99" class="field-input" id="classNumber" required>
-                    <span class="help-text">Pembeda antar rombel satu jurusan. Kalau jurusannya cuma satu, isi 1 saja.</span>
+                <div class="field"><label class="field-label">Rombel <span class="text-danger">*</span></label>
+                    <input type="text" name="rombel" value="{{ old('rombel', '1') }}" maxlength="2" class="field-input" id="classRombel" placeholder="1 atau A" required>
+                    <span class="help-text">Pembeda antar kelas pada tingkatan yang sama. Boleh angka (1, 2) atau huruf (A, B).</span>
                 </div>
                 <div class="field"><label class="field-label">Nama Kelas</label>
                     <input type="text" id="composedName" class="field-input cursor-not-allowed" value="{{ old('name') }}" readonly style="background:var(--surface);color:var(--on-surface-muted)">
-                    <span class="help-text">Nama kelas tersusun otomatis: Tingkatan + Jurusan + Nomor (mis. X PPLG 1).</span>
+                    <span class="help-text">Nama kelas tersusun otomatis: Tingkatan + Rombel (mis. VII 1 atau VII A).</span>
                 </div>
                 <div class="field"><label class="field-label">Status</label>
                     <input type="text" class="field-input cursor-not-allowed" value="Aktif" disabled style="background:var(--surface);cursor:not-allowed">
@@ -75,18 +66,18 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-            // Nama kelas tersusun live: Tingkatan + Kode Jurusan + Nomor
+            // Nama kelas tersusun live: Tingkatan + Rombel (angka atau huruf).
             const compose = () => {
                 const grade = document.getElementById('gradeLevel')?.value || '';
-                const code = document.getElementById('departmentSelect')?.selectedOptions[0]?.dataset.code || '';
-                const num = document.getElementById('classNumber')?.value || '';
-                const name = [grade, code, num].filter(Boolean).join(' ');
+                const rombel = (document.getElementById('classRombel')?.value || '').trim().toUpperCase();
+                const name = [grade, rombel].filter(Boolean).join(' ');
                 const out = document.getElementById('composedName');
-                if (out) out.value = name || '';
+                if (out) out.value = name;
             };
-            ['gradeLevel', 'departmentSelect', 'classNumber'].forEach(id => {
+            ['gradeLevel', 'classRombel'].forEach(id => {
                 const el = document.getElementById(id);
-                if (el) el.addEventListener('change', compose);
+                if (!el) return;
+                el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', compose);
             });
             compose();
         });

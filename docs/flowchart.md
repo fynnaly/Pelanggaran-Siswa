@@ -115,7 +115,7 @@ flowchart TD
 
 ## 4. Flowchart Kenaikan Kelas & Roll-Over Saldo Poin
 
-Diagram ini menggambarkan proses transisi tahun ajaran baru pada kenaikan tingkat rombongan belajar (Kelas X $\rightarrow$ XI $\rightarrow$ XII).
+Diagram ini menggambarkan proses transisi tahun ajaran baru pada kenaikan tingkat rombongan belajar (Kelas VII $\rightarrow$ VIII $\rightarrow$ IX).
 
 ```mermaid
 flowchart TD

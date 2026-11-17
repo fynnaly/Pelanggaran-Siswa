@@ -62,13 +62,12 @@ Menyimpan data rombongan belajar (rombel kelas).
 | :--- | :--- | :--- | :--- |
 | `id` | `BIGINT UNSIGNED` | Tidak | Primary Key |
 | `academic_year_id` | `BIGINT UNSIGNED` | Tidak | Foreign Key ke `academic_years.id` (Cascade) |
-| `name` | `VARCHAR(20)` | Tidak | Nama kelas, contoh: `X PPLG 1`, `XII DKV 2` |
-| `grade_level` | `ENUM('X','XI','XII')` | Ya | Tingkat angkatan |
-| `major` | `VARCHAR(50)` | Ya | Konsentrasi keahlian (contoh: `PPLG`, `DKV`, `AKL`) |
+| `name` | `VARCHAR(20)` | Tidak | Nama kelas, contoh: `VII 1`, `VIII A` |
+| `grade_level` | `ENUM('VII','VIII','IX')` | Ya | Tingkat kelas (VII, VIII, IX) |
 | `capacity` | `INTEGER UNSIGNED` | Tidak | Kapasitas maksimal kursi (default `40`) |
 | `homeroom_teacher_id` | `BIGINT UNSIGNED` | Ya | Foreign Key ke `users.id` (Wali Kelas) |
 | `assistant_teacher_id`| `BIGINT UNSIGNED` | Ya | Foreign Key ke `users.id` (Guru Pendamping) |
-| `status` | `ENUM('draft','active')` | Tidak | Status rombel (default `active`) |
+| `status` | `ENUM('active','inactive')` | Tidak | Status rombel (default `active`) |
 | `created_at` | `TIMESTAMP` | Ya | - |
 | `updated_at` | `TIMESTAMP` | Ya | - |
 

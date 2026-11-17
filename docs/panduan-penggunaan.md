@@ -30,8 +30,8 @@ Buku panduan ini disusun sebagai rujukan teknis operasional bagi seluruh pemangk
    - Centang opsi **Aktifkan Tahun Ajaran Ini**.
 3. **Konsekuensi Sistem**:
    - Pengaktifan tahun ajaran baru akan memicu mesin promosi otomatis (`PromotionService`).
-   - Seluruh rombel kelas disalin secara otomatis ke tahun baru (tingkat X naik ke XI, XI naik ke XII).
-   - Siswa kelas XII pada tahun sebelumnya otomatis ditandai berstatus **Lulus** (*graduated*).
+   - Seluruh rombel kelas disalin secara otomatis ke tahun baru (tingkat VII naik ke VIII, VIII naik ke IX).
+   - Siswa kelas IX pada tahun sebelumnya otomatis ditandai berstatus **Lulus** (*graduated*).
    - Saldo poin berjalan siswa aktif dipindahkan (*carry forward*) menjadi saldo pembuka tahun baru.
 
 ### 1.3 Manajemen Pengguna dan Akun Staf
@@ -52,7 +52,7 @@ Buku panduan ini disusun sebagai rujukan teknis operasional bagi seluruh pemangk
 3. **Pilih Siswa Pelanggar**:
    - *Kasus Siswa Tunggal*: Ketik nama atau NIS pada kolom pencarian, lalu klik nama siswa yang muncul pada hasil pencarian.
    - *Kasus Kelompok / Rombongan*: Cari dan pilih kembali siswa kedua, ketiga, dst. Seluruh siswa yang terpilih akan tampil dalam bentuk lencana (*badge*).
-   - *Kasus Satu Kelas*: Gunakan dropdown **"Atau tambah satu kelas"** dan pilih nama rombel (misal: *X PPLG 1*). Seluruh siswa aktif di kelas tersebut akan otomatis terpilih.
+   - *Kasus Satu Kelas*: Gunakan dropdown **"Atau tambah satu kelas"** dan pilih nama rombel (misal: *VII 1*). Seluruh siswa aktif di kelas tersebut akan otomatis terpilih.
    - *Batal Pilihan*: Klik ikon silang pada nama siswa untuk membatalkan satu orang, atau klik **Kosongkan Semua** jika salah memilih rombel.
 4. **Waktu & Kategori**:
    - Tentukan tanggal kejadian (default terisi hari ini).

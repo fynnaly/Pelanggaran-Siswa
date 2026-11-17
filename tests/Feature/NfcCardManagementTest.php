@@ -8,9 +8,10 @@ use App\Models\User;
 use App\Support\Xlsx;
 use Illuminate\Http\UploadedFile;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function () {
-    app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+    app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
     Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
     Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web']);
@@ -24,9 +25,9 @@ beforeEach(function () {
     ]);
 
     $this->class = SchoolClass::create([
-        'name' => 'X PPLG 1',
+        'name' => 'VII 1',
         'academic_year_id' => $this->year->id,
-        'grade_level' => 'X',
+        'grade_level' => 'VII',
         'status' => 'active',
     ]);
 

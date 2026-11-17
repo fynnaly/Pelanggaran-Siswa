@@ -40,10 +40,10 @@ class DatabaseSeeder extends Seeder
             ['name' => '2026'],
             [
                 'start_date' => now()->startOfYear(),
-                'end_date'   => now()->startOfYear()->addYear()->subDay(),
-                'status'     => AcademicYear::STATUS_ACTIVE,
-                'is_locked'  => false,
-                'is_active'  => true,
+                'end_date' => now()->startOfYear()->addYear()->subDay(),
+                'status' => AcademicYear::STATUS_ACTIVE,
+                'is_locked' => false,
+                'is_active' => true,
             ]
         );
 
@@ -60,38 +60,38 @@ class DatabaseSeeder extends Seeder
 
         // Kelas
         // $classA = SchoolClass::firstOrCreate(
-        //     ['name' => 'X RPL 1', 'academic_year_id' => $academicYear->id],
-        //     ['grade_level' => 'X', 'major' => 'RPL', 'homeroom_teacher_id' => $guru1->id]
+        //     ['name' => 'VII 1', 'academic_year_id' => $academicYear->id],
+        //     ['grade_level' => 'VII', 'homeroom_teacher_id' => $guru1->id]
         // );
         // $classB = SchoolClass::firstOrCreate(
-        //     ['name' => 'X RPL 2', 'academic_year_id' => $academicYear->id],
-        //     ['grade_level' => 'X', 'major' => 'RPL', 'homeroom_teacher_id' => $guru2->id]
+        //     ['name' => 'VII 2', 'academic_year_id' => $academicYear->id],
+        //     ['grade_level' => 'VII', 'homeroom_teacher_id' => $guru2->id]
         // );
 
-        // 6 kelas tambahan (XII, XI, X) untuk test sort grade_level
+        // 6 kelas tambahan (IX, VIII, VII) untuk test sort grade_level
         // $classC = SchoolClass::firstOrCreate(
-        //     ['name' => 'XII RPL 1', 'academic_year_id' => $academicYear->id],
-        //     ['grade_level' => 'XII', 'major' => 'RPL', 'homeroom_teacher_id' => $staffUsers[0]->id]
+        //     ['name' => 'IX 1', 'academic_year_id' => $academicYear->id],
+        //     ['grade_level' => 'IX', 'homeroom_teacher_id' => $staffUsers[0]->id]
         // );
         // $classD = SchoolClass::firstOrCreate(
-        //     ['name' => 'XI RPL 1', 'academic_year_id' => $academicYear->id],
-        //     ['grade_level' => 'XI', 'major' => 'RPL', 'homeroom_teacher_id' => $staffUsers[1]->id]
+        //     ['name' => 'VIII 1', 'academic_year_id' => $academicYear->id],
+        //     ['grade_level' => 'VIII', 'homeroom_teacher_id' => $staffUsers[1]->id]
         // );
         // $classE = SchoolClass::firstOrCreate(
-        //     ['name' => 'X TKJ 1', 'academic_year_id' => $academicYear->id],
-        //     ['grade_level' => 'X', 'major' => 'TKJ', 'homeroom_teacher_id' => $staffUsers[2]->id]
+        //     ['name' => 'VII 3', 'academic_year_id' => $academicYear->id],
+        //     ['grade_level' => 'VII', 'homeroom_teacher_id' => $staffUsers[2]->id]
         // );
         // $classF = SchoolClass::firstOrCreate(
-        //     ['name' => 'XII TKJ 1', 'academic_year_id' => $academicYear->id],
-        //     ['grade_level' => 'XII', 'major' => 'TKJ', 'homeroom_teacher_id' => $staffUsers[3]->id]
+        //     ['name' => 'IX 2', 'academic_year_id' => $academicYear->id],
+        //     ['grade_level' => 'IX', 'homeroom_teacher_id' => $staffUsers[3]->id]
         // );
         // $classG = SchoolClass::firstOrCreate(
-        //     ['name' => 'XI TKJ 1', 'academic_year_id' => $academicYear->id],
-        //     ['grade_level' => 'XI', 'major' => 'TKJ', 'homeroom_teacher_id' => $staffUsers[4]->id]
+        //     ['name' => 'VIII 2', 'academic_year_id' => $academicYear->id],
+        //     ['grade_level' => 'VIII', 'homeroom_teacher_id' => $staffUsers[4]->id]
         // );
         // $classH = SchoolClass::firstOrCreate(
-        //     ['name' => 'X AKT 1', 'academic_year_id' => $academicYear->id],
-        //     ['grade_level' => 'X', 'major' => 'AKT', 'homeroom_teacher_id' => $staffUsers[5]->id]
+        //     ['name' => 'VII 4', 'academic_year_id' => $academicYear->id],
+        //     ['grade_level' => 'VII', 'homeroom_teacher_id' => $staffUsers[5]->id]
         // );
         // $allClasses = [$classA, $classB, $classC, $classD, $classE, $classF, $classG, $classH];
 

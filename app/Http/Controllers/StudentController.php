@@ -379,7 +379,7 @@ class StudentController extends Controller
         // Fallback darurat bila file template hilang: generate polos tanpa style.
         $rows = [
             ['NISN', 'NIS', 'Nama Lengkap', 'Jenis Kelamin', 'Telepon', 'Alamat', 'Nama Orang Tua', 'No. HP Orang Tua', 'Kelas (nama)', 'Tahun Ajaran (nama)', 'Status'],
-            ['3690012345', '202412010001', 'Budi Santoso', 'Laki-laki', '08123456789', 'Jl. Merdeka No. 1', 'Bapak Santoso', '08987654321', 'X PPLG 1', '2025/2026', 'active'],
+            ['3690012345', '202412010001', 'Budi Santoso', 'Laki-laki', '08123456789', 'Jl. Merdeka No. 1', 'Bapak Santoso', '08987654321', 'VII 1', '2025/2026', 'active'],
         ];
 
         $tmp = Xlsx::write($rows);

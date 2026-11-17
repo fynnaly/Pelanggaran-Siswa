@@ -6,9 +6,10 @@ use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function () {
-    app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+    app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
     foreach (['admin', 'guru', 'wali_kelas', 'bk', 'siswa', 'kesiswaan', 'kepala_sekolah'] as $roleName) {
         Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
@@ -25,9 +26,9 @@ beforeEach(function () {
     $this->guruUser->assignRole('guru');
 
     $this->class = SchoolClass::create([
-        'name' => 'X PPLG 1',
+        'name' => 'VII 1',
         'academic_year_id' => $this->year->id,
-        'grade_level' => 'X',
+        'grade_level' => 'VII',
         'status' => 'active',
         'homeroom_teacher_id' => $this->guruUser->id,
     ]);
@@ -65,7 +66,7 @@ it('renders student dashboard with school-oriented character terms and without c
 
     // Memverifikasi teks edukatif dan ramah siswa
     $response->assertSee('Ahmad Siswa');
-    $response->assertSee('X PPLG 1');
+    $response->assertSee('VII 1');
     $response->assertSee('Poin Karakter dan Prestasi');
     $response->assertSee('Jenjang Sikap');
     $response->assertSee('Lihat Riwayat Poin');
@@ -103,7 +104,6 @@ it('forbids siswa from accessing management and master data', function () {
     $this->get('/users')->assertForbidden();
     $this->get('/settings')->assertForbidden();
     $this->get('/classes')->assertForbidden();
-    $this->get('/departments')->assertForbidden();
     $this->get('/academic-years')->assertForbidden();
     $this->get('/students')->assertForbidden();
     $this->get('/laporan/pelanggaran')->assertForbidden();

@@ -13,10 +13,8 @@ class SchoolClass extends Model
 
     protected $fillable = [
         'academic_year_id',
-        'department_id',
         'name',
         'grade_level',
-        'major',
         'homeroom_teacher_id',
         'assistant_teacher_id',
         'capacity',
@@ -31,12 +29,6 @@ class SchoolClass extends Model
     public function academicYear(): BelongsTo
     {
         return $this->belongsTo(AcademicYear::class);
-    }
-
-    /** Jurusan / Program Keahlian */
-    public function department(): BelongsTo
-    {
-        return $this->belongsTo(Department::class);
     }
 
     public function homeroomTeacher(): BelongsTo
@@ -61,20 +53,28 @@ class SchoolClass extends Model
         return $this->hasMany(Enrollment::class, 'class_id');
     }
 
-    /** Tingkat format resmi Kurikulum Merdeka: "X/10", "XI/11", "XII/12". */
+    /** Tingkat format resmi: "VII/7", "VIII/8", "IX/9". */
     public function getTingkatAttribute(): ?string
     {
         return match ($this->grade_level) {
-            'X' => 'X/10',
-            'XI' => 'XI/11',
-            'XII' => 'XII/12',
+            'VII' => 'VII/7',
+            'VIII' => 'VIII/8',
+            'IX' => 'IX/9',
             default => null,
         };
     }
 
-    /** Nama kelas format: "X RPL 1" */
+    /** Rombel (bagian akhir nama kelas), mis. "VII 1" → "1", "VII A" → "A". */
+    public function getRombelAttribute(): ?string
+    {
+        $parts = preg_split('/[\s-]+/', trim((string) $this->name));
+
+        return $parts ? end($parts) : null;
+    }
+
+    /** Nama kelas disimpan lengkap, mis. "VII 1". */
     public function getDisplayNameAttribute(): string
     {
-        return "{$this->grade_level} {$this->major} " . substr($this->name, -1);
+        return (string) $this->name;
     }
 }
