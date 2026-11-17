@@ -3,8 +3,8 @@
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\AchievementCategoryController;
 use App\Http\Controllers\AchievementRecordController;
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DisciplineCaseController;
 use App\Http\Controllers\NfcCardController;
 use App\Http\Controllers\NotificationController;
@@ -15,6 +15,7 @@ use App\Http\Controllers\SchoolClassController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentPointController;
+use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ViolationCategoryController;
 use Illuminate\Support\Facades\Route;
@@ -35,6 +36,12 @@ Route::middleware(['auth', 'active.account'])->group(function () {
             Route::get('/', [SettingController::class, 'index'])->name('index');
             Route::put('/', [SettingController::class, 'update'])->name('update');
         });
+
+    // Log aktivitas — jejak import, generate akun, dan perubahan data.
+    Route::middleware('role:admin|kesiswaan')->group(function () {
+        Route::get('logs', [ActivityLogController::class, 'index'])->name('logs.index');
+        Route::get('logs/{activityLog}', [ActivityLogController::class, 'show'])->name('logs.show');
+    });
 
     // Auth Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -67,6 +74,13 @@ Route::middleware(['auth', 'active.account'])->group(function () {
     Route::get('students/search', [StudentController::class, 'search'])->name('students.search');
     Route::resource('students', StudentController::class)->except(['destroy']);
 
+    // Master Guru — template/export/import SEBELUM resource agar tidak tertelan {teacher}
+    Route::get('teachers/template', [TeacherController::class, 'downloadTemplate'])->name('teachers.template');
+    Route::get('teachers/export', [TeacherController::class, 'export'])->name('teachers.export');
+    Route::post('teachers/import', [TeacherController::class, 'import'])->name('teachers.import');
+    Route::patch('teachers/{teacher}/toggle-status', [TeacherController::class, 'toggleStatus'])->name('teachers.toggle-status');
+    Route::resource('teachers', TeacherController::class)->except(['destroy', 'show']);
+
     // Nametag NFC (Data Referensi)
     Route::get('nametag-nfc/template', [NfcCardController::class, 'downloadTemplate'])->name('nametag-nfc.template');
     Route::get('nametag-nfc/export', [NfcCardController::class, 'export'])->name('nametag-nfc.export');
@@ -76,12 +90,6 @@ Route::middleware(['auth', 'active.account'])->group(function () {
     // Kelas — promote HARUS sebelum resource agar tidak tertelan sebagai {class}
     Route::post('classes/promote', [SchoolClassController::class, 'promote'])->name('classes.promote');
     Route::resource('classes', SchoolClassController::class);
-
-    // Jurusan / Program Keahlian (tanpa destroy — hanya aktif & nonaktif)
-    Route::patch('departments/{department}/toggle-status', [DepartmentController::class, 'toggleStatus'])->name('departments.toggle-status');
-    Route::resource('departments', DepartmentController::class)->except(['destroy']);
-    Route::patch('jurusan/{department}/toggle-status', [DepartmentController::class, 'toggleStatus'])->name('jurusan.toggle-status');
-    Route::resource('jurusan', DepartmentController::class)->except(['destroy'])->names('jurusan')->parameters(['jurusan' => 'department']);
 
     // PointLedger — siswa/{student} SEBELUM resource agar tidak tertelan {pointLedger}
     Route::get('point-ledgers/siswa/{student}', [PointLedgerController::class, 'forStudent'])->name('point-ledgers.siswa');
@@ -144,6 +152,14 @@ Route::middleware(['auth', 'active.account'])->group(function () {
         Route::get('users/template', [UserController::class, 'downloadTemplate'])->name('users.template');
         Route::get('users/export', [UserController::class, 'export'])->name('users.export');
         Route::post('users/import', [UserController::class, 'import'])->name('users.import');
+        Route::post('users/generate', [UserController::class, 'generateAccounts'])->name('users.generate');
+        Route::get('users/generate/download', [UserController::class, 'downloadGeneratedAccounts'])->name('users.generate.download');
+        Route::post('users/generate/clear', [UserController::class, 'clearGeneratedAccounts'])->name('users.generate.clear');
+        // Reset password massal & satuan — harus sebelum resource agar tidak tertelan {user}.
+        Route::post('users/reset-passwords', [UserController::class, 'resetPasswords'])->name('users.passwords.reset');
+        Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.password.reset');
+        // Halaman profil terpisah sudah digabung ke form edit pengguna — arahkan tautan lama.
+        Route::get('users/{user}/profile', fn ($user) => redirect()->route('users.edit', $user));
         Route::patch('users/{user}/deletion-request/approve', [UserController::class, 'approveDeletionRequest'])->name('users.deletion-requests.approve');
         Route::patch('users/{user}/deletion-request/reject', [UserController::class, 'rejectDeletionRequest'])->name('users.deletion-requests.reject');
         Route::patch('users/{user}/activate', [UserController::class, 'activate'])->name('users.activate');

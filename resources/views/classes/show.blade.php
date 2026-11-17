@@ -3,7 +3,7 @@
         <div class="page-header">
             <div>
                 <h1>{{ $class->name }}</h1>
-                <p class="text-muted text-sm">{{ $class->academicYear?->name ?? '-' }} &middot; {{ $class->tingkat ?? '-' }} {{ $class->major }}</p>
+                <p class="text-muted text-sm">{{ $class->academicYear?->name ?? '-' }} &middot; {{ $class->tingkat ?? '-' }}{{ $class->angkatan ? ' &middot; Angkatan '.$class->angkatan : '' }}</p>
             </div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
                 <a href="{{ route('classes.index') }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" class="icon-sm"></i> Kembali</a>
@@ -20,7 +20,7 @@
                 <tbody>
                     <tr><td style="padding:8px 0;color:var(--on-surface-muted);width:180px">Nama Kelas</td><td style="font-weight:600">{{ $class->name }}</td></tr>
                     <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Tingkat</td><td class="mono" style="font-weight:600">{{ $class->tingkat ?? '-' }}</td></tr>
-                    <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Program Keahlian</td><td>{{ $class->major ?? '-' }}</td></tr>
+                    <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Angkatan</td><td class="mono" style="font-weight:600">{{ $class->angkatan ?? '-' }}</td></tr>
                     <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Tahun Ajaran</td><td>{{ $class->academicYear?->name ?? '-' }}</td></tr>
                     <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Status</td><td><span class="badge {{ ($class->status ?? 'active')==='active'?'badge-success':'' }}" style="{{ ($class->status ?? 'active')!=='active'?'background:var(--surface);color:var(--on-surface-muted)':'' }}">{{ ($class->status ?? 'active')==='active'?'Aktif':'Nonaktif' }}</span></td></tr>
                     <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Wali Kelas</td><td>{{ $class->homeroomTeacher?->name ?? '-' }}</td></tr>

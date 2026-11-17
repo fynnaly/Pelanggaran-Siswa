@@ -13,10 +13,9 @@ class SchoolClass extends Model
 
     protected $fillable = [
         'academic_year_id',
-        'department_id',
         'name',
         'grade_level',
-        'major',
+        'angkatan',
         'homeroom_teacher_id',
         'assistant_teacher_id',
         'capacity',
@@ -28,15 +27,47 @@ class SchoolClass extends Model
         return [];
     }
 
+    /**
+     * Isi angkatan otomatis saat kelas dibuat / tingkatan atau tahun ajarannya berubah.
+     * Nilai eksplisit pada kelas baru tetap dihormati.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (self $class) {
+            if (! $class->exists && $class->angkatan !== null) {
+                return;
+            }
+
+            if ($class->angkatan === null || $class->isDirty(['academic_year_id', 'grade_level'])) {
+                $class->angkatan = self::resolveAngkatan($class->academicYear()->first(), $class->grade_level);
+            }
+        });
+    }
+
+    /**
+     * Angkatan = tahun masuk siswa berdasarkan tingkatan.
+     * VII = tahun awal tahun ajaran, VIII = tahun awal - 1, IX = tahun awal - 2.
+     */
+    public static function resolveAngkatan(?AcademicYear $year, ?string $gradeLevel): ?int
+    {
+        $startYear = $year?->startYear();
+
+        if ($startYear === null) {
+            return null;
+        }
+
+        $offset = match (strtoupper((string) $gradeLevel)) {
+            'VIII' => 1,
+            'IX' => 2,
+            default => 0,
+        };
+
+        return $startYear - $offset;
+    }
+
     public function academicYear(): BelongsTo
     {
         return $this->belongsTo(AcademicYear::class);
-    }
-
-    /** Jurusan / Program Keahlian */
-    public function department(): BelongsTo
-    {
-        return $this->belongsTo(Department::class);
     }
 
     public function homeroomTeacher(): BelongsTo
@@ -61,20 +92,28 @@ class SchoolClass extends Model
         return $this->hasMany(Enrollment::class, 'class_id');
     }
 
-    /** Tingkat format resmi Kurikulum Merdeka: "X/10", "XI/11", "XII/12". */
+    /** Tingkat format resmi: "VII/7", "VIII/8", "IX/9". */
     public function getTingkatAttribute(): ?string
     {
         return match ($this->grade_level) {
-            'X' => 'X/10',
-            'XI' => 'XI/11',
-            'XII' => 'XII/12',
+            'VII' => 'VII/7',
+            'VIII' => 'VIII/8',
+            'IX' => 'IX/9',
             default => null,
         };
     }
 
-    /** Nama kelas format: "X RPL 1" */
+    /** Rombel (bagian akhir nama kelas), mis. "VII A" → "A". */
+    public function getRombelAttribute(): ?string
+    {
+        $parts = preg_split('/[\s-]+/', trim((string) $this->name));
+
+        return $parts ? end($parts) : null;
+    }
+
+    /** Nama kelas disimpan lengkap, mis. "VII A". */
     public function getDisplayNameAttribute(): string
     {
-        return "{$this->grade_level} {$this->major} " . substr($this->name, -1);
+        return (string) $this->name;
     }
 }

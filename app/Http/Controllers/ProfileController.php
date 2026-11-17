@@ -27,19 +27,22 @@ class ProfileController extends Controller
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         $user = $request->user();
+
+        if ($user->hasRole('siswa')) {
+            abort(403, 'Siswa tidak diizinkan mengubah profil.');
+        }
+
         $validated = $request->validated();
         $oldAvatarPath = $user->avatar_path;
 
-        if (! $user->hasRole('siswa')) {
-            $user->fill([
-                'name' => $validated['name'],
-                'email' => $validated['email'],
-                'nip' => $validated['nip'] ?? null,
-            ]);
+        $user->fill([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'nip' => $validated['nip'] ?? null,
+        ]);
 
-            if ($user->isDirty('email')) {
-                $user->email_verified_at = null;
-            }
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
         if ($request->hasFile('avatar')) {
@@ -70,6 +73,10 @@ class ProfileController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        if ($request->user()->hasRole('siswa')) {
+            abort(403, 'Siswa tidak diizinkan mengajukan penghapusan akun. Hubungi petugas sekolah.');
+        }
+
         $request->validateWithBag('userDeletion', [
             'confirm_name' => ['required', 'string', 'in:'.$request->user()->name],
             'password' => ['required', 'current_password'],

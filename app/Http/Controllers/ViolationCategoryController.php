@@ -400,11 +400,12 @@ class ViolationCategoryController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Tampilan detail kategori: dialihkan ke form edit karena satu-satunya
+     * halaman detail yang ada adalah panel edit (dipakai juga oleh index).
      */
-    public function show(string $id)
+    public function show(ViolationCategory $violationCategory)
     {
-        //
+        return redirect()->route('violation-categories.edit', $violationCategory);
     }
 
     /**

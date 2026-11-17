@@ -71,11 +71,7 @@
             <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                 <div class="flex items-start gap-4">
                     <div class="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400 font-bold text-xl">
-                        @if(auth()->user()?->avatar_path)
-                            <img src="{{ asset('storage/'.auth()->user()->avatar_path) }}" alt="Foto profil {{ $studentName }}" class="h-full w-full object-cover">
-                        @else
-                            {{ strtoupper(substr($studentName, 0, 2)) }}
-                        @endif
+                        <img src="{{ auth()->user()?->avatar_url ?? asset('assets/images/user/default-avatar.png') }}" alt="Foto profil {{ $studentName }}" class="h-full w-full object-cover">
                     </div>
                     <div>
                         <div class="flex flex-wrap items-center gap-2">

@@ -22,8 +22,8 @@
             @if($errors->any())<div class="alert alert-error" style="margin-bottom:var(--sp-lg)"><i data-lucide="alert-circle" class="icon-sm"></i> {{ $errors->first() }}</div>@endif
             <form action="{{ route('students.store') }}" method="POST">
                 @csrf
-                <div class="field"><label class="field-label">NISN <span class="text-danger">*</span></label><input type="text" name="nisn" value="{{ old('nisn') }}" class="field-input" required maxlength="10" placeholder="10 digit angka (standar Kemendikbud)"></div>
-                <div class="field"><label class="field-label">NIS <span class="text-danger">*</span></label><input type="text" name="nis" value="{{ old('nis') }}" class="field-input" required maxlength="12" placeholder="12 digit: YYYYMMDD + urutan 4 (contoh 202412010001)"></div>
+                <div class="field"><label class="field-label">NISN</label><input type="text" name="nisn" value="{{ old('nisn') }}" class="field-input" maxlength="10" placeholder="10 digit angka (opsional)"><span class="help-text">Boleh dikosongkan. Isi 10 digit angka bila tersedia.</span></div>
+                <div class="field"><label class="field-label">NIS <span class="text-danger">*</span></label><input type="text" name="nis" value="{{ old('nis') }}" class="field-input" required maxlength="20" placeholder="Nomor Induk Siswa (contoh 2425.7.001)"></div>
                 <div class="field"><label class="field-label">Nama Lengkap <span class="text-danger">*</span></label><input type="text" name="full_name" value="{{ old('full_name') }}" class="field-input" required maxlength="255"></div>
                 <div class="field"><label class="field-label">Jenis Kelamin <span class="text-danger">*</span></label>
                     <div style="display:flex;gap:var(--sp-lg)">

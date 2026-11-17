@@ -70,9 +70,7 @@
                             <td class="text-sm text-muted" style="white-space:nowrap">{{ $l->created_at?->copy()->setTimezone('Asia/Jakarta')->locale('id')->translatedFormat('d/m/Y H:i') }} WIB</td>
                             <td>
                                 <div style="display:flex;align-items:center;gap:var(--sp-sm)">
-                                    <div style="width:32px;height:32px;border-radius:var(--r-full);background:var(--primary);color:var(--on-primary);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0">
-                                        {{ strtoupper(substr($l->student?->full_name ?? '?', 0, 2)) }}
-                                    </div>
+                                    <img src="{{ $l->student?->avatar_url ?? asset('assets/images/user/default-avatar.png') }}" alt="Foto {{ $l->student?->full_name ?? 'Siswa' }}" style="width:32px;height:32px;border-radius:var(--r-full);object-fit:cover;flex-shrink:0">
                                     <div>
                                         <div style="font-weight:600;font-size:.875rem">{{ $l->student?->full_name ?? '-' }}</div>
                                         <div class="text-sm text-muted">{{ $l->student?->currentEnrollment?->schoolClass?->name ?? '' }}</div>

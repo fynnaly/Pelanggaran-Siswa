@@ -13,9 +13,10 @@ Dokumen ini menguraikan seluruh modul fungsional yang tersedia pada aplikasi Pel
 
 ### 1.2 Profil Pengguna dan Identitas Kepegawaian
 - **Pengaturan Profil Berbasis Tab**: Tampilan terbagi menjadi kategori *Informasi Akun* dan *Zona Bahaya*.
-- **Foto Profil Pegawai (Avatar)**: Staf dapat mengunggah foto profil (JPG/PNG/WebP maks. 2MB) yang tersimpan aman pada storage publik lokal (`public/storage/avatars`).
+- **Foto Profil Pegawai (Avatar)**: Staf dapat mengunggah foto profil (JPG/PNG/WebP maks. 50MB) yang tersimpan aman pada storage publik lokal (`public/storage/avatars`). Bila belum mengunggah, sistem menampilkan gambar avatar default.
+- **Profil Siswa Hanya-Baca**: Akun siswa tidak dapat mengubah data apa pun dari halaman Pengaturan Akun — termasuk nama, email, NIP, foto profil, kata sandi, dan pengajuan penghapusan akun. Seluruh perubahan data siswa dilakukan oleh petugas sekolah. Menu Pengaturan global juga tidak tersedia untuk siswa.
 - **Nomor Induk Pegawai (NIP)**: Staf dapat melengkapi NIP resmi yang akan dicantumkan secara otomatis pada dokumen penanganan kasus dan berkas rekapitulasi.
-- **Deteksi Tugas Tambahan**: Sistem secara cerdas mendeteksi dan menampilkan lencana tugas struktural guru, seperti status *Wali Kelas X PPLG 1* berdasarkan tahun ajaran yang sedang aktif.
+- **Deteksi Tugas Tambahan**: Sistem secara cerdas mendeteksi dan menampilkan lencana tugas struktural guru, seperti status *Wali Kelas VII A* berdasarkan tahun ajaran yang sedang aktif.
 
 ### 1.3 Pengamanan Zona Bahaya (Penghapusan Akun)
 - **Soft Deletes Eloquent**: Akun pengguna yang dihapus tidak langsung dihilangkan dari tabel basis data secara permanen, melainkan diberi stempel waktu `deleted_at`. Seluruh riwayat audit (kasus yang pernah dilaporkan atau divalidasi) tetap utuh.
@@ -27,22 +28,29 @@ Dokumen ini menguraikan seluruh modul fungsional yang tersedia pada aplikasi Pel
 
 ### 2.1 Tahun Ajaran Aktif (`AcademicYear`)
 - Menyimpan nama periode (contoh: `2026/2027`), tanggal mulai, status operasional, dan penanda status aktif (`is_active`).
-- **Tombol Aktifkan Cepat**: Tahun ajaran nonaktif dapat diaktifkan langsung dari baris daftar (ikon `power`) dengan konfirmasi dua tahap — peringatan ringan, lalu peringatan final yang menjelaskan konsekuensi (kelas baru dibuat, siswa naik tingkat, XII lulus).
+- **Tombol Aktifkan Cepat**: Tahun ajaran nonaktif dapat diaktifkan langsung dari baris daftar (ikon `power`) dengan konfirmasi dua tahap — peringatan ringan, lalu peringatan final yang menjelaskan konsekuensi (kelas baru dibuat, siswa naik tingkat, IX lulus).
 - **Nonaktif Otomatis saat Berlalu**: Tahun ajaran yang periodenya sudah lewat (akhir periode = `end_date` bila diisi, atau `start_date` + 1 tahun) otomatis dinonaktifkan saat halaman daftar dibuka, sehingga `is_active` tidak pernah "nyangkut" pada periode yang sudah selesai. Tabel daftar menampilkan kolom Tanggal Selesai dan tanda *Berlalu*.
-- **Pemicu Kenaikan Kelas Otomatis (`PromotionService`)**: Pengaktifan tahun ajaran baru secara otomatis menyalin struktur kelas ke tahun ajaran baru, memperbarui pendaftaran siswa (*enrollments*), menandai siswa tingkat XII sebagai lulus, dan membawa saldo poin berjalan sebagai saldo awal tahun baru.
+- **Pemicu Kenaikan Kelas Otomatis (`PromotionService`)**: Pengaktifan tahun ajaran baru secara otomatis menyalin struktur kelas ke tahun ajaran baru, memperbarui pendaftaran siswa (*enrollments*), menandai siswa tingkat IX sebagai lulus, dan membawa saldo poin berjalan sebagai saldo awal tahun baru.
 
 ### 2.2 Rombongan Belajar / Kelas (`SchoolClass`)
-- Menyimpan data nama rombel (contoh: `X PPLG 1`), tingkat kelas (`X`, `XI`, `XII`), dan Program Keahlian (`major`, e.g. `PPLG`, `DKV`).
+- Menyimpan data nama rombel (contoh: `VII A`), tingkat kelas (`VII`, `VIII`, `IX`), dan rombel (huruf, mis. A/B).
 - Mengaitkan guru sebagai **Wali Kelas** (`homeroom_teacher_id`) untuk keperluan pendampingan siswa di Zona Pembinaan.
 - Mendukung penetapan guru wali kelas secara cepat langsung dari baris tabel data (*inline quick-assign*).
 
 ### 2.3 Manajemen Profil Siswa (`Student`)
-- Berisi identitas statis siswa: Nama Lengkap, NIS, NISN, Jenis Kelamin, Nama dan Nomor Telepon Orang Tua, serta Alamat.
+- Berisi identitas statis siswa: Nama Lengkap, NIS, NISN (opsional), Jenis Kelamin, Nama dan Nomor Telepon Orang Tua, serta Alamat.
 - **Independen dari Kelas**: Siswa tidak lagi menyimpan `class_id` langsung di tabel `students`. Seluruh data kelas siswa berjalan melalui riwayat pendaftaran aktif (`enrollments`).
 
 ### 2.4 Impor dan Ekspor Data Siswa Berkinerja Tinggi
-- **Impor CSV Native**: Mengunggah berkas CSV/XLSX tanpa ketergantungan library eksternal yang berat, memvalidasi keunikan NISN/NIS, dan otomatis mendaftarkan siswa ke kelas serta membuka saldo poin awal 2000.
+- **Impor CSV Native**: Mengunggah berkas CSV/XLSX tanpa ketergantungan library eksternal yang berat, memvalidasi keunikan NIS (serta NISN bila diisi), dan otomatis mendaftarkan siswa ke kelas serta membuka saldo poin awal 2000. NISN boleh dikosongkan saat impor. Kolom **Kelas (nama)** boleh memuat tingkatan langsung (mis. `VIII B`) atau diisi rombel saja (mis. `B`) dengan kolom **Tingkatan** (`VII`/`VIII`/`IX`, boleh juga `7`/`8`/`9`); tingkatan otomatis tersimpan pada kelas.
 - **Ekspor XLSX Terproteksi**: Mendukung pengunduhan data siswa, pengguna, dan monitor poin berformat XLSX ber-style template native dengan proteksi *Formula Injection*.
+
+### 2.5 Master Data Guru (`Teacher`)
+- Menyimpan identitas guru/staf pengajar: NIP (unik), nama lengkap, mata pelajaran yang diampu, nomor telepon, dan status aktif/nonaktif.
+- **Penautan Akun**: Akun pengguna ber-role `guru` atau `wali_kelas` dapat ditautkan ke satu data guru (relasi satu-satu `teachers.user_id`). Foto profil pada tabel guru diambil dari akun pengguna, dengan fallback avatar default.
+- **Pencarian & Live Filter**: Pencarian nama/NIP/mata pelajaran/email akun serta filter status berjalan tanpa reload halaman.
+- **Impor & Ekspor**: Tersedia template, impor CSV/XLSX (idempoten berdasarkan NIP), dan ekspor XLSX daftar guru.
+- Data guru lama milik akun ber-role guru/wali kelas otomatis di-*backfill* saat migrasi, dan akun baru dapat dibuat langsung dari data guru melalui form Pengguna.
 
 ---
 
@@ -122,7 +130,7 @@ Dokumen ini menguraikan seluruh modul fungsional yang tersedia pada aplikasi Pel
 
 ### 5.3 Pelaporan Siswa Kolektif (Bulk Input)
 - **Pencarian Multi-Siswa**: Mengetik dan menambahkan banyak siswa dalam satu laporan insiden yang sama.
-- **Pilihan Cepat Satu Kelas**: Opsi memilih satu rombel kelas (misal: "X PPLG 1") untuk memasukkan seluruh siswa aktif di rombel tersebut ke dalam berkas laporan secara instan.
+- **Pilihan Cepat Satu Kelas**: Opsi memilih satu rombel kelas (misal: "VII A") untuk memasukkan seluruh siswa aktif di rombel tersebut ke dalam berkas laporan secara instan.
 - **Tombol Kosongkan Semua**: Mereset daftar siswa terpilih dalam 1 klik jika staf salah memilih rombel.
 
 ### 5.4 Pelapor Otomatis dan Terkunci

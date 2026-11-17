@@ -4,6 +4,7 @@ use App\Models\AcademicYear;
 use App\Models\DisciplineCase;
 use App\Models\SchoolClass;
 use App\Models\Student;
+use App\Models\User;
 use App\Models\ViolationCategory;
 use App\Support\ViolationStats;
 use Spatie\Permission\Models\Role;
@@ -12,7 +13,7 @@ beforeEach(function () {
     Role::firstOrCreate(['name' => 'kesiswaan', 'guard_name' => 'web']);
 
     $year = AcademicYear::create(['name' => '2026/2027', 'start_date' => now(), 'is_active' => true, 'status' => 'active']);
-    $this->class = SchoolClass::create(['name' => 'X PPLG 1', 'academic_year_id' => $year->id, 'grade_level' => 'X', 'status' => 'active']);
+    $this->class = SchoolClass::create(['name' => 'VII A', 'academic_year_id' => $year->id, 'grade_level' => 'VII', 'status' => 'active']);
 
     $mk = fn (string $code) => ViolationCategory::create([
         'code' => $code, 'name' => "Kat $code", 'group_type' => 'terlambat', 'points' => 5, 'severity' => 'ringan', 'status' => 'active',
@@ -55,7 +56,7 @@ it('mengurutkan kategori dan siswa berdasarkan jumlah kasus, tanpa kasus dismiss
 
 it('halaman dashboard, laporan, dan detail kategori ter-render', function () {
     ($this->kasus)($this->budi, $this->a);
-    $user = \App\Models\User::factory()->create();
+    $user = User::factory()->create();
     $user->assignRole('kesiswaan'); // role staf; kesiswaan = supervisor tanpa scope wali kelas
     $this->actingAs($user, 'web');
 

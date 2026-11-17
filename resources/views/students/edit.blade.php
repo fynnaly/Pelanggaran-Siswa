@@ -13,10 +13,26 @@
     <div class="main-wrap">
         <div class="card card-form">
             @if($errors->any())<div class="alert alert-error" style="margin-bottom:var(--sp-lg)"><i data-lucide="alert-circle" class="icon-sm"></i> {{ $errors->first() }}</div>@endif
-            <form action="{{ route('students.update', $student) }}" method="POST">
+            <form action="{{ route('students.update', $student) }}" method="POST" enctype="multipart/form-data">
                 @csrf @method('PUT')
-                <div class="field"><label class="field-label">NISN <span class="text-danger">*</span></label><input type="text" name="nisn" value="{{ old('nisn', $student->nisn) }}" class="field-input" required maxlength="10" placeholder="10 digit angka"></div>
-                <div class="field"><label class="field-label">NIS <span class="text-danger">*</span></label><input type="text" name="nis" value="{{ old('nis', $student->nis) }}" class="field-input" required maxlength="12" placeholder="12 digit: YYYYMMDD + urutan 4"></div>
+                @if(auth()->user()?->hasAnyRole(['admin','bk','kesiswaan']))
+                    <div style="display:flex;align-items:center;gap:var(--sp-md);margin-bottom:var(--sp-lg)">
+                        <img src="{{ $student->avatar_url }}" alt="Foto {{ $student->full_name }}"
+                             style="width:64px;height:64px;border-radius:999px;object-fit:cover;flex-shrink:0;border:1px solid var(--border);background:var(--surface)">
+                        <div style="flex:1;min-width:0">
+                            <label class="field-label" for="studentAvatar">Foto Profil Siswa</label>
+                            <input id="studentAvatar" type="file" name="avatar" accept="image/png,image/jpeg,image/webp" class="field-input" style="padding:6px 10px">
+                            <span class="help-text">PNG/JPG/WEBP, maks. 15MB. Hanya admin/BK/Kesiswaan yang dapat mengganti foto siswa.</span>
+                            @if($student->avatar_path || $student->user?->avatar_path)
+                                <label style="display:inline-flex;align-items:center;gap:6px;margin-top:6px;cursor:pointer">
+                                    <input type="checkbox" name="remove_avatar" value="1" style="width:14px;height:14px;accent-color:var(--primary)"> Hapus foto saat ini
+                                </label>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+                <div class="field"><label class="field-label">NISN</label><input type="text" name="nisn" value="{{ old('nisn', $student->nisn) }}" class="field-input" maxlength="10" placeholder="10 digit angka (opsional)"><span class="help-text">Boleh dikosongkan. Isi 10 digit angka bila tersedia.</span></div>
+                <div class="field"><label class="field-label">NIS <span class="text-danger">*</span></label><input type="text" name="nis" value="{{ old('nis', $student->nis) }}" class="field-input" required maxlength="20" placeholder="Nomor Induk Siswa (contoh 2425.7.001)"></div>
                 <div class="field"><label class="field-label">Nama Lengkap <span class="text-danger">*</span></label><input type="text" name="full_name" value="{{ old('full_name', $student->full_name) }}" class="field-input" required maxlength="255"></div>
                 <div class="field"><label class="field-label">Jenis Kelamin <span class="text-danger">*</span></label>
                     <div style="display:flex;gap:var(--sp-lg)">

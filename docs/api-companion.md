@@ -124,7 +124,7 @@ Memastikan layanan backend aktif dan dapat dijangkau dari aplikasi seluler.
 #### C. Ganti Password Sendiri
 - **URL**: `PATCH /api/v1/auth/password`
 - **Header**: `Authorization: Bearer <token>`, `Content-Type: application/json`
-- **Hak Akses**: Semua peran.
+- **Hak Akses**: Semua peran kecuali `siswa` (akun siswa hanya-baca, `403`).
 - **Payload Request**:
   ```json
   {
@@ -175,7 +175,7 @@ Mengambil daftar siswa beserta saldo poin terkini dan klasifikasi 8 zona pembina
         "full_name": "Ahmad Rizki",
         "nis": "242518001",
         "nisn": "0081234567",
-        "class_name": "X PPLG 1",
+        "class_name": "VII A",
         "balance": 1780,
         "zone": {
           "name": "Pembinaan 2",
@@ -209,7 +209,7 @@ Mengambil rincian mutasi kredit dan debit yang pernah dialami siswa.
       "id": 105,
       "full_name": "Ahmad Rizki",
       "nis": "242518001",
-      "class_name": "X PPLG 1",
+      "class_name": "VII A",
       "current_balance": 1780,
       "zone": "Pembinaan 2"
     },
@@ -277,7 +277,7 @@ Digunakan saat guru mengetik nama / NISN / NIS siswa di form input pelanggaran (
       "nis": "NIS-015",
       "nisn": "0012345678",
       "nama": "Budi Santoso",
-      "kelas": "X RPL 1",
+      "kelas": "VII A",
       "saldo_poin": 2000,
       "zona": "Normal"
     }
@@ -300,7 +300,7 @@ Digunakan saat perangkat membaca chip NFC pada kartu tanda pengenal siswa untuk 
     "nisn": "0012345678",
     "nis": "NIS-015",
     "nama": "Budi Santoso",
-    "kelas": "X RPL 1"
+    "kelas": "VII A"
   },
   "saldo": 2000,
   "zona": {
@@ -443,7 +443,7 @@ Mengambil daftar kasus pelanggaran yang pernah dilaporkan dengan filter status d
       "id": 42,
       "case_number": "KAS-2026-0042",
       "student_name": "Budi Santoso",
-      "class_name": "X RPL 1",
+      "class_name": "VII A",
       "violation_name": "Tidak memakai dasi / ikat pinggang standar",
       "points": 5,
       "status": "found",
@@ -485,7 +485,7 @@ Satu endpoint untuk layar utama aplikasi mobile: staf mendapat statistik sekolah
     {
       "case_number": "KAS-2026-0006",
       "student_name": "Siswa 1",
-      "class_name": "X RPL 1",
+      "class_name": "VII A",
       "violation_name": "Membuang sampah sembarangan dan merusak lingkungan.",
       "points": 32,
       "status": "handling",
@@ -506,7 +506,7 @@ Satu endpoint untuk layar utama aplikasi mobile: staf mendapat statistik sekolah
     "nama": "Siswa 1",
     "nis": "NIS-001",
     "nisn": "001",
-    "kelas": "X RPL 1"
+    "kelas": "VII A"
   },
   "stats": {
     "poin": 1916,
@@ -537,15 +537,15 @@ Satu endpoint untuk layar utama aplikasi mobile: staf mendapat statistik sekolah
 #### A. Baca Profil
 - **URL**: `GET /api/v1/profile`
 - **Header**: `Authorization: Bearer <token>`
-- **Respons Berhasil (`200 OK`)**: bentuk sama dengan `auth/me` (field `user` memuat `name`, `email`, `nip`, `roles`, `avatar_path`, `avatar_url`, dan `student` dengan `id/nis/nisn/name/class`).
+- **Respons Berhasil (`200 OK`)**: bentuk sama dengan `auth/me` (field `user` memuat `name`, `email`, `nip`, `roles`, `avatar_path`, `avatar_url`, dan `student` dengan `id/nis/nisn/name/class`). `avatar_url` selalu berisi URL — memakai gambar avatar default bila pengguna belum mengunggah foto.
 
 #### B. Ubah Profil dan Avatar
 - **URL**: `PATCH /api/v1/profile`
 - **Header**: `Authorization: Bearer <token>`, `Content-Type: multipart/form-data` (bila ada berkas avatar)
-- **Hak Akses**: Semua peran. Akun `siswa` tidak boleh mengubah `name`, `email`, dan `nip` (prohibited).
+- **Hak Akses**: Staf saja. Akun `siswa` bersifat hanya-baca — seluruh perubahan (termasuk avatar) ditolak dengan `403`.
 - **Payload (multipart/form-data)**:
   - `name`, `email`, `nip`: opsional (staf saja).
-  - `avatar`: berkas gambar JPG/JPEG/PNG/WebP maks. 2MB.
+  - `avatar`: berkas gambar JPG/JPEG/PNG/WebP maks. 50MB.
   - `remove_avatar`: `true` untuk menghapus foto profil (avatar lama ikut dihapus dari storage).
 - **Perilaku**: mengganti avatar otomatis menghapus berkas lama; mengubah email mereset `email_verified_at`.
 - **Respons Berhasil (`200 OK`)**:
@@ -600,7 +600,7 @@ Satu endpoint untuk layar utama aplikasi mobile: staf mendapat statistik sekolah
       "points_awarded": 20,
       "category": { "id": 27, "code": "R4.2", "name": "...", "parent_name": "Kedisiplinan" },
       "discipline_case": { "id": 4, "case_number": "KAS-2026-0004" },
-      "class": "X RPL 1",
+      "class": "VII A",
       "academic_year": "2026",
       "recorded_by": "Umar Faruq",
       "verified_by": "Umar Faruq",
@@ -664,7 +664,7 @@ Satu endpoint untuk layar utama aplikasi mobile: staf mendapat statistik sekolah
             "category_parent": "Ketertiban & Kedisiplinan Umum",
             "status": "handling",
             "description": "...",
-            "class": "X RPL 1",
+            "class": "VII A",
             "academic_year": "2026",
             "reported_by": "Guru 1",
             "validated_by": "Umar Faruq"
@@ -698,6 +698,6 @@ Satu endpoint untuk layar utama aplikasi mobile: staf mendapat statistik sekolah
 - **Respons Berhasil (`200 OK`)**: bentuk sama dengan laporan siswa, plus:
 ```json
 {
-  "class": { "id": 1, "name": "X RPL 1", "academic_year": "2026" }
+  "class": { "id": 1, "name": "VII A", "academic_year": "2026" }
 }
 ```

@@ -33,6 +33,17 @@
     --ws: #78350f; --wt: #fcd34d;
     --ds: #7f1d1d; --dt: #fca5a5;
   }
+
+  html {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
+  body {
+    overflow-x: hidden;
+    max-width: 100%;
+    position: relative;
+  }
 }
 
 @layer components {
@@ -45,7 +56,13 @@
   }
 
   .main-wrap {
-    @apply w-full space-y-6;
+    @apply w-full max-w-full min-w-0 space-y-6;
+  }
+
+  .main-content-layout {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: clip;
   }
 
   .toolbar {
@@ -53,6 +70,79 @@
   }
   .filter-group {
     @apply flex flex-wrap gap-3 items-center;
+  }
+
+  /* Toolbar filter + aksi/import: dua form bersebelahan. Saat layar sempit
+     form turun baris sendiri supaya input pencarian tidak tergencet. */
+  .toolbar-form {
+    @apply flex flex-wrap items-center gap-2 min-w-0;
+  }
+  .toolbar-form > .input {
+    @apply w-auto;
+  }
+  .toolbar-form > select.input,
+  .toolbar-form > .btn {
+    flex: 0 0 auto;
+  }
+  .toolbar-form--filters {
+    flex: 1 1 420px;
+    min-width: 0;
+  }
+  .toolbar-form--import {
+    flex: 1 1 320px;
+    min-width: 0;
+    max-width: 460px;
+  }
+  .toolbar-form--filters .toolbar-search {
+    flex: 1 1 200px;
+    min-width: 160px;
+  }
+  .toolbar-form--import .input[type="file"] {
+    flex: 1 1 150px;
+    min-width: 0;
+    max-width: 100%;
+  }
+  @media (max-width: 640px) {
+    .toolbar-form--filters,
+    .toolbar-form--import {
+      flex-basis: 100%;
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+    }
+    .toolbar-form--filters .toolbar-search {
+      min-width: 0;
+      width: 100%;
+      flex: 1 1 100%;
+    }
+    .toolbar-form--filters select.input {
+      flex: 1 1 calc(50% - 0.5rem);
+      min-width: 0;
+    }
+    .toolbar-form--import {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .toolbar-form--import > label {
+      width: 100%;
+    }
+    .toolbar-form--import .input[type="file"] {
+      flex: 1 1 160px;
+      min-width: 0;
+      width: auto;
+    }
+    .toolbar-form--import .btn {
+      flex-shrink: 0;
+    }
+  }
+  @media (max-width: 420px) {
+    .toolbar-form--import .input[type="file"],
+    .toolbar-form--import .btn {
+      width: 100%;
+      flex: 1 1 100%;
+      justify-content: center;
+    }
   }
 
   .card {
@@ -63,7 +153,13 @@
   }
 
   .table-wrap {
-    @apply overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800/40 shadow-sm;
+    @apply w-full max-w-full overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800/40 shadow-sm;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Varian tanpa chrome: dipakai saat tabel sudah berada di dalam .card.
+     Tetap overflow-x-auto supaya tabel lebar tidak melebarkan halaman. */
+  .table-wrap--plain {
+    @apply rounded-none border-0 bg-transparent shadow-none;
   }
   table {
     @apply w-full text-left text-sm text-gray-600 dark:text-gray-300 border-collapse;

@@ -16,7 +16,7 @@
         <div class="print-only" style="display:none;margin-bottom:16px">
             <div style="text-align:center;border-bottom:2px solid #000;padding-bottom:8px">
                 <h2 style="font-size:16px;font-weight:800;margin:0;text-transform:uppercase">FORMAT MONITORING POIN PROGRAM KESISWAAN</h2>
-                <div style="font-size:12px;font-weight:700">{{ \App\Models\Setting::get('school_name', 'SMK Baktinusantara 666') }}</div>
+                <div style="font-size:12px;font-weight:700">{{ \App\Models\Setting::get('school_name', 'SMP Baktinusantara 666') }}</div>
                 <div style="font-size:11px;color:#475569">
                     Tahun Pelajaran: {{ $academicYears->firstWhere('id', $selectedYearId)?->name ?? 'Semua Tahun' }} &middot; Dicetak: {{ now()->translatedFormat('d F Y') }}
                 </div>

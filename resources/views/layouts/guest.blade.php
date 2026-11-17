@@ -340,7 +340,7 @@
             <div class="guest-card">
                 <div class="brand-header">
                     <h1 class="brand-title">{{ config('app.name', 'Pelanggaran Siswa') }}</h1>
-                    <p class="brand-subtitle">{{ \App\Models\Setting::get('school_name', 'SMK Baktinusantara 666') }}</p>
+                    <p class="brand-subtitle">{{ \App\Models\Setting::get('school_name', 'SMP Baktinusantara 666') }}</p>
                 </div>
 
                 @if(session('status'))
@@ -354,7 +354,7 @@
             </div>
 
             <div class="guest-footer">
-                <span>&copy; {{ date('Y') }} {{ \App\Models\Setting::get('school_name', 'SMK Baktinusantara 666') }}</span>
+                <span>&copy; {{ date('Y') }} {{ \App\Models\Setting::get('school_name', 'SMP Baktinusantara 666') }}</span>
             </div>
         </div>
 

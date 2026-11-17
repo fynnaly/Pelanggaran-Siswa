@@ -12,10 +12,10 @@ use Illuminate\Support\Facades\Log;
 
 class PromotionService
 {
-    /** Grade increment mapping: X→XI, XI→XII */
+    /** Grade increment mapping: VII→VIII, VIII→IX. */
     protected const GRADE_MAP = [
-        'X'  => 'XI',
-        'XI' => 'XII',
+        'VII' => 'VIII',
+        'VIII' => 'IX',
     ];
 
     /**
@@ -25,7 +25,7 @@ class PromotionService
      * - Kelas lama TIDAK DIUBAH (histori tetap).
      * - Buat kelas baru di tahun ajaran baru.
      * - Siswa yang naik kelas: buat enrollment baru di kelas baru.
-     * - XII: graduation → status graduated (enrollment lama tetap).
+     * - IX: graduation → status graduated (enrollment lama tetap).
      * - PointLedger dibuat per tahun ajaran baru.
      *
      * @return array{classes_created: int, students_graduated: int, students_promoted: int, balances_created: int}
@@ -44,7 +44,7 @@ class PromotionService
 
             // 2. Kunci tahun ajaran lama — ledger historis tidak boleh diubah lagi
             $previousYear->update([
-                'status'    => AcademicYear::STATUS_CLOSED,
+                'status' => AcademicYear::STATUS_CLOSED,
                 'is_locked' => true,
             ]);
 
@@ -57,30 +57,30 @@ class PromotionService
             $balancesCreated = 0;
 
             foreach ($oldClasses as $oldClass) {
-                $newGrade = $this->getNextGrade($oldClass->name);
+                $newGrade = $this->getNextGrade($oldClass->grade_level);
 
-                // XII → lulus
+                // IX → lulus
                 if ($newGrade === null) {
                     $graduated = $this->markGraduated($oldClass, $previousYear);
                     $studentsGraduated += $graduated;
-                $oldClass->update(['status' => 'inactive']);
+                    $oldClass->update(['status' => 'inactive']);
                     Log::info("Promotion: {$oldClass->name} ({$previousYear->name}) → {$graduated} graduated");
+
                     continue;
                 }
 
                 // Buat kelas baru di tahun ajaran baru — JANGAN mutasi kelas lama.
                 // grade_level HARUS $newGrade (bukan $oldClass->grade_level): nama sudah
                 // diganti naik kelas oleh replaceGrade(), jadi tingkat ikut menyesuaikan.
-                // Menyalin grade_level lama membuat "XI TKJ 1" tetap ber-taraf "X/10".
+                // Menyalin grade_level lama membuat "VIII A" tetap ber-taraf "VII/7".
                 $newClassName = $this->replaceGrade($oldClass->name, $newGrade);
                 $newClass = SchoolClass::create([
                     'academic_year_id' => $newYear->id,
-                    'name'             => $newClassName,
-                    'grade_level'      => $newGrade,
-                    'major'            => $oldClass->major,
+                    'name' => $newClassName,
+                    'grade_level' => $newGrade,
                     'homeroom_teacher_id' => $oldClass->homeroom_teacher_id,
-                    'capacity'         => $oldClass->capacity,
-                    'status'           => 'active',
+                    'capacity' => $oldClass->capacity,
+                    'status' => 'active',
                 ]);
                 $classesCreated++;
 
@@ -110,10 +110,10 @@ class PromotionService
             Log::info("Promotion complete: {$classesCreated} classes created, {$studentsGraduated} graduated, {$studentsPromoted} promoted, {$balancesCreated} balances");
 
             return [
-                'classes_created'    => $classesCreated,
+                'classes_created' => $classesCreated,
                 'students_graduated' => $studentsGraduated,
-                'students_promoted'  => $studentsPromoted,
-                'balances_created'   => $balancesCreated,
+                'students_promoted' => $studentsPromoted,
+                'balances_created' => $balancesCreated,
             ];
         });
     }
@@ -181,11 +181,11 @@ class PromotionService
                 $enroll->update(['status' => 'completed', 'ended_at' => now()]);
 
                 Enrollment::create([
-                    'student_id'     => $enroll->student_id,
-                    'class_id'       => $newClass->id,
+                    'student_id' => $enroll->student_id,
+                    'class_id' => $newClass->id,
                     'academic_year_id' => $newClass->academic_year_id,
-                    'status'         => 'active',
-                    'enrolled_at'    => now(),
+                    'status' => 'active',
+                    'enrolled_at' => now(),
                 ]);
             }
         }
@@ -193,27 +193,24 @@ class PromotionService
         return $enrollments->count();
     }
 
-    /** Ambil grade berikutnya dari nama kelas. Return null jika XII (lulus). */
-    protected function getNextGrade(string $className): ?string
+    /** Ambil grade berikutnya dari grade_level. Return null jika IX (lulus). */
+    protected function getNextGrade(?string $gradeLevel): ?string
     {
-        $firstToken = explode('-', $className)[0] ?? '';
-        if (! isset(self::GRADE_MAP[$firstToken])) {
-            $firstToken = explode(' ', $className)[0] ?? '';
-        }
-
-        return self::GRADE_MAP[$firstToken] ?? null;
+        return self::GRADE_MAP[$gradeLevel] ?? null;
     }
 
-    /** Ganti grade dalam nama kelas. "X RPL 1" + "XI" → "XI RPL 1" */
+    /** Ganti grade dalam nama kelas. "VII A" + "VIII" → "VIII A" */
     protected function replaceGrade(string $className, string $newGrade): string
     {
         if (str_contains($className, '-')) {
             $parts = explode('-', $className);
             $parts[0] = $newGrade;
+
             return implode('-', $parts);
         }
         $parts = explode(' ', $className);
         $parts[0] = $newGrade;
+
         return implode(' ', $parts);
     }
 
@@ -234,15 +231,15 @@ class PromotionService
             ->value('balance_after') ?? PointLedger::OPENING_AMOUNT;
 
         PointLedger::create([
-            'student_id'       => $student->id,
+            'student_id' => $student->id,
             'academic_year_id' => $academicYear->id,
-            'direction'        => PointLedger::DIR_CREDIT,
-            'amount'           => PointLedger::OPENING_AMOUNT,
-            'balance_after'    => $carryForward,
+            'direction' => PointLedger::DIR_CREDIT,
+            'amount' => PointLedger::OPENING_AMOUNT,
+            'balance_after' => $carryForward,
             'transaction_type' => PointLedger::TYPE_OPENING,
-            'reason'           => "Saldo awal tahun ajaran {$academicYear->name}",
-            'created_by'       => auth()->id(),
-            'verified_by'      => auth()->id(),
+            'reason' => "Saldo awal tahun ajaran {$academicYear->name}",
+            'created_by' => auth()->id(),
+            'verified_by' => auth()->id(),
         ]);
 
         return true;

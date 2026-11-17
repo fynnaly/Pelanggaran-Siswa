@@ -20,11 +20,11 @@
 
     <!-- Logo & Brand Header Section -->
     <div class="h-16 flex items-center px-4 border-b border-gray-100 dark:border-gray-800 shrink-0 overflow-hidden">
-        <a href="/" class="flex items-center gap-3 min-w-0">
-            <img class="h-8 w-8 shrink-0 rounded-lg pointer-events-none" src="/image.ico" alt="Logo" />
-            <span class="font-bold text-gray-800 dark:text-white text-base leading-tight truncate transition-opacity duration-200 pointer-events-none select-none"
+        <a href="/" class="flex items-center gap-3 min-w-0" title="{{ config('app.name') }}">
+            <img class="h-8 w-8 shrink-0 object-contain pointer-events-none" src="{{ asset('logo-smp.png') }}" alt="Logo {{ config('app.name') }}" />
+            <span class="min-w-0 truncate font-bold text-gray-800 dark:text-white text-base leading-tight transition-opacity duration-200 pointer-events-none select-none"
                 :class="isOpen() ? 'opacity-100' : 'opacity-0 w-0 hidden'">
-                Pelanggaran Kuy
+                {{ config('app.name') }}
             </span>
         </a>
     </div>
@@ -130,11 +130,7 @@
         <div class="flex items-center gap-3 px-1.5 py-1">
             <div class="size-8 rounded-full bg-transparent border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 flex items-center justify-center text-xs font-semibold shrink-0 overflow-hidden"
                 title="{{ Auth::user()->name ?? 'User' }}">
-                @if(Auth::user()?->avatar_path)
-                    <img src="{{ asset('storage/'.Auth::user()->avatar_path) }}" alt="{{ Auth::user()->name }}" class="w-full h-full object-cover pointer-events-none">
-                @else
-                    {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 2)) }}
-                @endif
+                <img src="{{ Auth::user()?->avatar_url ?? asset('assets/images/user/default-avatar.png') }}" alt="{{ Auth::user()->name ?? 'Pengguna' }}" class="w-full h-full object-cover pointer-events-none">
             </div>
             
             <div class="flex-1 min-w-0 transition-opacity duration-200"

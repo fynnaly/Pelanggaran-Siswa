@@ -19,38 +19,31 @@
             @if($errors->any())<div class="alert alert-error" style="margin-bottom:var(--sp-lg)"><i data-lucide="alert-circle" class="icon-sm"></i> {{ $errors->first() }}</div>@endif
             <form action="{{ route('classes.store') }}" method="POST">
                 @csrf
-                <div class="field"><label class="field-label">Tahun Ajaran <span class="text-danger">*</span></label>
-                    <select name="academic_year_id" class="field-input" required>
-                        <option value="">Pilih tahun ajaran...</option>
-                        @foreach($academicYears as $year)
-                            <option value="{{ $year->id }}" {{ old('academic_year_id')==$year->id?'selected':'' }}>{{ $year->name }}</option>
-                        @endforeach
-                    </select>
+                <div class="field"><label class="field-label">Tahun Ajaran</label>
+                    <input type="text" class="field-input" value="{{ $activeYear?->name ?? 'Belum ada tahun ajaran aktif' }}" readonly style="background:var(--surface);color:var(--on-surface-muted);cursor:not-allowed">
+                    <span class="help-text">Otomatis menggunakan tahun ajaran yang sedang aktif.</span>
                 </div>
-                <div class="field"><label class="field-label">Tingkatan <span class="text-danger">*</span></label>
-                    <select name="grade_level" class="field-input" id="gradeLevel" required>
-                        <option value="">Pilih tingkatan...</option>
-                        <option value="X" {{ old('grade_level')==='X'?'selected':'' }}>X</option>
-                        <option value="XI" {{ old('grade_level')==='XI'?'selected':'' }}>XI</option>
-                        <option value="XII" {{ old('grade_level')==='XII'?'selected':'' }}>XII</option>
-                    </select>
-                </div>
-                <div class="field"><label class="field-label">Jurusan <span class="text-danger">*</span></label>
-                    <select name="department_id" class="field-input" id="departmentSelect" required>
-                        <option value="">Pilih jurusan...</option>
-                        @foreach($departments as $dept)
-                            <option value="{{ $dept->id }}" data-code="{{ $dept->code }}" {{ old('department_id')==$dept->id?'selected':'' }}>{{ $dept->code }} — {{ $dept->name }}</option>
-                        @endforeach
-                    </select>
-                    <span class="help-text">Diambil dari data referensi Jurusan.</span>
-                </div>
-                <div class="field"><label class="field-label">Nomor <span class="text-danger">*</span></label>
-                    <input type="number" name="number" value="{{ old('number', 1) }}" min="1" max="99" class="field-input" id="classNumber" required>
-                    <span class="help-text">Pembeda antar rombel satu jurusan. Kalau jurusannya cuma satu, isi 1 saja.</span>
+                <div style="display:grid;grid-template-columns:2fr 1fr;gap:var(--sp-md)">
+                    <div class="field"><label class="field-label">Tingkatan <span class="text-danger">*</span></label>
+                        <select name="grade_level" class="field-input" id="gradeLevel" required>
+                            <option value="">Pilih tingkatan...</option>
+                            @foreach(['VII' => 'VII/7', 'VIII' => 'VIII/8', 'IX' => 'IX/9'] as $value => $label)
+                                <option value="{{ $value }}" {{ old('grade_level')===$value?'selected':'' }}>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="field"><label class="field-label">Rombel <span class="text-danger">*</span></label>
+                        <input type="text" name="rombel" value="{{ old('rombel') }}" maxlength="2" pattern="[A-Za-z]{1,2}" class="field-input" id="classRombel" placeholder="A" autocomplete="off" required>
+                        <span class="help-text">Hanya huruf, mis. A atau B.</span>
+                    </div>
                 </div>
                 <div class="field"><label class="field-label">Nama Kelas</label>
                     <input type="text" id="composedName" class="field-input cursor-not-allowed" value="{{ old('name') }}" readonly style="background:var(--surface);color:var(--on-surface-muted)">
-                    <span class="help-text">Nama kelas tersusun otomatis: Tingkatan + Jurusan + Nomor (mis. X PPLG 1).</span>
+                    <span class="help-text">Nama kelas tersusun otomatis: Tingkatan + Rombel (mis. VII A).</span>
+                </div>
+                <div class="field"><label class="field-label">Angkatan</label>
+                    <input type="text" id="angkatanField" class="field-input cursor-not-allowed" value="" readonly style="background:var(--surface);color:var(--on-surface-muted)">
+                    <span class="help-text">Tahun masuk siswa, dihitung otomatis: VII = tahun awal tahun ajaran, VIII = −1, IX = −2.</span>
                 </div>
                 <div class="field"><label class="field-label">Status</label>
                     <input type="text" class="field-input cursor-not-allowed" value="Aktif" disabled style="background:var(--surface);cursor:not-allowed">
@@ -75,19 +68,30 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-            // Nama kelas tersusun live: Tingkatan + Kode Jurusan + Nomor
-            const compose = () => {
-                const grade = document.getElementById('gradeLevel')?.value || '';
-                const code = document.getElementById('departmentSelect')?.selectedOptions[0]?.dataset.code || '';
-                const num = document.getElementById('classNumber')?.value || '';
-                const name = [grade, code, num].filter(Boolean).join(' ');
-                const out = document.getElementById('composedName');
-                if (out) out.value = name || '';
-            };
-            ['gradeLevel', 'departmentSelect', 'classNumber'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.addEventListener('change', compose);
+            const rombel = document.getElementById('classRombel');
+
+            // Rombel hanya boleh huruf; normalisasi langsung saat diketik.
+            rombel?.addEventListener('input', () => {
+                rombel.value = rombel.value.replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 2);
+                compose();
             });
+
+            // Nama kelas tersusun live: Tingkatan + Rombel.
+            function compose() {
+                const grade = document.getElementById('gradeLevel')?.value || '';
+                const rombelValue = (rombel?.value || '').trim().toUpperCase();
+                const name = [grade, rombelValue].filter(Boolean).join(' ');
+                const out = document.getElementById('composedName');
+                if (out) out.value = name;
+
+                // Angkatan: tahun awal tahun ajaran dikurangi offset tingkatan.
+                const startYear = {{ $activeYear?->startYear() ?? 'null' }};
+                const offset = { VII: 0, VIII: 1, IX: 2 }[grade] ?? 0;
+                const angkatan = document.getElementById('angkatanField');
+                if (angkatan) angkatan.value = startYear ? (startYear - offset) : '';
+            }
+
+            document.getElementById('gradeLevel')?.addEventListener('change', compose);
             compose();
         });
     </script>

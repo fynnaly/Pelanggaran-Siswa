@@ -90,17 +90,18 @@
                 </div>
             </div>
 
-            <!-- Banner Sisi Kanan (Desktop) Asli TailAdmin -->
+            <!-- Banner Sisi Kanan (Desktop) -->
             <div class="bg-brand-950 relative hidden h-full w-full items-center lg:grid lg:w-1/2 dark:bg-white/5">
                 <div class="z-1 flex items-center justify-center">
                     <x-common.common-grid-shape/>
                     <div class="flex max-w-xs flex-col items-center text-center">
-                        <div class="mb-5 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 border border-white/20">
-                            <img src="{{ asset('image.ico') }}" alt="Logo SMK" class="h-10 w-10" />
-                        </div>
-                        <h2 class="text-2xl font-bold tracking-tight text-white mb-2">Pelanggaran Kuy</h2>
+                        <img src="{{ asset('logo-smp.png') }}"
+                             alt="Logo SMP Baktinusantara 666"
+                             width="132" height="132"
+                             class="mb-6 h-28 w-28 object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,0.35)] sm:h-32 sm:w-32" />
+                        <h2 class="text-2xl font-bold tracking-tight text-white mb-2">SMP Baktinusantara 666</h2>
                         <p class="text-center text-sm text-gray-400 dark:text-white/60">
-                            Sistem Informasi Tata Tertib & Prestasi Siswa SMK Baktinusantara 666
+                            Sistem Informasi Tata Tertib &amp; Prestasi Siswa
                         </p>
                     </div>
                 </div>

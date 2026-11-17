@@ -15,6 +15,10 @@ class PasswordController extends Controller
      */
     public function update(Request $request): RedirectResponse
     {
+        if ($request->user()?->hasRole('siswa')) {
+            abort(403, 'Siswa tidak diizinkan mengubah kata sandi. Hubungi petugas sekolah.');
+        }
+
         $validated = $request->validateWithBag('updatePassword', [
             'current_password' => ['required', 'current_password'],
             'password' => ['required', Password::defaults(), 'confirmed'],

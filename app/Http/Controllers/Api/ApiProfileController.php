@@ -26,26 +26,29 @@ class ApiProfileController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
-        $isStudent = $user->hasRole('siswa');
+
+        if ($user->hasRole('siswa')) {
+            return response()->json([
+                'message' => 'Akun siswa bersifat hanya-baca. Hubungi petugas sekolah untuk perubahan.',
+            ], 403);
+        }
 
         $validated = $request->validate([
-            'name' => $isStudent ? ['prohibited'] : ['sometimes', 'required', 'string', 'max:255'],
-            'email' => $isStudent
-                ? ['prohibited']
-                : ['sometimes', 'required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
-            'nip' => $isStudent ? ['prohibited'] : ['sometimes', 'nullable', 'string', 'max:40'],
-            'avatar' => ['sometimes', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'email' => ['sometimes', 'required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'nip' => ['sometimes', 'nullable', 'string', 'max:40'],
+            'avatar' => ['sometimes', 'image', 'mimes:jpg,jpeg,png,webp', 'max:51200'],
             'remove_avatar' => ['sometimes', 'boolean'],
+        ], [
+            'avatar.max' => 'Ukuran foto profil maksimal 50MB.',
         ]);
 
         $oldAvatarPath = $user->avatar_path;
 
-        if (! $isStudent) {
-            $user->fill(collect($validated)->only(['name', 'email', 'nip'])->all());
+        $user->fill(collect($validated)->only(['name', 'email', 'nip'])->all());
 
-            if ($user->isDirty('email')) {
-                $user->email_verified_at = null;
-            }
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
         if ($request->hasFile('avatar')) {
@@ -89,7 +92,7 @@ class ApiProfileController extends Controller
             'roles' => $user->getRoleNames(),
             'is_active' => $user->is_active,
             'avatar_path' => $user->avatar_path,
-            'avatar_url' => $user->avatar_path ? Storage::disk('public')->url($user->avatar_path) : null,
+            'avatar_url' => $user->avatar_url,
             'student' => $user->student ? [
                 'id' => $user->student->id,
                 'nis' => $user->student->nis,

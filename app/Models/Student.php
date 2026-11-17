@@ -83,6 +83,16 @@ class Student extends Model
             ->first();
     }
 
+    /** URL foto siswa; foto akun bila ada, jika tidak memakai gambar default. */
+    public function getAvatarUrlAttribute(): string
+    {
+        if ($this->avatar_path) {
+            return asset('storage/'.$this->avatar_path);
+        }
+
+        return $this->user?->avatar_url ?? asset('assets/images/user/default-avatar.png');
+    }
+
     public function getClassNameAttribute(): string
     {
         return $this->latestEnrollment()?->schoolClass?->name ?? '-';

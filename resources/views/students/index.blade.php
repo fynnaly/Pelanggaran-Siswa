@@ -36,29 +36,35 @@
         @endif
 
         <div class="toolbar">
-            <form id="studentFilter" action="{{ route('students.index') }}" method="GET" data-live="#studentRegion" style="display:flex;gap:var(--sp-sm);flex:1;align-items:stretch">
-                <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nama / NISN / NIS..." class="input" style="flex:1;min-width:0" id="searchInput">
-                <select name="year_id" class="input" style="width:auto;min-width:130px;flex-shrink:0" onchange="this.form.submit()">
+            <form id="studentFilter" action="{{ route('students.index') }}" method="GET" data-live="#studentRegion"
+                  class="toolbar-form toolbar-form--filters">
+                <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nama / NISN / NIS..." class="input toolbar-search" id="searchInput">
+                <select name="year_id" class="input w-auto min-w-[120px] max-sm:w-full max-sm:min-w-0" onchange="this.form.submit()">
                     <option value="">Semua Tahun</option>
                     @foreach($academicYears as $yr)
                         <option value="{{ $yr->id }}" {{ $selectedYearId==$yr->id?'selected':'' }}>{{ $yr->name }}{{ $yr->is_active?' (Aktif)':'' }}</option>
                     @endforeach
                 </select>
-                <select name="class_id" class="input" style="width:auto;min-width:140px;flex-shrink:0" onchange="this.form.submit()">
+                <select name="class_id" class="input w-auto min-w-[120px] max-sm:w-full max-sm:min-w-0" onchange="this.form.submit()">
                     <option value="">Semua Kelas</option>
                     @foreach($allClasses as $cls)
                         <option value="{{ $cls->id }}" {{ request('class_id')==$cls->id?'selected':'' }}>{{ $cls->name }}</option>
                     @endforeach
                 </select>
+                <button type="submit" class="btn btn-secondary btn-sm max-sm:w-full max-sm:justify-center">
+                    <i data-lucide="filter" class="icon-sm"></i> Saring
+                </button>
+                <a href="{{ route('students.index') }}" class="btn btn-secondary btn-sm max-sm:w-full max-sm:justify-center" title="Bersihkan semua filter">
+                    <i data-lucide="x" class="icon-sm"></i> Reset
+                </a>
             </form>
-            <div style="display:flex;align-items:center;gap:var(--sp-sm);flex-wrap:wrap">
-                <form action="{{ route('students.import') }}" method="POST" enctype="multipart/form-data" style="display:flex;align-items:center;gap:var(--sp-sm);flex:1;min-width:0">
-                    @csrf
-                    <label class="text-sm text-muted" style="white-space:nowrap">Import CSV:</label>
-                    <input type="file" name="file" accept=".csv,.txt" required class="input" style="width:auto;padding:6px 10px;flex:1;min-width:0">
-                    <button type="submit" class="btn btn-primary btn-sm" style="flex-shrink:0"><i data-lucide="upload" class="icon-sm"></i> Unggah</button>
-                </form>
-            </div>
+            <form action="{{ route('students.import') }}" method="POST" enctype="multipart/form-data"
+                  class="toolbar-form toolbar-form--import">
+                @csrf
+                <label class="text-sm text-muted shrink-0 whitespace-nowrap max-sm:w-full">Import CSV:</label>
+                <input type="file" name="file" accept=".csv,.txt" required class="input max-sm:w-full" style="padding:6px 10px">
+                <button type="submit" class="btn btn-primary btn-sm max-sm:w-full max-sm:justify-center"><i data-lucide="upload" class="icon-sm"></i> Unggah</button>
+            </form>
         </div>
 
         <div id="studentRegion">@include('students._table')</div>

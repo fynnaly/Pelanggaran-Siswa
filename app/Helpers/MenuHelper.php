@@ -76,9 +76,9 @@ class MenuHelper
 
         $dataReferensi = [
             ['name' => 'Siswa', 'path' => '/students', 'pro' => false],
+            ['name' => 'Guru', 'path' => '/teachers', 'pro' => false],
             ['name' => 'Nametag NFC', 'path' => '/nametag-nfc', 'pro' => false],
             ['name' => 'Kelas', 'path' => '/classes', 'pro' => false],
-            ['name' => 'Jurusan', 'path' => '/departments', 'pro' => false],
             ['name' => 'Tahun Ajaran', 'path' => '/academic-years', 'pro' => false],
         ];
         if ($isManagement) {
@@ -148,8 +148,17 @@ class MenuHelper
             ];
         }
 
-        // Pengaturan hanya pengelola (admin / kesiswaan / kepala sekolah).
+        // Log aktivitas hanya admin & kesiswaan.
         $items = [];
+        if ($user?->hasAnyRole(['admin', 'kesiswaan'])) {
+            $items[] = [
+                'icon' => 'task',
+                'name' => 'Log Aktivitas',
+                'path' => '/logs',
+            ];
+        }
+
+        // Pengaturan hanya pengelola (admin / kesiswaan / kepala sekolah).
         if ($user?->hasAnyRole(['admin', 'kesiswaan', 'kepala_sekolah'])) {
             $items[] = [
                 'icon' => 'settings',
