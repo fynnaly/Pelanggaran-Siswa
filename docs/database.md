@@ -82,7 +82,7 @@ Menyimpan profil identitas dasar siswa sekolah.
 | :--- | :--- | :--- | :--- |
 | `id` | `BIGINT UNSIGNED` | Tidak | Primary Key |
 | `user_id` | `BIGINT UNSIGNED` | Ya | Foreign Key ke `users.id` (Akun login murid, Set Null) |
-| `nisn` | `VARCHAR(20)` | Tidak | Unique 10 digit NISN Kemendikbud |
+| `nisn` | `VARCHAR(20)` | Ya | Unique NISN Kemendikbud 10 digit; boleh kosong (`null`) |
 | `nis` | `VARCHAR(20)` | Tidak | Unique Nomor Induk Siswa Sekolah |
 | `full_name` | `VARCHAR(255)` | Tidak | Nama lengkap siswa |
 | `gender` | `ENUM('L','P')` | Tidak | Jenis kelamin |

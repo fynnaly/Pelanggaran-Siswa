@@ -38,11 +38,11 @@ Dokumen ini menguraikan seluruh modul fungsional yang tersedia pada aplikasi Pel
 - Mendukung penetapan guru wali kelas secara cepat langsung dari baris tabel data (*inline quick-assign*).
 
 ### 2.3 Manajemen Profil Siswa (`Student`)
-- Berisi identitas statis siswa: Nama Lengkap, NIS, NISN, Jenis Kelamin, Nama dan Nomor Telepon Orang Tua, serta Alamat.
+- Berisi identitas statis siswa: Nama Lengkap, NIS, NISN (opsional), Jenis Kelamin, Nama dan Nomor Telepon Orang Tua, serta Alamat.
 - **Independen dari Kelas**: Siswa tidak lagi menyimpan `class_id` langsung di tabel `students`. Seluruh data kelas siswa berjalan melalui riwayat pendaftaran aktif (`enrollments`).
 
 ### 2.4 Impor dan Ekspor Data Siswa Berkinerja Tinggi
-- **Impor CSV Native**: Mengunggah berkas CSV/XLSX tanpa ketergantungan library eksternal yang berat, memvalidasi keunikan NISN/NIS, dan otomatis mendaftarkan siswa ke kelas serta membuka saldo poin awal 2000.
+- **Impor CSV Native**: Mengunggah berkas CSV/XLSX tanpa ketergantungan library eksternal yang berat, memvalidasi keunikan NIS (serta NISN bila diisi), dan otomatis mendaftarkan siswa ke kelas serta membuka saldo poin awal 2000. NISN boleh dikosongkan saat impor.
 - **Ekspor XLSX Terproteksi**: Mendukung pengunduhan data siswa, pengguna, dan monitor poin berformat XLSX ber-style template native dengan proteksi *Formula Injection*.
 
 ### 2.5 Master Data Guru (`Teacher`)
