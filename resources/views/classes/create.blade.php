@@ -53,8 +53,8 @@
                 <div class="field"><label class="field-label">Wali Kelas</label>
                     <select name="homeroom_teacher_id" class="field-input">
                         <option value="">Belum ditentukan</option>
-                        @foreach($users as $user)
-                            <option value="{{ $user->id }}" {{ old('homeroom_teacher_id')==$user->id?'selected':'' }}>{{ $user->name }}</option>
+                        @foreach($teachers ?? $users as $teacher)
+                            <option value="{{ $teacher->id }}" {{ (string) old('homeroom_teacher_id') === (string) $teacher->id ? 'selected' : '' }}>{{ $teacher->name }}</option>
                         @endforeach
                     </select>
                 </div>

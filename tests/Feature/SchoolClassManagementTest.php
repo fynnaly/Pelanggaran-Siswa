@@ -4,6 +4,7 @@ use App\Models\AcademicYear;
 use App\Models\Enrollment;
 use App\Models\SchoolClass;
 use App\Models\Student;
+use App\Models\Teacher;
 use App\Models\User;
 use App\Services\Academic\PromotionService;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -167,3 +168,75 @@ it('promotes VII to VIII and VIII to IX, then graduates IX', function () {
     expect($students['IX']->fresh()->status)->toBe('graduated');
     expect($students['VII']->fresh()->status)->toBe('active');
 });
+
+it('can quickly update homeroom teacher directly from classes index without rombel', function () {
+    $teacherUser = User::factory()->create(['name' => 'Pak Guru Budi']);
+    $teacherUser->assignRole('guru');
+
+    $teacher = Teacher::create([
+        'user_id' => $teacherUser->id,
+        'full_name' => 'Budi Santoso, S.Pd',
+        'status' => 'active',
+    ]);
+
+    $classA = SchoolClass::create([
+        'academic_year_id' => $this->year->id,
+        'name' => 'VII A',
+        'grade_level' => 'VII',
+        'status' => 'active',
+    ]);
+
+    $classB = SchoolClass::create([
+        'academic_year_id' => $this->year->id,
+        'name' => 'VII B',
+        'grade_level' => 'VII',
+        'status' => 'active',
+        'homeroom_teacher_id' => null,
+    ]);
+
+    $this->actingAs($this->admin)
+        ->put(route('classes.update', $classA), [
+            'homeroom_teacher_id' => $teacherUser->id,
+        ])
+        ->assertRedirect(route('classes.index'))
+        ->assertSessionHas('success');
+
+    expect($classA->fresh()->homeroom_teacher_id)->toBe($teacherUser->id);
+    expect($classB->fresh()->homeroom_teacher_id)->toBeNull();
+    expect($classA->fresh()->homeroom_teacher_name)->toBe('Budi Santoso, S.Pd');
+});
+
+it('lists teachers from Data Guru and selects the assigned homeroom teacher per class', function () {
+    $teacherUser = User::factory()->create(['name' => 'Ibu Guru Ani']);
+    $teacherUser->assignRole('wali_kelas');
+
+    $teacher = Teacher::create([
+        'user_id' => $teacherUser->id,
+        'full_name' => 'Dra. Ani Suryani, M.Pd',
+        'status' => 'active',
+    ]);
+
+    $classA = SchoolClass::create([
+        'academic_year_id' => $this->year->id,
+        'name' => 'VII A',
+        'grade_level' => 'VII',
+        'status' => 'active',
+        'homeroom_teacher_id' => $teacherUser->id,
+    ]);
+
+    $classB = SchoolClass::create([
+        'academic_year_id' => $this->year->id,
+        'name' => 'VII B',
+        'grade_level' => 'VII',
+        'status' => 'active',
+        'homeroom_teacher_id' => null,
+    ]);
+
+    $response = $this->actingAs($this->admin)
+        ->get(route('classes.index'));
+
+    $response->assertOk();
+    $response->assertSee('Dra. Ani Suryani, M.Pd');
+    $response->assertSee('value="'.$teacherUser->id.'" selected', false);
+});
+

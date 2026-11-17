@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\ScopesWaliKelas;
 use App\Models\AcademicYear;
 use App\Models\SchoolClass;
 use App\Models\Student;
+use App\Models\Teacher;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -50,7 +51,7 @@ class SchoolClassController extends Controller
         $allowed = ['id', 'name', 'grade_level', 'angkatan', 'academic_year_id', 'status', 'students_count'];
         $sort = in_array($sort, $allowed, true) ? $sort : 'id';
 
-        $query = SchoolClass::with(['academicYear', 'homeroomTeacher', 'assistantTeacher'])->withCount('students')
+        $query = SchoolClass::with(['academicYear', 'homeroomTeacher.teacher', 'assistantTeacher.teacher'])->withCount('students')
             ->where('academic_year_id', $selectedYearId);
 
         // Scope wali kelas: null = role pengawas/penuh, array = wajib filter (bisa kosong = tidak ada kelas binaan)
@@ -62,9 +63,8 @@ class SchoolClassController extends Controller
         $classes = $query->orderBy($sort, $order)
             ->paginate(20)
             ->withQueryString();
-        // Hanya role 'guru' yang bisa jadi wali kelas (skill: filter whereHas('roles')).
-        $teachers = User::whereHas('roles', fn ($q) => $q->where('name', 'guru'))
-            ->orderBy('name')->get(['id', 'name']);
+        // Ambil data guru dari master Data Guru dan akun guru/wali kelas
+        $teachers = $this->getAvailableHomeroomTeachers($classes);
 
         return view('classes.index', compact('classes', 'academicYears', 'selectedYearId', 'teachers', 'sort', 'order'));
     }
@@ -84,7 +84,7 @@ class SchoolClassController extends Controller
             );
         }
 
-        $class->load(['academicYear', 'homeroomTeacher', 'assistantTeacher']);
+        $class->load(['academicYear', 'homeroomTeacher.teacher', 'assistantTeacher.teacher']);
         $students = $class->students()
             ->with(['currentEnrollment', 'pointLedgers'])
             ->paginate(20);
@@ -113,7 +113,8 @@ class SchoolClassController extends Controller
     {
         $this->authorizeManagement();
 
-        $users = User::whereHas('roles', fn ($q) => $q->where('name', 'guru'))->orderBy('name')->get();
+        $teachers = $this->getAvailableHomeroomTeachers();
+        $users = $teachers;
 
         // Form kelas baru selalu memakai tahun ajaran yang sedang aktif.
         $activeYear = AcademicYear::where('is_active', true)->first();
@@ -127,7 +128,7 @@ class SchoolClassController extends Controller
             ],
         ];
 
-        return view('classes.create', compact('users', 'activeYear', 'hasPrerequisites', 'prerequisites'));
+        return view('classes.create', compact('teachers', 'users', 'activeYear', 'hasPrerequisites', 'prerequisites'));
     }
 
     /** Menyimpan kelas baru ke database */
@@ -145,12 +146,22 @@ class SchoolClassController extends Controller
         $validated = $request->validate([
             'grade_level' => ['required', 'in:VII,VIII,IX'],
             'rombel' => ['required', 'string', 'max:2', 'regex:/^[A-Za-z]{1,2}$/'],
-            'homeroom_teacher_id' => 'nullable|exists:users,id',
-            'assistant_teacher_id' => 'nullable|exists:users,id|different:homeroom_teacher_id',
+            'homeroom_teacher_id' => 'nullable',
+            'assistant_teacher_id' => 'nullable',
             'status' => 'nullable|in:active,inactive',
         ]);
         $validated['status'] ??= 'active';
         $validated['academic_year_id'] = $activeYearId;
+
+        $validated['homeroom_teacher_id'] = $this->resolveTeacherUserId($request->input('homeroom_teacher_id'));
+        if ($validated['homeroom_teacher_id'] !== null) {
+            $user = User::find($validated['homeroom_teacher_id']);
+            if ($user && ! $user->hasRole('wali_kelas')) {
+                $user->assignRole('wali_kelas');
+            }
+        }
+
+        $validated['assistant_teacher_id'] = $this->resolveTeacherUserId($request->input('assistant_teacher_id'));
 
         // Nama kelas = Tingkatan + Rombel, mis. "VII A" atau "VIII B".
         $rombel = strtoupper(trim($validated['rombel']));
@@ -180,9 +191,10 @@ class SchoolClassController extends Controller
         $this->authorizeManagement();
 
         $academicYears = AcademicYear::orderBy('name', 'desc')->get();
-        $users = User::whereHas('roles', fn ($q) => $q->where('name', 'guru'))->orderBy('name')->get();
+        $teachers = $this->getAvailableHomeroomTeachers(collect([$class]));
+        $users = $teachers;
 
-        return view('classes.edit', compact('class', 'academicYears', 'users'));
+        return view('classes.edit', compact('class', 'academicYears', 'teachers', 'users'));
     }
 
     /** Memperbarui data kelas */
@@ -190,7 +202,27 @@ class SchoolClassController extends Controller
     {
         $this->authorizeManagement();
 
-        // amvil data ID tahun ajaran
+        // 1. Kasus quick update dari tabel (misalnya hanya mengganti Wali Kelas)
+        if (! $request->has('grade_level') && ! $request->has('rombel') && $request->has('homeroom_teacher_id')) {
+            $teacherUserId = $this->resolveTeacherUserId($request->input('homeroom_teacher_id'));
+
+            if ($teacherUserId !== null) {
+                $user = User::find($teacherUserId);
+                if ($user && ! $user->hasRole('wali_kelas')) {
+                    $user->assignRole('wali_kelas');
+                }
+            }
+
+            $class->update(['homeroom_teacher_id' => $teacherUserId]);
+
+            $teacherName = $class->fresh()->homeroom_teacher_name ?? 'Belum ditentukan';
+
+            return redirect()
+                ->route('classes.index')
+                ->with('success', 'Wali kelas untuk '.$class->name.' berhasil diperbarui menjadi '.$teacherName.'.');
+        }
+
+        // 2. Kasus form edit kelas lengkap
         $academicYearId = $request->input('academic_year_id', $class->academic_year_id);
 
         $validated = $request->validate([
@@ -199,9 +231,23 @@ class SchoolClassController extends Controller
             'rombel' => ['required', 'string', 'max:2', 'regex:/^[A-Za-z]{1,2}$/'],
             'capacity' => 'sometimes|nullable|integer|min:1|max:100',
             'status' => 'sometimes|nullable|in:active,inactive',
-            'homeroom_teacher_id' => 'nullable|exists:users,id',
-            'assistant_teacher_id' => 'nullable|exists:users,id|different:homeroom_teacher_id',
+            'homeroom_teacher_id' => 'nullable',
+            'assistant_teacher_id' => 'nullable',
         ]);
+
+        if (array_key_exists('homeroom_teacher_id', $validated)) {
+            $validated['homeroom_teacher_id'] = $this->resolveTeacherUserId($validated['homeroom_teacher_id']);
+            if ($validated['homeroom_teacher_id'] !== null) {
+                $user = User::find($validated['homeroom_teacher_id']);
+                if ($user && ! $user->hasRole('wali_kelas')) {
+                    $user->assignRole('wali_kelas');
+                }
+            }
+        }
+
+        if (array_key_exists('assistant_teacher_id', $validated)) {
+            $validated['assistant_teacher_id'] = $this->resolveTeacherUserId($validated['assistant_teacher_id']);
+        }
 
         // Nama kelas = Tingkatan + Rombel, mis. "VII A" atau "VIII B".
         $rombel = strtoupper(trim($validated['rombel']));
@@ -294,5 +340,95 @@ class SchoolClassController extends Controller
         return redirect()
             ->route('classes.index')
             ->with('success', 'Kelas '.$class->name.' berhasil dihapus.');
+    }
+
+    /**
+     * Ambil daftar guru yang tersedia untuk menjadi wali kelas.
+     * Mengambil dari master Data Guru (Teacher), akun user dengan role guru/wali_kelas,
+     * serta guru yang saat ini sudah ditugaskan di kelas.
+     */
+    private function getAvailableHomeroomTeachers($currentClasses = null): \Illuminate\Support\Collection
+    {
+        $teachers = collect();
+        $seenUserIds = [];
+
+        // 1. Data dari menu Data Guru (Teacher)
+        $dataGuru = Teacher::with('user')->active()->orderBy('full_name')->get();
+        foreach ($dataGuru as $tg) {
+            $userId = $tg->user_id;
+            if ($userId) {
+                $seenUserIds[$userId] = true;
+            }
+            $teachers->push((object) [
+                'id' => $userId ?: ('teacher_'.$tg->id),
+                'user_id' => $userId,
+                'name' => $tg->full_name,
+                'nip' => $tg->nip,
+            ]);
+        }
+
+        // 2. Akun pengguna dengan role guru atau wali_kelas yang belum tertaut ke Data Guru
+        $users = User::with('teacher')
+            ->whereHas('roles', fn ($q) => $q->whereIn('name', ['guru', 'wali_kelas']))
+            ->orderBy('name')
+            ->get();
+
+        foreach ($users as $u) {
+            if (! isset($seenUserIds[$u->id])) {
+                $seenUserIds[$u->id] = true;
+                $teachers->push((object) [
+                    'id' => $u->id,
+                    'user_id' => $u->id,
+                    'name' => $u->teacher?->full_name ?? $u->name,
+                    'nip' => $u->teacher?->nip ?? $u->nip,
+                ]);
+            }
+        }
+
+        // 3. Pastikan wali kelas yang sudah terpasang di kelas saat ini tidak hilang
+        if ($currentClasses) {
+            foreach ($currentClasses as $c) {
+                if ($c->homeroomTeacher && ! isset($seenUserIds[$c->homeroom_teacher_id])) {
+                    $seenUserIds[$c->homeroom_teacher_id] = true;
+                    $teachers->push((object) [
+                        'id' => $c->homeroom_teacher_id,
+                        'user_id' => $c->homeroom_teacher_id,
+                        'name' => $c->homeroomTeacher->teacher?->full_name ?? $c->homeroomTeacher->name,
+                        'nip' => $c->homeroomTeacher->teacher?->nip ?? $c->homeroomTeacher->nip,
+                    ]);
+                }
+            }
+        }
+
+        return $teachers->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)->values();
+    }
+
+    /**
+     * Konversi input form wali kelas (user_id, teacher_id, atau teacher_X) menjadi User ID yang valid.
+     */
+    private function resolveTeacherUserId(mixed $input): ?int
+    {
+        if (blank($input)) {
+            return null;
+        }
+
+        if (is_string($input) && str_starts_with($input, 'teacher_')) {
+            $teacherId = (int) substr($input, 8);
+            $teacher = Teacher::find($teacherId);
+
+            return $teacher?->ensureUserAccount()->id;
+        }
+
+        // Jika input merupakan ID user yang valid
+        if (User::where('id', $input)->exists()) {
+            return (int) $input;
+        }
+
+        // Jika input merupakan ID dari tabel teachers
+        if ($teacher = Teacher::find($input)) {
+            return $teacher->ensureUserAccount()->id;
+        }
+
+        return null;
     }
 }

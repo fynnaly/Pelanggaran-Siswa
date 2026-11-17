@@ -65,7 +65,7 @@
                         <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted);width:140px">Nama</td><td style="padding:8px 0;font-weight:600">{{ $disciplineCase->student?->full_name }}</td></tr>
                         <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">NIS</td><td class="mono" style="padding:8px 0">{{ $disciplineCase->student?->nis }}</td></tr>
                         <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Kelas</td><td style="padding:8px 0">{{ $disciplineCase->schoolClass?->name ?? $disciplineCase->student?->currentEnrollment?->schoolClass?->name ?? '-' }}</td></tr>
-                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Wali Kelas</td><td style="padding:8px 0">{{ $disciplineCase->schoolClass?->homeroomTeacher?->name ?? '-' }}</td></tr>
+                        <tr><td class="label" style="padding:8px 0;color:var(--on-surface-muted)">Wali Kelas</td><td style="padding:8px 0">{{ $disciplineCase->schoolClass?->homeroom_teacher_name ?? '-' }}</td></tr>
                     </table>
                 </div>
                 <div class="card" style="margin-bottom:var(--sp-lg)">
