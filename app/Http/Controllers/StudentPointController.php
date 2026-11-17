@@ -198,7 +198,7 @@ class StudentPointController extends Controller
      * Bulk sertifikat → 1 arsip ZIP berisi HTML per siswa.
      *
      * Nama file per siswa: Sertifikat-Poin_{nama}_{kelas}_{tahun-ajaran}.html
-     * contoh: Sertifikat-Poin_Udin-Saepul_IX-1_2026.html
+     * contoh: Sertifikat-Poin_Udin-Saepul_IX-A_2026.html
      *
      * ZIP dipilih atas multi-download: Chrome memblokir >10 unduhan otomatis
      * per origin, sedangkan kelas bisa berisi puluhan siswa.

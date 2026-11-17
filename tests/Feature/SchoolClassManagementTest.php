@@ -30,50 +30,65 @@ beforeEach(function () {
     $this->withoutMiddleware(PreventRequestForgery::class);
 });
 
-it('creates a class with a numeric rombel', function () {
+it('creates a class with a letter rombel using the active academic year', function () {
     $this->actingAs($this->admin)
         ->post(route('classes.store'), [
-            'academic_year_id' => $this->year->id,
             'grade_level' => 'VII',
-            'rombel' => '1',
-        ])
-        ->assertRedirect(route('classes.index'));
-
-    $this->assertDatabaseHas('classes', [
-        'academic_year_id' => $this->year->id,
-        'name' => 'VII 1',
-        'grade_level' => 'VII',
-    ]);
-});
-
-it('creates a class with a letter rombel', function () {
-    $this->actingAs($this->admin)
-        ->post(route('classes.store'), [
-            'academic_year_id' => $this->year->id,
-            'grade_level' => 'VIII',
             'rombel' => 'a',
         ])
         ->assertRedirect(route('classes.index'));
 
     $this->assertDatabaseHas('classes', [
-        'name' => 'VIII A',
+        'academic_year_id' => $this->year->id,
+        'name' => 'VII A',
+        'grade_level' => 'VII',
+    ]);
+});
+
+it('creates a class with an uppercase letter rombel', function () {
+    $this->actingAs($this->admin)
+        ->post(route('classes.store'), [
+            'grade_level' => 'VIII',
+            'rombel' => 'B',
+        ])
+        ->assertRedirect(route('classes.index'));
+
+    $this->assertDatabaseHas('classes', [
+        'name' => 'VIII B',
         'grade_level' => 'VIII',
     ]);
+});
+
+it('rejects a numeric rombel', function () {
+    $this->actingAs($this->admin)
+        ->post(route('classes.store'), [
+            'grade_level' => 'VII',
+            'rombel' => '1',
+        ])
+        ->assertSessionHasErrors('rombel');
+});
+
+it('shows the active academic year automatically on the create form', function () {
+    $this->actingAs($this->admin)
+        ->get(route('classes.create'))
+        ->assertOk()
+        ->assertSee('Otomatis menggunakan tahun ajaran yang sedang aktif')
+        ->assertSee($this->year->name)
+        ->assertDontSee('name="academic_year_id"', false);
 });
 
 it('rejects a duplicate class name in the same academic year', function () {
     SchoolClass::create([
         'academic_year_id' => $this->year->id,
-        'name' => 'VII 1',
+        'name' => 'VII A',
         'grade_level' => 'VII',
         'status' => 'active',
     ]);
 
     $this->actingAs($this->admin)
         ->post(route('classes.store'), [
-            'academic_year_id' => $this->year->id,
             'grade_level' => 'VII',
-            'rombel' => '1',
+            'rombel' => 'A',
         ])
         ->assertSessionHasErrors('rombel');
 });
@@ -103,7 +118,7 @@ it('promotes VII to VIII and VIII to IX, then graduates IX', function () {
 
     $classes = [];
 
-    foreach ([['VII 1', 'VII'], ['VIII 1', 'VIII'], ['IX 1', 'IX']] as [$name, $grade]) {
+    foreach ([['VII A', 'VII'], ['VIII A', 'VIII'], ['IX A', 'IX']] as [$name, $grade]) {
         $classes[$grade] = SchoolClass::create([
             'academic_year_id' => $this->year->id,
             'name' => $name,
@@ -140,12 +155,12 @@ it('promotes VII to VIII and VIII to IX, then graduates IX', function () {
 
     $this->assertDatabaseHas('classes', [
         'academic_year_id' => $newYear->id,
-        'name' => 'VIII 1',
+        'name' => 'VIII A',
         'grade_level' => 'VIII',
     ]);
     $this->assertDatabaseHas('classes', [
         'academic_year_id' => $newYear->id,
-        'name' => 'IX 1',
+        'name' => 'IX A',
         'grade_level' => 'IX',
     ]);
 

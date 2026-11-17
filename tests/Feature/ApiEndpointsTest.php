@@ -32,7 +32,7 @@ beforeEach(function () {
     ]);
 
     $this->class = SchoolClass::create([
-        'name' => 'VII 1',
+        'name' => 'VII A',
         'academic_year_id' => $this->year->id,
         'grade_level' => 'VII',
         'status' => 'active',
@@ -104,7 +104,7 @@ it('searches students for autocomplete', function () {
         ])
         ->assertJsonPath('data.0.id', $this->student->id)
         ->assertJsonPath('data.0.nama', 'Budi Santoso')
-        ->assertJsonPath('data.0.kelas', 'VII 1');
+        ->assertJsonPath('data.0.kelas', 'VII A');
 });
 
 it('returns empty array when search query is shorter than 2 chars', function () {
@@ -278,7 +278,7 @@ it('creates new discipline case from field report', function () {
 
 it('prevents a class teacher from reporting a case for a student outside their class', function () {
     $otherClass = SchoolClass::create([
-        'name' => 'VII 2',
+        'name' => 'VII B',
         'academic_year_id' => $this->year->id,
         'grade_level' => 'VII',
         'homeroom_teacher_id' => $this->guruUser->id,
@@ -636,7 +636,7 @@ it('returns a student report and restricts class reports to a wali kelas scope',
     $wali->assignRole('wali_kelas');
     $this->class->update(['homeroom_teacher_id' => $wali->id]);
     $otherClass = SchoolClass::create([
-        'name' => 'VII 2',
+        'name' => 'VII B',
         'academic_year_id' => $this->year->id,
         'grade_level' => 'VII',
         'status' => 'active',

@@ -28,7 +28,7 @@ beforeEach(function () {
     ]);
 
     $this->class = SchoolClass::create([
-        'name' => 'VII 1',
+        'name' => 'VII A',
         'academic_year_id' => $this->year->id,
         'grade_level' => 'VII',
         'status' => 'active',

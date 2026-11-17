@@ -397,9 +397,9 @@
                             <label class="text-xs font-semibold block mb-1.5" style="color: var(--ink)">Kelas</label>
                             <select x-model="form.kelas" class="field cursor-pointer">
                                 <option value="">Pilih kelas...</option>
-                                <option>VII 1</option><option>VII 2</option>
-                                <option>VIII 1</option><option>VIII 2</option>
-                                <option>IX 1</option>
+                                <option>VII A</option><option>VII B</option>
+                                <option>VIII A</option><option>VIII B</option>
+                                <option>IX A</option>
                             </select>
                         </div>
                     </div>
@@ -660,7 +660,7 @@
                     <div class="glass-subtle r-md p-4 text-sm min-h-[90px]" style="color: var(--ink)">
                         <p x-show="tab==='Ringkasan'"><b>Ringkasan:</b> 87 pelanggaran bulan ini, 72 selesai, 15 dalam proses.</p>
                         <p x-show="tab==='Tren'" x-cloak><b>Tren:</b> keterlambatan turun 12% dibanding bulan lalu.</p>
-                        <p x-show="tab==='Kelas'" x-cloak><b>Per kelas:</b> VII 1 tertinggi (21 kasus), IX 1 terendah (4 kasus).</p>
+                        <p x-show="tab==='Kelas'" x-cloak><b>Per kelas:</b> VII A tertinggi (21 kasus), IX A terendah (4 kasus).</p>
                     </div>
                     <p class="text-xs mt-4 mb-2" style="color: var(--ink-soft)"><b style="color: var(--ink)">Breadcrumb:</b></p>
                     <nav class="flex items-center gap-1.5 text-xs font-semibold flex-wrap" aria-label="Breadcrumb">
@@ -893,14 +893,14 @@ function glassLab() {
         /* tabel */
         q:'', fStatus:'Semua', sortKey:'nama', sortDir:1, page:1, perPage:5, selected:[],
         rows: [
-            {id:1,nama:'Ahmad Rizki',kelas:'VII 1',jenis:'Terlambat',status:'Proses'},
-            {id:2,nama:'Siti Nurhaliza',kelas:'VIII 1',jenis:'Bolos',status:'Berat'},
-            {id:3,nama:'Budi Santoso',kelas:'IX 1',jenis:'Seragam',status:'Selesai'},
-            {id:4,nama:'Dewi Lestari',kelas:'VII 2',jenis:'Terlambat',status:'Proses'},
-            {id:5,nama:'Rudi Hartono',kelas:'VIII 2',jenis:'HP di kelas',status:'Proses'},
-            {id:6,nama:'Maya Putri',kelas:'VII 1',jenis:'Bolos',status:'Selesai'},
-            {id:7,nama:'Fajar Nugroho',kelas:'IX 1',jenis:'Merokok',status:'Berat'},
-            {id:8,nama:'Intan Permata',kelas:'VIII 1',jenis:'Seragam',status:'Selesai'}
+            {id:1,nama:'Ahmad Rizki',kelas:'VII A',jenis:'Terlambat',status:'Proses'},
+            {id:2,nama:'Siti Nurhaliza',kelas:'VIII A',jenis:'Bolos',status:'Berat'},
+            {id:3,nama:'Budi Santoso',kelas:'IX A',jenis:'Seragam',status:'Selesai'},
+            {id:4,nama:'Dewi Lestari',kelas:'VII B',jenis:'Terlambat',status:'Proses'},
+            {id:5,nama:'Rudi Hartono',kelas:'VIII B',jenis:'HP di kelas',status:'Proses'},
+            {id:6,nama:'Maya Putri',kelas:'VII A',jenis:'Bolos',status:'Selesai'},
+            {id:7,nama:'Fajar Nugroho',kelas:'IX A',jenis:'Merokok',status:'Berat'},
+            {id:8,nama:'Intan Permata',kelas:'VIII A',jenis:'Seragam',status:'Selesai'}
         ],
         nNama:'', nKelas:'', nJenis:'',
         statusStyle(s) {

@@ -30,7 +30,7 @@ Sistem menggunakan Spatie Laravel-Permission dengan 6 peran utama:
    - Kolom: `id`, `name` (e.g. `2026/2027`), `start_date`, `end_date`, `status` (`draft`, `active`, `closed`, `archived`), `is_active` (boolean), `is_locked` (boolean).
 3. **`classes` (`SchoolClass`)**
    - Data rombongan belajar (rombel).
-   - Kolom: `id`, `academic_year_id` (FK), `name` (e.g. `VII 1`), `grade_level` (`VII`, `VIII`, `IX`), `homeroom_teacher_id` (FK `users`, Wali Kelas), `assistant_teacher_id` (FK `users`, opsional), `capacity`.
+   - Kolom: `id`, `academic_year_id` (FK), `name` (e.g. `VII A`), `grade_level` (`VII`, `VIII`, `IX`), `homeroom_teacher_id` (FK `users`, Wali Kelas), `assistant_teacher_id` (FK `users`, opsional), `capacity`.
 4. **`students`**
    - Data profil statis siswa (independen dari kelas/tahun ajaran).
    - Kolom: `id`, `user_id` (FK `users`, nullable), `full_name`, `nis`, `nisn`, `gender` (`L`/`P`), `birth_date`, `phone`, `parent_name`, `parent_phone`, `address`, `status` (`active`, `graduated`, `transferred`, `dropped_out`).

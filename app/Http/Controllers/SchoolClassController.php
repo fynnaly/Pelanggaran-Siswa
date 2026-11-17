@@ -113,10 +113,10 @@ class SchoolClassController extends Controller
     {
         $this->authorizeManagement();
 
-        $academicYears = AcademicYear::orderBy('name', 'desc')->get();
         $users = User::whereHas('roles', fn ($q) => $q->where('name', 'guru'))->orderBy('name')->get();
 
-        $activeYear = $academicYears->firstWhere('is_active', true) ?? $academicYears->first();
+        // Form kelas baru selalu memakai tahun ajaran yang sedang aktif.
+        $activeYear = AcademicYear::where('is_active', true)->first();
         $hasPrerequisites = (bool) $activeYear;
         $prerequisites = [
             [
@@ -127,7 +127,7 @@ class SchoolClassController extends Controller
             ],
         ];
 
-        return view('classes.create', compact('academicYears', 'users', 'hasPrerequisites', 'prerequisites'));
+        return view('classes.create', compact('users', 'activeYear', 'hasPrerequisites', 'prerequisites'));
     }
 
     /** Menyimpan kelas baru ke database */
@@ -135,17 +135,24 @@ class SchoolClassController extends Controller
     {
         $this->authorizeManagement();
 
+        $activeYearId = AcademicYear::where('is_active', true)->value('id');
+        if (! $activeYearId) {
+            return back()->withInput()->withErrors([
+                'academic_year_id' => 'Belum ada tahun ajaran aktif. Aktifkan tahun ajaran terlebih dahulu.',
+            ]);
+        }
+
         $validated = $request->validate([
-            'academic_year_id' => 'required|exists:academic_years,id',
             'grade_level' => ['required', 'in:VII,VIII,IX'],
-            'rombel' => ['required', 'string', 'max:2', 'regex:/^[A-Za-z0-9]{1,2}$/'],
+            'rombel' => ['required', 'string', 'max:2', 'regex:/^[A-Za-z]{1,2}$/'],
             'homeroom_teacher_id' => 'nullable|exists:users,id',
             'assistant_teacher_id' => 'nullable|exists:users,id|different:homeroom_teacher_id',
             'status' => 'nullable|in:active,inactive',
         ]);
         $validated['status'] ??= 'active';
+        $validated['academic_year_id'] = $activeYearId;
 
-        // Nama kelas = Tingkatan + Rombel, mis. "VII 1" atau "VII A".
+        // Nama kelas = Tingkatan + Rombel, mis. "VII A" atau "VIII B".
         $rombel = strtoupper(trim($validated['rombel']));
         $validated['name'] = $validated['grade_level'].' '.$rombel;
         unset($validated['rombel']);
@@ -189,14 +196,14 @@ class SchoolClassController extends Controller
         $validated = $request->validate([
             'academic_year_id' => 'sometimes|exists:academic_years,id',
             'grade_level' => ['required', 'in:VII,VIII,IX'],
-            'rombel' => ['required', 'string', 'max:2', 'regex:/^[A-Za-z0-9]{1,2}$/'],
+            'rombel' => ['required', 'string', 'max:2', 'regex:/^[A-Za-z]{1,2}$/'],
             'capacity' => 'sometimes|nullable|integer|min:1|max:100',
             'status' => 'sometimes|nullable|in:active,inactive',
             'homeroom_teacher_id' => 'nullable|exists:users,id',
             'assistant_teacher_id' => 'nullable|exists:users,id|different:homeroom_teacher_id',
         ]);
 
-        // Nama kelas = Tingkatan + Rombel, mis. "VII 1" atau "VII A".
+        // Nama kelas = Tingkatan + Rombel, mis. "VII A" atau "VIII B".
         $rombel = strtoupper(trim($validated['rombel']));
         $name = $validated['grade_level'].' '.$rombel;
 

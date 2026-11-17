@@ -13,7 +13,7 @@ beforeEach(function () {
     Role::firstOrCreate(['name' => 'kesiswaan', 'guard_name' => 'web']);
 
     $year = AcademicYear::create(['name' => '2026/2027', 'start_date' => now(), 'is_active' => true, 'status' => 'active']);
-    $this->class = SchoolClass::create(['name' => 'VII 1', 'academic_year_id' => $year->id, 'grade_level' => 'VII', 'status' => 'active']);
+    $this->class = SchoolClass::create(['name' => 'VII A', 'academic_year_id' => $year->id, 'grade_level' => 'VII', 'status' => 'active']);
 
     $mk = fn (string $code) => ViolationCategory::create([
         'code' => $code, 'name' => "Kat $code", 'group_type' => 'terlambat', 'points' => 5, 'severity' => 'ringan', 'status' => 'active',

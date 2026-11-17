@@ -29,7 +29,7 @@ it('shows the account profile photo next to the student name', function () {
 
     $class = SchoolClass::create([
         'academic_year_id' => $year->id,
-        'name' => 'VII 1',
+        'name' => 'VII A',
         'grade_level' => 'VII',
         'status' => 'active',
     ]);

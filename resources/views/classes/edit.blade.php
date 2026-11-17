@@ -9,8 +9,8 @@
     </x-slot>
     <div class="main-wrap">
         @php
-            // Rombel diambil dari bagian akhir nama kelas yang tersimpan (angka atau huruf).
-            $classRombel = old('rombel', $class->rombel ?: '1');
+            // Rombel diambil dari bagian akhir nama kelas yang tersimpan (huruf).
+            $classRombel = old('rombel', $class->rombel ?: 'A');
         @endphp
         <div class="card card-form">
             @if($errors->any())<div class="alert alert-error" style="margin-bottom:var(--sp-lg)"><i data-lucide="alert-circle" class="icon-sm"></i> {{ $errors->first() }}</div>@endif
@@ -33,12 +33,12 @@
                     </select>
                 </div>
                 <div class="field"><label class="field-label">Rombel <span class="text-danger">*</span></label>
-                    <input type="text" name="rombel" value="{{ $classRombel }}" maxlength="2" class="field-input" id="classRombel" placeholder="1 atau A" required>
-                    <span class="help-text">Pembeda antar kelas pada tingkatan yang sama. Boleh angka (1, 2) atau huruf (A, B).</span>
+                    <input type="text" name="rombel" value="{{ $classRombel }}" maxlength="2" pattern="[A-Za-z]{1,2}" class="field-input" id="classRombel" placeholder="A" autocomplete="off" required>
+                    <span class="help-text">Hanya huruf, mis. A atau B.</span>
                 </div>
                 <div class="field"><label class="field-label">Nama Kelas</label>
                     <input type="text" id="composedName" class="field-input cursor-not-allowed" value="{{ old('name', $class->name) }}" readonly style="background:var(--surface);color:var(--on-surface-muted)">
-                    <span class="help-text">Nama kelas tersusun otomatis: Tingkatan + Rombel (mis. VII 1 atau VII A).</span>
+                    <span class="help-text">Nama kelas tersusun otomatis: Tingkatan + Rombel (mis. VII A).</span>
                 </div>
                 <div class="field"><label class="field-label">Status</label>
                     <select name="status" class="field-input">
@@ -65,19 +65,24 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-            // Nama kelas tersusun live: Tingkatan + Rombel (angka atau huruf).
-            const compose = () => {
+            const rombel = document.getElementById('classRombel');
+
+            // Rombel hanya boleh huruf; normalisasi langsung saat diketik.
+            rombel?.addEventListener('input', () => {
+                rombel.value = rombel.value.replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 2);
+                compose();
+            });
+
+            // Nama kelas tersusun live: Tingkatan + Rombel.
+            function compose() {
                 const grade = document.getElementById('gradeLevel')?.value || '';
-                const rombel = (document.getElementById('classRombel')?.value || '').trim().toUpperCase();
-                const name = [grade, rombel].filter(Boolean).join(' ');
+                const rombelValue = (rombel?.value || '').trim().toUpperCase();
+                const name = [grade, rombelValue].filter(Boolean).join(' ');
                 const out = document.getElementById('composedName');
                 if (out) out.value = name;
-            };
-            ['gradeLevel', 'classRombel'].forEach(id => {
-                const el = document.getElementById(id);
-                if (!el) return;
-                el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', compose);
-            });
+            }
+
+            document.getElementById('gradeLevel')?.addEventListener('change', compose);
             compose();
         });
     </script>

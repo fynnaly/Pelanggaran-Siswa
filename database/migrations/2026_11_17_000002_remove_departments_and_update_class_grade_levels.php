@@ -23,8 +23,8 @@ return new class extends Migration
     /**
      * Hapus konsep jurusan dan ubah tingkat kelas menjadi VII/VIII/IX.
      *
-     * Nama kelas lama seperti "X PPLG 1" dirapikan menjadi "VII 1". Bagian
-     * rombel diambil dari token terakhir nama lama (angka atau huruf).
+     * Nama kelas lama seperti "X PPLG 1" dirapikan menjadi "VII A". Bagian
+     * rombel diambil dari token terakhir nama lama lalu diubah ke huruf.
      */
     public function up(): void
     {
@@ -97,14 +97,14 @@ return new class extends Migration
             $grade = self::GRADE_MAP[strtoupper(trim((string) $class->grade_level))] ?? null;
             $grade ??= self::GRADE_MAP[strtoupper($tokens[0] ?? '')] ?? 'VII';
 
-            $rombel = count($tokens) > 1 ? (string) end($tokens) : '1';
-            $rombel = strtoupper(trim($rombel)) ?: '1';
+            $rombel = count($tokens) > 1 ? (string) end($tokens) : 'A';
+            $rombel = $this->toLetterRombel($rombel);
 
             $name = "{$grade} {$rombel}";
             $attempt = 0;
 
             // Nama kelas unik per tahun ajaran. Jika dua jurusan lama punya
-            // nomor rombel sama, beri akhiran huruf agar tetap unik.
+            // rombel sama, beri akhiran huruf agar tetap unik.
             while (isset($used[$class->academic_year_id][$name])) {
                 $attempt++;
                 $suffix = $attempt <= 26 ? chr(64 + $attempt) : (string) $attempt;
@@ -118,6 +118,26 @@ return new class extends Migration
                 'grade_level' => $grade,
             ]);
         }
+    }
+
+    /** Ubah rombel lama menjadi huruf: 1 → A, 2 → B, dst. */
+    private function toLetterRombel(string $rombel): string
+    {
+        $rombel = strtoupper(trim($rombel));
+
+        if ($rombel === '') {
+            return 'A';
+        }
+
+        if (ctype_digit($rombel)) {
+            $number = (int) $rombel;
+
+            return $number >= 1 && $number <= 26 ? chr(64 + $number) : 'A';
+        }
+
+        $letters = preg_replace('/[^A-Z]/', '', $rombel);
+
+        return $letters !== '' ? substr($letters, 0, 2) : 'A';
     }
 
     private function restoreOldGradeLevels(): void

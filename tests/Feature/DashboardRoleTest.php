@@ -26,7 +26,7 @@ beforeEach(function () {
     $this->guruUser->assignRole('guru');
 
     $this->class = SchoolClass::create([
-        'name' => 'VII 1',
+        'name' => 'VII A',
         'academic_year_id' => $this->year->id,
         'grade_level' => 'VII',
         'status' => 'active',
@@ -66,7 +66,7 @@ it('renders student dashboard with school-oriented character terms and without c
 
     // Memverifikasi teks edukatif dan ramah siswa
     $response->assertSee('Ahmad Siswa');
-    $response->assertSee('VII 1');
+    $response->assertSee('VII A');
     $response->assertSee('Poin Karakter dan Prestasi');
     $response->assertSee('Jenjang Sikap');
     $response->assertSee('Lihat Riwayat Poin');

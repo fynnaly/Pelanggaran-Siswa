@@ -64,7 +64,7 @@ class SchoolClass extends Model
         };
     }
 
-    /** Rombel (bagian akhir nama kelas), mis. "VII 1" → "1", "VII A" → "A". */
+    /** Rombel (bagian akhir nama kelas), mis. "VII A" → "A". */
     public function getRombelAttribute(): ?string
     {
         $parts = preg_split('/[\s-]+/', trim((string) $this->name));
@@ -72,7 +72,7 @@ class SchoolClass extends Model
         return $parts ? end($parts) : null;
     }
 
-    /** Nama kelas disimpan lengkap, mis. "VII 1". */
+    /** Nama kelas disimpan lengkap, mis. "VII A". */
     public function getDisplayNameAttribute(): string
     {
         return (string) $this->name;

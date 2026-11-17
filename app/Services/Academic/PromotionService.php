@@ -72,7 +72,7 @@ class PromotionService
                 // Buat kelas baru di tahun ajaran baru — JANGAN mutasi kelas lama.
                 // grade_level HARUS $newGrade (bukan $oldClass->grade_level): nama sudah
                 // diganti naik kelas oleh replaceGrade(), jadi tingkat ikut menyesuaikan.
-                // Menyalin grade_level lama membuat "VIII 1" tetap ber-taraf "VII/7".
+                // Menyalin grade_level lama membuat "VIII A" tetap ber-taraf "VII/7".
                 $newClassName = $this->replaceGrade($oldClass->name, $newGrade);
                 $newClass = SchoolClass::create([
                     'academic_year_id' => $newYear->id,
@@ -199,7 +199,7 @@ class PromotionService
         return self::GRADE_MAP[$gradeLevel] ?? null;
     }
 
-    /** Ganti grade dalam nama kelas. "VII 1" + "VIII" → "VIII 1" */
+    /** Ganti grade dalam nama kelas. "VII A" + "VIII" → "VIII A" */
     protected function replaceGrade(string $className, string $newGrade): string
     {
         if (str_contains($className, '-')) {

@@ -62,7 +62,7 @@ Menyimpan data rombongan belajar (rombel kelas).
 | :--- | :--- | :--- | :--- |
 | `id` | `BIGINT UNSIGNED` | Tidak | Primary Key |
 | `academic_year_id` | `BIGINT UNSIGNED` | Tidak | Foreign Key ke `academic_years.id` (Cascade) |
-| `name` | `VARCHAR(20)` | Tidak | Nama kelas, contoh: `VII 1`, `VIII A` |
+| `name` | `VARCHAR(20)` | Tidak | Nama kelas, contoh: `VII A`, `VIII A` |
 | `grade_level` | `ENUM('VII','VIII','IX')` | Ya | Tingkat kelas (VII, VIII, IX) |
 | `capacity` | `INTEGER UNSIGNED` | Tidak | Kapasitas maksimal kursi (default `40`) |
 | `homeroom_teacher_id` | `BIGINT UNSIGNED` | Ya | Foreign Key ke `users.id` (Wali Kelas) |

@@ -60,37 +60,37 @@ class DatabaseSeeder extends Seeder
 
         // Kelas
         // $classA = SchoolClass::firstOrCreate(
-        //     ['name' => 'VII 1', 'academic_year_id' => $academicYear->id],
+        //     ['name' => 'VII A', 'academic_year_id' => $academicYear->id],
         //     ['grade_level' => 'VII', 'homeroom_teacher_id' => $guru1->id]
         // );
         // $classB = SchoolClass::firstOrCreate(
-        //     ['name' => 'VII 2', 'academic_year_id' => $academicYear->id],
+        //     ['name' => 'VII B', 'academic_year_id' => $academicYear->id],
         //     ['grade_level' => 'VII', 'homeroom_teacher_id' => $guru2->id]
         // );
 
         // 6 kelas tambahan (IX, VIII, VII) untuk test sort grade_level
         // $classC = SchoolClass::firstOrCreate(
-        //     ['name' => 'IX 1', 'academic_year_id' => $academicYear->id],
+        //     ['name' => 'IX A', 'academic_year_id' => $academicYear->id],
         //     ['grade_level' => 'IX', 'homeroom_teacher_id' => $staffUsers[0]->id]
         // );
         // $classD = SchoolClass::firstOrCreate(
-        //     ['name' => 'VIII 1', 'academic_year_id' => $academicYear->id],
+        //     ['name' => 'VIII A', 'academic_year_id' => $academicYear->id],
         //     ['grade_level' => 'VIII', 'homeroom_teacher_id' => $staffUsers[1]->id]
         // );
         // $classE = SchoolClass::firstOrCreate(
-        //     ['name' => 'VII 3', 'academic_year_id' => $academicYear->id],
+        //     ['name' => 'VII C', 'academic_year_id' => $academicYear->id],
         //     ['grade_level' => 'VII', 'homeroom_teacher_id' => $staffUsers[2]->id]
         // );
         // $classF = SchoolClass::firstOrCreate(
-        //     ['name' => 'IX 2', 'academic_year_id' => $academicYear->id],
+        //     ['name' => 'IX B', 'academic_year_id' => $academicYear->id],
         //     ['grade_level' => 'IX', 'homeroom_teacher_id' => $staffUsers[3]->id]
         // );
         // $classG = SchoolClass::firstOrCreate(
-        //     ['name' => 'VIII 2', 'academic_year_id' => $academicYear->id],
+        //     ['name' => 'VIII B', 'academic_year_id' => $academicYear->id],
         //     ['grade_level' => 'VIII', 'homeroom_teacher_id' => $staffUsers[4]->id]
         // );
         // $classH = SchoolClass::firstOrCreate(
-        //     ['name' => 'VII 4', 'academic_year_id' => $academicYear->id],
+        //     ['name' => 'VII D', 'academic_year_id' => $academicYear->id],
         //     ['grade_level' => 'VII', 'homeroom_teacher_id' => $staffUsers[5]->id]
         // );
         // $allClasses = [$classA, $classB, $classC, $classD, $classE, $classF, $classG, $classH];

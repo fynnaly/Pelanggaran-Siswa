@@ -52,7 +52,7 @@ Buku panduan ini disusun sebagai rujukan teknis operasional bagi seluruh pemangk
 3. **Pilih Siswa Pelanggar**:
    - *Kasus Siswa Tunggal*: Ketik nama atau NIS pada kolom pencarian, lalu klik nama siswa yang muncul pada hasil pencarian.
    - *Kasus Kelompok / Rombongan*: Cari dan pilih kembali siswa kedua, ketiga, dst. Seluruh siswa yang terpilih akan tampil dalam bentuk lencana (*badge*).
-   - *Kasus Satu Kelas*: Gunakan dropdown **"Atau tambah satu kelas"** dan pilih nama rombel (misal: *VII 1*). Seluruh siswa aktif di kelas tersebut akan otomatis terpilih.
+   - *Kasus Satu Kelas*: Gunakan dropdown **"Atau tambah satu kelas"** dan pilih nama rombel (misal: *VII A*). Seluruh siswa aktif di kelas tersebut akan otomatis terpilih.
    - *Batal Pilihan*: Klik ikon silang pada nama siswa untuk membatalkan satu orang, atau klik **Kosongkan Semua** jika salah memilih rombel.
 4. **Waktu & Kategori**:
    - Tentukan tanggal kejadian (default terisi hari ini).
