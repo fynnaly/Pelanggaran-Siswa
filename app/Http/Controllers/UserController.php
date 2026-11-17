@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Student;
+use App\Models\Teacher;
 use App\Models\User;
 use App\Support\Xlsx;
 use Illuminate\Http\RedirectResponse;
@@ -61,14 +62,18 @@ class UserController extends Controller
         $allowed = ['id', 'name', 'email', 'created_at'];
         $sort = in_array($sort, $allowed, true) ? $sort : 'name';
 
-        $users = User::with(['roles', 'student.currentEnrollment.schoolClass'])
+        $users = User::with(['roles', 'student.currentEnrollment.schoolClass', 'teacher'])
             ->when($q, fn ($query) => $query->where(function ($where) use ($q) {
                 $where->where('name', 'like', "%{$q}%")
                     ->orWhere('email', 'like', "%{$q}%")
                     ->orWhereHas('student', fn ($student) => $student
                         ->where('full_name', 'like', "%{$q}%")
                         ->orWhere('nis', 'like', "%{$q}%")
-                        ->orWhere('nisn', 'like', "%{$q}%"));
+                        ->orWhere('nisn', 'like', "%{$q}%"))
+                    ->orWhereHas('teacher', fn ($teacher) => $teacher
+                        ->where('full_name', 'like', "%{$q}%")
+                        ->orWhere('nip', 'like', "%{$q}%")
+                        ->orWhere('mata_pelajaran', 'like', "%{$q}%"));
             }))
             ->when($type === 'guru', fn ($query) => $query->whereHas(
                 'roles',
@@ -103,8 +108,11 @@ class UserController extends Controller
         $students = Student::whereNull('user_id')
             ->orderBy('full_name')
             ->get(['id', 'full_name', 'nis', 'nisn']);
+        $teachers = Teacher::whereNull('user_id')
+            ->orderBy('full_name')
+            ->get(['id', 'full_name', 'nip', 'mata_pelajaran']);
 
-        return view('users.create', compact('roles', 'students'));
+        return view('users.create', compact('roles', 'students', 'teachers'));
     }
 
     /**
@@ -120,13 +128,16 @@ class UserController extends Controller
             'password' => 'required|string|min:8',
             'role' => 'required|exists:roles,name',
             'student_id' => 'nullable|integer|exists:students,id',
+            'teacher_id' => 'nullable|integer|exists:teachers,id',
         ]);
 
         $role = $validated['role'];
         $studentId = $validated['student_id'] ?? null;
+        $teacherId = $validated['teacher_id'] ?? null;
         $this->validateStudentLink($role, $studentId);
+        $this->validateTeacherLink($role, $teacherId);
 
-        $user = DB::transaction(function () use ($validated, $role, $studentId) {
+        $user = DB::transaction(function () use ($validated, $role, $studentId, $teacherId) {
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
@@ -136,6 +147,10 @@ class UserController extends Controller
 
             if ($studentId !== null) {
                 Student::whereKey($studentId)->update(['user_id' => $user->id]);
+            }
+
+            if ($teacherId !== null) {
+                Teacher::whereKey($teacherId)->update(['user_id' => $user->id]);
             }
 
             return $user;
@@ -152,7 +167,7 @@ class UserController extends Controller
     {
         $this->authorizeManagement();
 
-        $user->load(['roles', 'student.currentEnrollment.schoolClass', 'student.currentEnrollment.academicYear']);
+        $user->load(['roles', 'student.currentEnrollment.schoolClass', 'student.currentEnrollment.academicYear', 'teacher']);
 
         return view('users.show', compact('user'));
     }
@@ -170,9 +185,14 @@ class UserController extends Controller
         })
             ->orderBy('full_name')
             ->get(['id', 'full_name', 'nis', 'nisn']);
+        $teachers = Teacher::where(function ($query) use ($user) {
+            $query->whereNull('user_id')->orWhere('user_id', $user->id);
+        })
+            ->orderBy('full_name')
+            ->get(['id', 'full_name', 'nip', 'mata_pelajaran']);
         $user->load('roles');
 
-        return view('users.edit', compact('user', 'roles', 'students'));
+        return view('users.edit', compact('user', 'roles', 'students', 'teachers'));
     }
 
     /**
@@ -188,15 +208,20 @@ class UserController extends Controller
             'password' => 'nullable|string|min:8',
             'role' => 'sometimes|required|exists:roles,name',
             'student_id' => 'nullable|integer|exists:students,id',
+            'teacher_id' => 'nullable|integer|exists:teachers,id',
         ]);
 
         $role = $validated['role'] ?? $user->roles->first()?->name;
         $studentId = array_key_exists('student_id', $validated)
             ? $validated['student_id']
             : ($role === 'siswa' ? $user->student?->id : null);
+        $teacherId = array_key_exists('teacher_id', $validated)
+            ? $validated['teacher_id']
+            : (in_array($role, ['guru', 'wali_kelas'], true) ? $user->teacher?->id : null);
         $this->validateStudentLink($role, $studentId, $user->id);
+        $this->validateTeacherLink($role, $teacherId, $user->id);
 
-        DB::transaction(function () use ($validated, $user, $role, $studentId) {
+        DB::transaction(function () use ($validated, $user, $role, $studentId, $teacherId) {
             $userData = collect($validated)->only(['name', 'email', 'password'])->all();
             if (isset($userData['password'])) {
                 $userData['password'] = Hash::make($userData['password']);
@@ -207,6 +232,11 @@ class UserController extends Controller
             Student::where('user_id', $user->id)->update(['user_id' => null]);
             if ($studentId !== null) {
                 Student::whereKey($studentId)->update(['user_id' => $user->id]);
+            }
+
+            Teacher::where('user_id', $user->id)->update(['user_id' => null]);
+            if ($teacherId !== null) {
+                Teacher::whereKey($teacherId)->update(['user_id' => $user->id]);
             }
         });
 
@@ -320,20 +350,28 @@ class UserController extends Controller
     {
         $this->authorizeManagement();
 
-        $users = User::with(['roles', 'student.currentEnrollment.schoolClass'])
+        $users = User::with(['roles', 'student.currentEnrollment.schoolClass', 'teacher'])
             ->orderBy('name')
             ->limit(5000)
             ->get();
 
         $rows = [
-            ['Nama', 'Email', 'Role', 'Identitas Siswa', 'Kelas'],
+            ['Nama', 'Email', 'Role', 'Identitas Siswa', 'Kelas', 'NIP Guru', 'Mata Pelajaran'],
         ];
 
         foreach ($users as $u) {
             $role = $u->roles->first()?->name ?? '-';
             $studentInfo = $u->student ? $u->student->nisn.' - '.$u->student->full_name : '-';
             $kelas = $u->student?->currentEnrollment?->schoolClass?->name ?? '-';
-            $rows[] = [$u->name, $u->email, $role, $studentInfo, $kelas];
+            $rows[] = [
+                $u->name,
+                $u->email,
+                $role,
+                $studentInfo,
+                $kelas,
+                $u->teacher?->nip ?? '-',
+                $u->teacher?->mata_pelajaran ?? '-',
+            ];
         }
 
         $path = Xlsx::write($rows, 'Daftar Pengguna', true);
@@ -561,6 +599,35 @@ class UserController extends Controller
         if (! $linked) {
             throw ValidationException::withMessages([
                 'student_id' => 'Identitas siswa sudah terhubung ke akun lain.',
+            ]);
+        }
+    }
+
+    /** Enforce one account-to-one teacher record and only for teaching roles. */
+    private function validateTeacherLink(?string $role, ?int $teacherId, ?int $currentUserId = null): void
+    {
+        if ($teacherId === null) {
+            return;
+        }
+
+        if (! in_array($role, ['guru', 'wali_kelas'], true)) {
+            throw ValidationException::withMessages([
+                'teacher_id' => 'Data guru hanya dapat ditautkan ke akun ber-role guru atau wali kelas.',
+            ]);
+        }
+
+        $linked = Teacher::whereKey($teacherId)
+            ->where(function ($query) use ($currentUserId) {
+                $query->whereNull('user_id');
+                if ($currentUserId !== null) {
+                    $query->orWhere('user_id', $currentUserId);
+                }
+            })
+            ->exists();
+
+        if (! $linked) {
+            throw ValidationException::withMessages([
+                'teacher_id' => 'Data guru sudah tertaut ke akun lain.',
             ]);
         }
     }

@@ -7,7 +7,6 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class ApiAuthController extends Controller
@@ -68,6 +67,12 @@ class ApiAuthController extends Controller
      */
     public function changePassword(Request $request): JsonResponse
     {
+        if ($request->user()?->hasRole('siswa')) {
+            return response()->json([
+                'message' => 'Akun siswa bersifat hanya-baca. Hubungi petugas sekolah untuk perubahan.',
+            ], 403);
+        }
+
         $validated = $request->validate([
             'current_password' => 'required|string',
             'password' => 'required|string|min:8|confirmed',
@@ -103,7 +108,7 @@ class ApiAuthController extends Controller
             'roles' => $user->getRoleNames(),
             'is_active' => $user->is_active,
             'avatar_path' => $user->avatar_path,
-            'avatar_url' => $user->avatar_path ? Storage::disk('public')->url($user->avatar_path) : null,
+            'avatar_url' => $user->avatar_url,
             'siswa' => $user->student ? [
                 'id' => $user->student->id,
                 'nisn' => $user->student->nisn,

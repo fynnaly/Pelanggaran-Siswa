@@ -39,6 +39,14 @@ class User extends Authenticatable
         ];
     }
 
+    /** URL foto profil; memakai gambar default bila pengguna belum mengunggah. */
+    public function getAvatarUrlAttribute(): string
+    {
+        return $this->avatar_path
+            ? asset('storage/'.$this->avatar_path)
+            : asset('assets/images/user/default-avatar.png');
+    }
+
     /** Pengelola yang menyetujui penonaktifan akun ini. */
     public function deletionApprover(): BelongsTo
     {
@@ -49,6 +57,12 @@ class User extends Authenticatable
     public function student(): HasOne
     {
         return $this->hasOne(Student::class);
+    }
+
+    /** Relasi data guru (master guru) untuk akun staf pengajar. */
+    public function teacher(): HasOne
+    {
+        return $this->hasOne(Teacher::class);
     }
 
     /** Kelas yang diwalikan oleh guru ini. */

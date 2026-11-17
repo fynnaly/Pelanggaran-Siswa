@@ -136,7 +136,7 @@ class SchoolClassController extends Controller
 
         $validated = $request->validate([
             'academic_year_id' => 'required|exists:academic_years,id',
-            'grade_level' => ['required', 'in:X,XI,XII'],
+            'grade_level' => ['required', 'in:VII,VIII,IX'],
             'department_id' => ['required', 'exists:departments,id'],
             'number' => ['required', 'integer', 'min:1', 'max:99'],
             'homeroom_teacher_id' => 'nullable|exists:users,id',
@@ -189,7 +189,7 @@ class SchoolClassController extends Controller
 
         $validated = $request->validate([
             'academic_year_id' => 'sometimes|exists:academic_years,id',
-            'grade_level' => ['required', 'in:X,XI,XII'],
+            'grade_level' => ['required', 'in:VII,VIII,IX'],
             'department_id' => ['required', 'exists:departments,id'],
             'number' => ['required', 'integer', 'min:1', 'max:99'],
             'capacity' => 'sometimes|nullable|integer|min:1|max:100',

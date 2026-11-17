@@ -15,6 +15,7 @@ use App\Http\Controllers\SchoolClassController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentPointController;
+use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ViolationCategoryController;
 use Illuminate\Support\Facades\Route;
@@ -66,6 +67,13 @@ Route::middleware(['auth', 'active.account'])->group(function () {
     Route::post('students/import', [StudentController::class, 'import'])->name('students.import');
     Route::get('students/search', [StudentController::class, 'search'])->name('students.search');
     Route::resource('students', StudentController::class)->except(['destroy']);
+
+    // Master Guru — template/export/import SEBELUM resource agar tidak tertelan {teacher}
+    Route::get('teachers/template', [TeacherController::class, 'downloadTemplate'])->name('teachers.template');
+    Route::get('teachers/export', [TeacherController::class, 'export'])->name('teachers.export');
+    Route::post('teachers/import', [TeacherController::class, 'import'])->name('teachers.import');
+    Route::patch('teachers/{teacher}/toggle-status', [TeacherController::class, 'toggleStatus'])->name('teachers.toggle-status');
+    Route::resource('teachers', TeacherController::class)->except(['destroy', 'show']);
 
     // Nametag NFC (Data Referensi)
     Route::get('nametag-nfc/template', [NfcCardController::class, 'downloadTemplate'])->name('nametag-nfc.template');

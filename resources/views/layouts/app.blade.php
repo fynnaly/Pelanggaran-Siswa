@@ -229,6 +229,82 @@
 
     </div>
 
+    <script>
+        // ── Live filter (global) ─────────────────────────────────────────────
+        // Form GET dengan data-live="<selector region>" → search & select tanpa
+        // reload penuh: fetch halaman → DOMParser → copy isi region → swap.
+        // Input/toolbar/header asli tidak disentuh → fokus & kursor tetap utuh.
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('form[data-live]').forEach(form => {
+                const selector = form.getAttribute('data-live');
+                const region = document.querySelector(selector);
+                if (!region) return;
+
+                let timer = null, inflight = null;
+                const indexPath = new URL(form.action).pathname;
+
+                const buildUrl = () => {
+                    const url = new URL(form.action, location.origin);
+                    for (const [k, v] of new FormData(form)) v ? url.searchParams.set(k, v) : url.searchParams.delete(k);
+                    url.searchParams.delete('page'); // ganti filter = balik ke halaman 1
+                    return url;
+                };
+
+                const load = (url, push) => {
+                    inflight?.abort();
+                    inflight = new AbortController();
+                    fetch(url, { signal: inflight.signal, headers: { 'Accept': 'text/html' } })
+                        .then(r => r.ok ? r.text() : Promise.reject(r.status))
+                        .then(html => {
+                            const parsed = new DOMParser().parseFromString(html, 'text/html');
+                            const next = parsed.querySelector(selector);
+                            if (!next) { location.href = url; return; } // region tidak ada → navigasi biasa
+                            region.innerHTML = next.innerHTML;
+                            // angka di header ("N total kasus") ikut menyesuaikan
+                            const counts = parsed.querySelectorAll('[data-live-count]');
+                            const targets = document.querySelectorAll('[data-live-count]');
+                            counts.forEach((el, i) => { if (targets[i]) targets[i].textContent = el.textContent; });
+                            history[push ? 'pushState' : 'replaceState']({}, '', url);
+                            if (window.lucide) lucide.createIcons();
+                        })
+                        .catch(e => { if (e.name !== 'AbortError') console.error(e); });
+                };
+
+                // Ketik teks → debounce 300ms.
+                form.querySelectorAll('input[type="text"],input[type="search"]').forEach(inp => {
+                    inp.addEventListener('input', () => {
+                        clearTimeout(timer);
+                        timer = setTimeout(() => load(buildUrl(), false), 300);
+                    });
+                });
+
+                // Select filter → langsung ganti (intercept semua select; fallback onchange no-JS dilepas).
+                form.querySelectorAll('select').forEach(sel => {
+                    sel.removeAttribute('onchange');
+                    if (!sel.dataset.liveBound) {
+                        sel.dataset.liveBound = '1';
+                        sel.addEventListener('change', () => load(buildUrl(), false));
+                    }
+                });
+
+                // Enter / tombol submit → tanpa reload.
+                form.addEventListener('submit', e => { e.preventDefault(); load(buildUrl(), false); });
+
+                // Sort & pagination di dalam region (path sama) → intercept.
+                region.addEventListener('click', e => {
+                    const link = e.target.closest('a[href]');
+                    if (!link) return;
+                    const url = new URL(link.href, location.origin);
+                    if (url.pathname !== indexPath) return; // detail/edit → biarkan browser
+                    e.preventDefault();
+                    load(url, true);
+                });
+            });
+
+            window.addEventListener('popstate', () => location.reload());
+        });
+    </script>
+
 </body>
 
 @stack('scripts')

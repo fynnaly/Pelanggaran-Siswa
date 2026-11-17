@@ -124,7 +124,7 @@ Memastikan layanan backend aktif dan dapat dijangkau dari aplikasi seluler.
 #### C. Ganti Password Sendiri
 - **URL**: `PATCH /api/v1/auth/password`
 - **Header**: `Authorization: Bearer <token>`, `Content-Type: application/json`
-- **Hak Akses**: Semua peran.
+- **Hak Akses**: Semua peran kecuali `siswa` (akun siswa hanya-baca, `403`).
 - **Payload Request**:
   ```json
   {
@@ -537,15 +537,15 @@ Satu endpoint untuk layar utama aplikasi mobile: staf mendapat statistik sekolah
 #### A. Baca Profil
 - **URL**: `GET /api/v1/profile`
 - **Header**: `Authorization: Bearer <token>`
-- **Respons Berhasil (`200 OK`)**: bentuk sama dengan `auth/me` (field `user` memuat `name`, `email`, `nip`, `roles`, `avatar_path`, `avatar_url`, dan `student` dengan `id/nis/nisn/name/class`).
+- **Respons Berhasil (`200 OK`)**: bentuk sama dengan `auth/me` (field `user` memuat `name`, `email`, `nip`, `roles`, `avatar_path`, `avatar_url`, dan `student` dengan `id/nis/nisn/name/class`). `avatar_url` selalu berisi URL — memakai gambar avatar default bila pengguna belum mengunggah foto.
 
 #### B. Ubah Profil dan Avatar
 - **URL**: `PATCH /api/v1/profile`
 - **Header**: `Authorization: Bearer <token>`, `Content-Type: multipart/form-data` (bila ada berkas avatar)
-- **Hak Akses**: Semua peran. Akun `siswa` tidak boleh mengubah `name`, `email`, dan `nip` (prohibited).
+- **Hak Akses**: Staf saja. Akun `siswa` bersifat hanya-baca — seluruh perubahan (termasuk avatar) ditolak dengan `403`.
 - **Payload (multipart/form-data)**:
   - `name`, `email`, `nip`: opsional (staf saja).
-  - `avatar`: berkas gambar JPG/JPEG/PNG/WebP maks. 2MB.
+  - `avatar`: berkas gambar JPG/JPEG/PNG/WebP maks. 50MB.
   - `remove_avatar`: `true` untuk menghapus foto profil (avatar lama ikut dihapus dari storage).
 - **Perilaku**: mengganti avatar otomatis menghapus berkas lama; mengubah email mereset `email_verified_at`.
 - **Respons Berhasil (`200 OK`)**:

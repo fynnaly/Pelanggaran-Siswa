@@ -51,6 +51,22 @@
             <a href="{{ route('students.show', $user->student) }}" class="btn btn-secondary btn-sm" style="margin-top:var(--sp-md)"><i data-lucide="eye" class="icon-sm"></i> Lihat Detail Siswa</a>
         </div>
         @endif
+
+        @if($user->teacher)
+        <div class="card" style="margin-top:var(--sp-lg)">
+            <h2 style="font-size:1.125rem;font-weight:700;margin-bottom:var(--sp-md)">Identitas Guru</h2>
+            <table style="width:100%">
+                <tbody>
+                    <tr><td style="padding:8px 0;color:var(--on-surface-muted)">NIP</td><td style="font-weight:600">{{ $user->teacher->nip ?: '-' }}</td></tr>
+                    <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Nama Guru</td><td>{{ $user->teacher->full_name }}</td></tr>
+                    <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Mata Pelajaran</td><td>{{ $user->teacher->mata_pelajaran ?: '-' }}</td></tr>
+                    <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Telepon</td><td>{{ $user->teacher->phone ?: '-' }}</td></tr>
+                    <tr><td style="padding:8px 0;color:var(--on-surface-muted)">Status</td><td><span class="badge {{ $user->teacher->status==='active'?'badge-success':'badge-neutral' }}">{{ $user->teacher->status === 'active' ? 'Aktif' : 'Nonaktif' }}</span></td></tr>
+                </tbody>
+            </table>
+            <a href="{{ route('teachers.edit', $user->teacher) }}" class="btn btn-secondary btn-sm" style="margin-top:var(--sp-md)"><i data-lucide="pencil" class="icon-sm"></i> Kelola Data Guru</a>
+        </div>
+        @endif
     </div>
     <script>document.addEventListener('DOMContentLoaded',()=>{lucide.createIcons()})</script>
 </x-app-layout>

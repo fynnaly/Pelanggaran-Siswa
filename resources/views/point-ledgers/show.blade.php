@@ -14,13 +14,7 @@
         {{-- Student Info Card --}}
         <div class="card" style="margin-bottom:var(--sp-xl)">
             <div style="display:flex;align-items:center;gap:var(--sp-lg);flex-wrap:wrap">
-                @if($student?->user?->avatar_path)
-                    <img src="{{ asset('storage/' . $student->user->avatar_path) }}" alt="Foto {{ $student->full_name }}" style="width:56px;height:56px;border-radius:var(--r-full);object-fit:cover;flex-shrink:0">
-                @else
-                    <div style="width:56px;height:56px;border-radius:var(--r-full);background:var(--primary);color:var(--on-primary);display:flex;align-items:center;justify-content:center;font-size:1.25rem;font-weight:700;flex-shrink:0">
-                        {{ strtoupper(substr($student?->full_name ?? '?', 0, 2)) }}
-                    </div>
-                @endif
+                <img src="{{ $student?->avatar_url ?? asset('assets/images/user/default-avatar.png') }}" alt="Foto {{ $student?->full_name ?? 'Siswa' }}" style="width:56px;height:56px;border-radius:var(--r-full);object-fit:cover;flex-shrink:0">
                 <div style="flex:1;min-width:200px">
                     <div style="font-weight:700;font-size:1.125rem">{{ $student?->full_name ?? '-' }}</div>
                     <div class="text-sm text-muted">NISN: {{ $student?->nisn ?? '-' }} &middot; Kelas: {{ $student?->currentEnrollment?->schoolClass?->name ?? '-' }}</div>

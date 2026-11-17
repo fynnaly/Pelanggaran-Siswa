@@ -30,9 +30,9 @@
                 <div class="field"><label class="field-label">Tingkatan <span class="text-danger">*</span></label>
                     <select name="grade_level" class="field-input" id="gradeLevel" required>
                         <option value="">Pilih tingkatan...</option>
-                        <option value="X" {{ old('grade_level')==='X'?'selected':'' }}>X</option>
-                        <option value="XI" {{ old('grade_level')==='XI'?'selected':'' }}>XI</option>
-                        <option value="XII" {{ old('grade_level')==='XII'?'selected':'' }}>XII</option>
+                        <option value="X" {{ old('grade_level')==='VII'?'selected':'' }}>VII/7</option>
+                        <option value="XI" {{ old('grade_level')==='VIII'?'selected':'' }}>VIII/8</option>
+                        <option value="XII" {{ old('grade_level')==='IX'?'selected':'' }}>IX/9</option>
                     </select>
                 </div>
                 <div class="field"><label class="field-label">Jurusan <span class="text-danger">*</span></label>

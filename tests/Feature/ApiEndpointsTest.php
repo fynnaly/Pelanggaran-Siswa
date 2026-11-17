@@ -352,7 +352,7 @@ it('lists reported discipline cases with pagination', function () {
         ->assertJsonPath('meta.total', 1);
 });
 
-it('allows a student to upload and remove their own avatar through the api', function () {
+it('blocks a student from changing their avatar through the api', function () {
     Storage::fake('public');
     $this->student->update(['user_id' => $this->siswaUser->id]);
     Sanctum::actingAs($this->siswaUser);
@@ -362,24 +362,17 @@ it('allows a student to upload and remove their own avatar through the api', fun
         base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=')
     );
 
-    $upload = $this->patchJson('/api/v1/profile', ['avatar' => $avatar]);
-
-    $upload->assertOk()
-        ->assertJsonPath('user.id', $this->siswaUser->id);
-
-    $avatarPath = $this->siswaUser->fresh()->avatar_path;
-    expect($avatarPath)->not->toBeNull();
-    Storage::disk('public')->assertExists($avatarPath);
+    $this->patchJson('/api/v1/profile', ['avatar' => $avatar])
+        ->assertForbidden()
+        ->assertJsonPath('message', 'Akun siswa bersifat hanya-baca. Hubungi petugas sekolah untuk perubahan.');
 
     $this->patchJson('/api/v1/profile', ['remove_avatar' => true])
-        ->assertOk()
-        ->assertJsonPath('user.avatar_path', null);
+        ->assertForbidden();
 
     $this->assertDatabaseHas('users', [
         'id' => $this->siswaUser->id,
         'avatar_path' => null,
     ]);
-    Storage::disk('public')->assertMissing($avatarPath);
 });
 
 it('requires authentication to access the mobile profile endpoint', function () {
@@ -403,7 +396,7 @@ it('documents the new mobile profile, achievement, and report endpoints', functi
         ->assertJsonFragment(['GET reports/classes/{schoolClass} (auth:sanctum)']);
 });
 
-it('prevents students from changing protected profile fields through the api', function () {
+it('blocks students from changing protected profile fields through the api', function () {
     $this->student->update(['user_id' => $this->siswaUser->id]);
     Sanctum::actingAs($this->siswaUser);
 
@@ -411,14 +404,24 @@ it('prevents students from changing protected profile fields through the api', f
         'name' => 'Nama Diubah',
         'email' => 'diubah@example.test',
         'nip' => 'NIP-123',
-    ])->assertUnprocessable()
-        ->assertInvalid(['name', 'email', 'nip']);
+    ])->assertForbidden();
 
     $this->assertDatabaseHas('users', [
         'id' => $this->siswaUser->id,
         'name' => 'Budi Siswa',
         'email' => $this->siswaUser->email,
     ]);
+});
+
+it('blocks students from changing their password through the api', function () {
+    Sanctum::actingAs($this->siswaUser);
+
+    $this->patchJson('/api/v1/auth/password', [
+        'current_password' => 'password',
+        'password' => 'new-password',
+        'password_confirmation' => 'new-password',
+    ])->assertForbidden()
+        ->assertJsonPath('message', 'Akun siswa bersifat hanya-baca. Hubungi petugas sekolah untuk perubahan.');
 });
 
 it('lets authenticated users list active achievement subcategories', function () {

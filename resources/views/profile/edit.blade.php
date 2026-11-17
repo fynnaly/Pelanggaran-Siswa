@@ -1,9 +1,14 @@
 <x-app-layout>
+    @php
+        $isStudent = $user->hasRole('siswa');
+        $activeClass = method_exists($user, 'activeHomeroomClass') ? $user->activeHomeroomClass() : null;
+    @endphp
+
     <x-slot name="header">
         <div class="page-header">
             <div>
-                <h1>Pengaturan Akun</h1>
-                <p class="text-muted text-sm">Kelola profil pribadi, kata sandi, dan keamanan akun</p>
+                <h1>{{ $isStudent ? 'Profil Saya' : 'Pengaturan Akun' }}</h1>
+                <p class="text-muted text-sm">{{ $isStudent ? 'Lihat data profil Anda. Perubahan data dilakukan oleh petugas sekolah.' : 'Kelola profil pribadi, kata sandi, dan keamanan akun' }}</p>
             </div>
             <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap">
                 <a href="{{ route('dashboard') }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" class="icon-sm"></i> Kembali</a>
@@ -11,7 +16,7 @@
         </div>
     </x-slot>
 
-    <div class="main-wrap" x-data="{ activeTab: '{{ $errors->userDeletion->isNotEmpty() ? 'danger' : 'account' }}' }">
+    <div class="main-wrap" x-data="{ activeTab: '{{ ! $isStudent && $errors->userDeletion->isNotEmpty() ? 'danger' : 'account' }}' }">
         <div class="profile-layout" style="display:flex;gap:var(--sp-lg);max-width:960px;margin:0 auto;align-items:flex-start">
             <!-- Sidebar Navigasi Kategori Profil -->
             <div class="profile-sidebar" style="width:240px;flex-shrink:0">
@@ -26,16 +31,18 @@
                             <span style="font-weight:500">Informasi Akun</span>
                         </button>
 
-                        <div style="height:1px;background:var(--border);margin:4px 0"></div>
+                        @unless($isStudent)
+                            <div style="height:1px;background:var(--border);margin:4px 0"></div>
 
-                        <button type="button"
-                                @click="activeTab = 'danger'"
-                                class="profile-tab-btn tab-danger"
-                                :class="activeTab === 'danger' ? 'is-active-danger' : ''"
-                                style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--r-sm);border:none;cursor:pointer;font-family:inherit;font-size:.875rem;width:100%;text-align:left;transition:background .15s">
-                            <i data-lucide="alert-triangle" class="icon-sm" style="flex-shrink:0"></i>
-                            <span style="font-weight:500">Zona Bahaya</span>
-                        </button>
+                            <button type="button"
+                                    @click="activeTab = 'danger'"
+                                    class="profile-tab-btn tab-danger"
+                                    :class="activeTab === 'danger' ? 'is-active-danger' : ''"
+                                    style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--r-sm);border:none;cursor:pointer;font-family:inherit;font-size:.875rem;width:100%;text-align:left;transition:background .15s">
+                                <i data-lucide="alert-triangle" class="icon-sm" style="flex-shrink:0"></i>
+                                <span style="font-weight:500">Zona Bahaya</span>
+                            </button>
+                        @endunless
                     </div>
                 </div>
             </div>
@@ -47,18 +54,11 @@
                     <!-- Ringkasan Akun -->
                     <div style="display:flex;align-items:center;gap:var(--sp-md);padding-bottom:var(--sp-lg);border-bottom:1px solid var(--border);margin-bottom:var(--sp-lg)">
                         <div style="width:56px;height:56px;border-radius:var(--r-full);overflow:hidden;background:var(--surface);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.25rem;color:var(--tertiary);flex-shrink:0">
-                            @if($user->avatar_path)
-                                <img src="{{ asset('storage/'.$user->avatar_path) }}" alt="{{ $user->name }}" style="width:100%;height:100%;object-fit:cover">
-                            @else
-                                {{ strtoupper(substr($user->name, 0, 1)) }}
-                            @endif
+                            <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" style="width:100%;height:100%;object-fit:cover">
                         </div>
                         <div style="flex:1">
                             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                                 <h2 style="font-size:1.125rem;font-weight:600;margin:0">{{ $user->name }}</h2>
-                                @php
-                                    $activeClass = method_exists($user, 'activeHomeroomClass') ? $user->activeHomeroomClass() : null;
-                                @endphp
                                 @if($activeClass)
                                     <span class="badge badge-success" style="font-size:.75rem">Wali Kelas {{ $activeClass->name }}</span>
                                 @endif
@@ -75,16 +75,20 @@
                     <!-- Form Informasi Profil -->
                     @include('profile.partials.update-profile-information-form')
 
-                    <div style="height:1px;background:var(--border);margin:var(--sp-xl) 0 var(--sp-lg)"></div>
+                    @unless($isStudent)
+                        <div style="height:1px;background:var(--border);margin:var(--sp-xl) 0 var(--sp-lg)"></div>
 
-                    <!-- Form Ubah Kata Sandi -->
-                    @include('profile.partials.update-password-form')
+                        <!-- Form Ubah Kata Sandi -->
+                        @include('profile.partials.update-password-form')
+                    @endunless
                 </div>
 
-                <!-- Tab: Zona Bahaya -->
-                <div x-show="activeTab === 'danger'" x-cloak class="card" style="border-color:var(--ds)">
-                    @include('profile.partials.delete-user-form')
-                </div>
+                @unless($isStudent)
+                    <!-- Tab: Zona Bahaya -->
+                    <div x-show="activeTab === 'danger'" x-cloak class="card" style="border-color:var(--ds)">
+                        @include('profile.partials.delete-user-form')
+                    </div>
+                @endunless
             </div>
         </div>
     </div>

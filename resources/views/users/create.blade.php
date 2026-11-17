@@ -40,6 +40,15 @@
                     </select>
                     <span class="help-text">Wajib untuk role siswa (FK: students.user_id). Harus kosong untuk role guru.</span>
                 </div>
+                <div class="field" id="teacherFieldCreate"><label class="field-label">Identitas Guru</label>
+                    <select name="teacher_id" class="field-input">
+                        <option value="">Tidak terkait</option>
+                        @foreach($teachers as $t)
+                            <option value="{{ $t->id }}" {{ old('teacher_id')==$t->id?'selected':'' }}>{{ $t->full_name }} ({{ $t->nip ?: 'tanpa NIP' }}{{ $t->mata_pelajaran ? ' · '.$t->mata_pelajaran : '' }})</option>
+                        @endforeach
+                    </select>
+                    <span class="help-text">Opsional untuk role guru / wali kelas. Sumber data: menu Data Guru.</span>
+                </div>
                 <div style="display:flex;gap:var(--sp-sm);margin-top:var(--sp-lg)">
                     <a href="{{ route('users.index') }}" class="btn btn-secondary" style="flex:1;justify-content:center">Batal</a>
                     <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center"><i data-lucide="save" class="icon-sm"></i> Simpan</button>
@@ -49,22 +58,35 @@
     </div>
     <script>
         (function(){
-            function bind(roleId, fieldId){
+            function bind(roleId, studentFieldId, teacherFieldId){
                 var sel = document.getElementById(roleId);
-                var field = document.getElementById(fieldId);
-                if (! sel || ! field) return;
-                function sync(){
-                    var isSiswa = sel.value === 'siswa';
-                    field.style.display = isSiswa ? 'block' : 'none';
-                    field.querySelector('select').required = isSiswa;
-                    if (! isSiswa) field.querySelector('select').value = '';
+                var studentField = document.getElementById(studentFieldId);
+                var teacherField = document.getElementById(teacherFieldId);
+                if (! sel) return;
+
+                function toggle(field, visible){
+                    if (! field) return;
+                    field.style.display = visible ? 'block' : 'none';
+                    var input = field.querySelector('select');
+                    if (! input) return;
+                    input.disabled = ! visible;
+                    if (! visible) input.value = '';
                 }
+
+                function sync(){
+                    var role = sel.value;
+                    var isSiswa = role === 'siswa';
+                    var isTeacher = role === 'guru' || role === 'wali_kelas';
+                    toggle(studentField, isSiswa);
+                    toggle(teacherField, isTeacher);
+                }
+
                 sel.addEventListener('change', sync);
                 sync();
             }
             document.addEventListener('DOMContentLoaded', function(){
-                bind('roleSelectCreate','studentFieldCreate');
-                bind('roleSelectEdit','studentFieldEdit');
+                bind('roleSelectCreate','studentFieldCreate','teacherFieldCreate');
+                bind('roleSelectEdit','studentFieldEdit','teacherFieldEdit');
                 if (typeof lucide !== 'undefined') lucide.createIcons();
             });
         })();

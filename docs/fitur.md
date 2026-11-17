@@ -13,7 +13,8 @@ Dokumen ini menguraikan seluruh modul fungsional yang tersedia pada aplikasi Pel
 
 ### 1.2 Profil Pengguna dan Identitas Kepegawaian
 - **Pengaturan Profil Berbasis Tab**: Tampilan terbagi menjadi kategori *Informasi Akun* dan *Zona Bahaya*.
-- **Foto Profil Pegawai (Avatar)**: Staf dapat mengunggah foto profil (JPG/PNG/WebP maks. 2MB) yang tersimpan aman pada storage publik lokal (`public/storage/avatars`).
+- **Foto Profil Pegawai (Avatar)**: Staf dapat mengunggah foto profil (JPG/PNG/WebP maks. 50MB) yang tersimpan aman pada storage publik lokal (`public/storage/avatars`). Bila belum mengunggah, sistem menampilkan gambar avatar default.
+- **Profil Siswa Hanya-Baca**: Akun siswa tidak dapat mengubah data apa pun dari halaman Pengaturan Akun — termasuk nama, email, NIP, foto profil, kata sandi, dan pengajuan penghapusan akun. Seluruh perubahan data siswa dilakukan oleh petugas sekolah. Menu Pengaturan global juga tidak tersedia untuk siswa.
 - **Nomor Induk Pegawai (NIP)**: Staf dapat melengkapi NIP resmi yang akan dicantumkan secara otomatis pada dokumen penanganan kasus dan berkas rekapitulasi.
 - **Deteksi Tugas Tambahan**: Sistem secara cerdas mendeteksi dan menampilkan lencana tugas struktural guru, seperti status *Wali Kelas X PPLG 1* berdasarkan tahun ajaran yang sedang aktif.
 
@@ -43,6 +44,13 @@ Dokumen ini menguraikan seluruh modul fungsional yang tersedia pada aplikasi Pel
 ### 2.4 Impor dan Ekspor Data Siswa Berkinerja Tinggi
 - **Impor CSV Native**: Mengunggah berkas CSV/XLSX tanpa ketergantungan library eksternal yang berat, memvalidasi keunikan NISN/NIS, dan otomatis mendaftarkan siswa ke kelas serta membuka saldo poin awal 2000.
 - **Ekspor XLSX Terproteksi**: Mendukung pengunduhan data siswa, pengguna, dan monitor poin berformat XLSX ber-style template native dengan proteksi *Formula Injection*.
+
+### 2.5 Master Data Guru (`Teacher`)
+- Menyimpan identitas guru/staf pengajar: NIP (unik), nama lengkap, mata pelajaran yang diampu, nomor telepon, dan status aktif/nonaktif.
+- **Penautan Akun**: Akun pengguna ber-role `guru` atau `wali_kelas` dapat ditautkan ke satu data guru (relasi satu-satu `teachers.user_id`). Foto profil pada tabel guru diambil dari akun pengguna, dengan fallback avatar default.
+- **Pencarian & Live Filter**: Pencarian nama/NIP/mata pelajaran/email akun serta filter status berjalan tanpa reload halaman.
+- **Impor & Ekspor**: Tersedia template, impor CSV/XLSX (idempoten berdasarkan NIP), dan ekspor XLSX daftar guru.
+- Data guru lama milik akun ber-role guru/wali kelas otomatis di-*backfill* saat migrasi, dan akun baru dapat dibuat langsung dari data guru melalui form Pengguna.
 
 ---
 

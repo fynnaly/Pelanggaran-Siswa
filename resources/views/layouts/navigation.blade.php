@@ -131,19 +131,16 @@
         </button>
         <div class="user-profile-row" style="display:flex;align-items:center;gap:var(--sp-sm);padding:8px var(--sp-md);margin-top:var(--sp-xs)">
             <div style="width:32px;height:32px;border-radius:var(--r-full);background:var(--primary);color:var(--on-primary);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0;overflow:hidden">
-                @if(Auth::user()?->avatar_path)
-                    <img src="{{ asset('storage/'.Auth::user()->avatar_path) }}" alt="{{ Auth::user()->name }}" style="width:100%;height:100%;object-fit:cover">
-                @else
-                    {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 2)) }}
-                @endif
+                <img src="{{ Auth::user()?->avatar_url ?? asset('assets/images/user/default-avatar.png') }}" alt="{{ Auth::user()->name ?? 'Pengguna' }}" style="width:100%;height:100%;object-fit:cover">
             </div>
             <div class="user-info-text" style="flex:1;min-width:0">
                 <div style="font-size:.875rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ Auth::user()->name ?? 'User' }}</div>
                 <div style="font-size:.75rem;color:var(--on-surface-muted)">{{ Auth::user()->email ?? '' }}</div>
             </div>
         </div>
-        <a href="{{ route('profile.edit') }}" class="sidebar-bottom-btn" style="display:flex;align-items:center;gap:var(--sp-sm);padding:8px var(--sp-md);font-size:.875rem;color:var(--on-surface-muted);text-decoration:none;border-radius:var(--r-sm);margin-top:var(--sp-xs)" title="Pengaturan Akun">
-            <i data-lucide="settings" style="width:16px;height:16px"></i> <span class="nav-label">Pengaturan</span>
+        @php($isSiswa = Auth::user()?->hasRole('siswa') ?? false)
+        <a href="{{ route('profile.edit') }}" class="sidebar-bottom-btn" style="display:flex;align-items:center;gap:var(--sp-sm);padding:8px var(--sp-md);font-size:.875rem;color:var(--on-surface-muted);text-decoration:none;border-radius:var(--r-sm);margin-top:var(--sp-xs)" title="{{ $isSiswa ? 'Profil Saya' : 'Pengaturan Akun' }}">
+            <i data-lucide="{{ $isSiswa ? 'user' : 'settings' }}" style="width:16px;height:16px"></i> <span class="nav-label">{{ $isSiswa ? 'Profil Saya' : 'Pengaturan' }}</span>
         </a>
         <form method="POST" action="{{ route('logout') }}">
             @csrf
@@ -173,11 +170,7 @@
                 <i data-lucide="sun" class="icon-theme" style="width:16px;height:16px"></i>
             </button>
             <div style="width:32px;height:32px;border-radius:var(--r-full);background:var(--primary);color:var(--on-primary);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;overflow:hidden">
-                @if(Auth::user()?->avatar_path)
-                    <img src="{{ asset('storage/'.Auth::user()->avatar_path) }}" alt="{{ Auth::user()->name }}" style="width:100%;height:100%;object-fit:cover">
-                @else
-                    {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 2)) }}
-                @endif
+                <img src="{{ Auth::user()?->avatar_url ?? asset('assets/images/user/default-avatar.png') }}" alt="{{ Auth::user()->name ?? 'Pengguna' }}" style="width:100%;height:100%;object-fit:cover">
             </div>
         </div>
     </div>
@@ -250,7 +243,7 @@
         </nav>
         <div style="padding:var(--sp-md);border-top:1px solid var(--border)">
             <a href="{{ route('profile.edit') }}" @click="open = false; localStorage.setItem('sidebar-open', 'false')" style="display:flex;align-items:center;gap:var(--sp-sm);padding:8px var(--sp-md);font-size:.875rem;color:var(--on-surface-muted);text-decoration:none;border-radius:var(--r-sm)">
-                <i data-lucide="settings" style="width:16px;height:16px"></i> Pengaturan
+                <i data-lucide="{{ $isSiswa ? 'user' : 'settings' }}" style="width:16px;height:16px"></i> {{ $isSiswa ? 'Profil Saya' : 'Pengaturan' }}
             </a>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf

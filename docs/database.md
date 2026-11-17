@@ -17,7 +17,7 @@ Dokumen ini berisi kamus data lengkap (*data dictionary*), definisi tipe data, b
 
 ---
 
-## 2. Kamus Data Entitas (12 Tabel Utama)
+## 2. Kamus Data Entitas (13 Tabel Utama)
 
 ### 2.1 `users`
 Menyimpan akun pengguna sistem (staf sekolah dan siswa).
@@ -267,3 +267,26 @@ Menyimpan konfigurasi instansi, kop surat, tanda tangan digital, dan footer sert
 | `value` | `TEXT` | Ya | Nilai konfigurasi |
 | `created_at` | `TIMESTAMP` | Ya | - |
 | `updated_at` | `TIMESTAMP` | Ya | - |
+
+---
+
+### 2.13 `teachers`
+Master data guru/staf pengajar. Menjadi sumber identitas akun ber-role `guru` / `wali_kelas` melalui pola penautan yang sama dengan `students.user_id`.
+
+| Kolom | Tipe Data | Nullable | Keterangan / Constraint |
+| :--- | :--- | :--- | :--- |
+| `id` | `BIGINT UNSIGNED` | Tidak | Primary Key |
+| `user_id` | `BIGINT UNSIGNED` | Ya | Foreign Key ke `users.id` (Null on delete), UNIQUE — satu akun satu data guru |
+| `nip` | `VARCHAR(40)` | Ya | Nomor Induk Pegawai, UNIQUE |
+| `full_name` | `VARCHAR(255)` | Tidak | Nama lengkap guru |
+| `mata_pelajaran` | `VARCHAR(150)` | Ya | Mata pelajaran yang diampu (teks bebas) |
+| `phone` | `VARCHAR(20)` | Ya | Nomor telepon guru |
+| `avatar_path` | `VARCHAR(255)` | Ya | Foto guru; fallback ke foto akun pengguna lalu avatar default |
+| `status` | `ENUM('active','inactive')` | Tidak | Status keaktifan data guru (default `active`) |
+| `created_at` | `TIMESTAMP` | Ya | - |
+| `updated_at` | `TIMESTAMP` | Ya | - |
+
+*Integritas*:
+- `UNIQUE (user_id)`: Satu akun pengguna hanya boleh tertaut ke satu data guru.
+- `UNIQUE (nip)`: NIP tidak boleh ganda antar guru; nilai kosong (`NULL`) diperbolehkan berulang.
+- Migrasi pembuatan tabel melakukan *backfill* akun ber-role `guru`/`wali_kelas` yang sudah ada menjadi data guru.

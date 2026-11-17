@@ -26,7 +26,13 @@
                     <tr>
                         <td class="text-sm text-muted">{{ $student->id }}</td>
                         <td class="mono">{{ $student->nis }}</td>
-                        <td><strong>{{ $student->full_name }}</strong></td>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:10px;min-width:0">
+                                <img src="{{ $student->avatar_url }}" alt="Foto {{ $student->full_name }}"
+                                     style="width:34px;height:34px;border-radius:999px;object-fit:cover;flex-shrink:0;border:1px solid var(--border);background:var(--surface)">
+                                <strong style="min-width:0">{{ $student->full_name }}</strong>
+                            </div>
+                        </td>
                         <td class="text-sm">{{ $student->gender==='L'?'Laki-laki':'Perempuan' }}</td>
                         <td class="mono" style="font-weight:600;white-space:nowrap">{{ $enr?->schoolClass?->tingkat ?? '-' }}</td>
                         <td class="text-sm" style="white-space:nowrap">{{ $enr?->schoolClass?->name ?? '-' }}</td>

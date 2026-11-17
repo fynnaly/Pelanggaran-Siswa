@@ -24,47 +24,45 @@
         @if(session('error'))<div class="alert alert-error"><i data-lucide="alert-circle" class="icon-sm"></i> {{ session('error') }}</div>@endif
 
         {{-- Filter: tipe (Guru/Siswa) + jabatan (hanya saat Guru) + pencarian --}}
-        <div class="toolbar" style="margin-bottom:var(--sp-md);display:flex;gap:var(--sp-sm);flex-wrap:wrap;align-items:flex-end">
-            <form action="{{ route('users.index') }}" method="GET" data-live="#userRegion" id="userFilter" style="display:flex;gap:var(--sp-sm);flex:1;flex-wrap:wrap;align-items:flex-end">
-                <div style="display:flex;flex-direction:column;gap:4px">
+        <div class="toolbar" style="display:flex;flex-direction:column;gap:var(--sp-sm);align-items:stretch;margin-bottom:var(--sp-md)">
+            <form action="{{ route('users.index') }}" method="GET" data-live="#userRegion" id="userFilter"
+                  style="display:flex;flex-wrap:wrap;gap:var(--sp-sm);align-items:flex-end;width:100%">
+                <div style="display:flex;flex-direction:column;gap:4px;flex:1 1 170px;min-width:170px">
                     <label style="font-size:.75rem;font-weight:700;color:var(--on-surface-muted);text-transform:uppercase;letter-spacing:.05em">Tipe Pengguna</label>
-                    <select name="type" class="input" style="min-width:160px" onchange="this.form.submit()">
+                    <select name="type" id="userType" class="input">
                         <option value="">Semua Pengguna</option>
                         <option value="guru" {{ ($type ?? '')==='guru'?'selected':'' }}>Guru / Staff</option>
                         <option value="siswa" {{ ($type ?? '')==='siswa'?'selected':'' }}>Siswa</option>
                     </select>
                 </div>
-                @if(($type ?? '')==='guru')
-                <div style="display:flex;flex-direction:column;gap:4px">
+                <div id="jabatanField" style="display:flex;flex-direction:column;gap:4px;flex:1 1 160px;min-width:160px;{{ ($type ?? '')==='guru' ? '' : 'display:none' }}">
                     <label style="font-size:.75rem;font-weight:700;color:var(--on-surface-muted);text-transform:uppercase;letter-spacing:.05em">Jabatan</label>
-                    <select name="jabatan" class="input" style="min-width:150px" onchange="this.form.submit()">
+                    <select name="jabatan" id="jabatanSelect" class="input" {{ ($type ?? '')==='guru' ? '' : 'disabled' }}>
                         <option value="">Semua Jabatan</option>
                         @foreach(['guru','bk','kesiswaan','kepala_sekolah','admin'] as $j)
                             <option value="{{ $j }}" {{ ($jabatan ?? '')===$j?'selected':'' }}>{{ ucfirst(str_replace('_',' ',$j)) }}</option>
                         @endforeach
                     </select>
                 </div>
-                @endif
-                <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:200px">
+                <div style="display:flex;flex-direction:column;gap:4px;flex:2 1 240px;min-width:220px">
                     <label style="font-size:.75rem;font-weight:700;color:var(--on-surface-muted);text-transform:uppercase;letter-spacing:.05em">Cari</label>
-                    <input type="text" name="q" value="{{ $q ?? '' }}" placeholder="Nama, email, NISN, atau NIS..." class="input">
+                    <input type="text" name="q" value="{{ $q ?? '' }}" placeholder="Nama, email, NISN, NIS, NIP, atau mapel..." class="input">
                 </div>
-                <div style="display:flex;flex-direction:column;gap:4px">
+                <div style="display:flex;flex-direction:column;gap:4px;flex:1 1 200px;min-width:200px">
                     <label style="font-size:.75rem;font-weight:700;color:var(--on-surface-muted);text-transform:uppercase;letter-spacing:.05em">Permintaan Akun</label>
-                    <select name="deletion_requested" class="input" style="min-width:190px" onchange="this.form.submit()">
+                    <select name="deletion_requested" class="input">
                         <option value="" {{ ! $deletionRequested ? 'selected' : '' }}>Semua akun</option>
                         <option value="1" {{ $deletionRequested ? 'selected' : '' }}>Menunggu persetujuan</option>
                     </select>
                 </div>
             </form>
-            <div style="display:flex;align-items:center;gap:var(--sp-sm);flex-wrap:wrap">
-                <form action="{{ route('users.import') }}" method="POST" enctype="multipart/form-data" style="display:flex;align-items:center;gap:var(--sp-sm);flex:1;min-width:0">
-                    @csrf
-                    <label class="text-sm text-muted" style="white-space:nowrap">Import CSV:</label>
-                    <input type="file" name="file" accept=".csv,.txt" required class="input" style="width:auto;padding:6px 10px;flex:1;min-width:0">
-                    <button type="submit" class="btn btn-primary btn-sm" style="flex-shrink:0"><i data-lucide="upload" class="icon-sm"></i> Unggah</button>
-                </form>
-            </div>
+            <form action="{{ route('users.import') }}" method="POST" enctype="multipart/form-data"
+                  style="display:flex;align-items:center;gap:var(--sp-sm);flex-wrap:wrap;width:100%;max-width:560px">
+                @csrf
+                <label class="text-sm text-muted" style="white-space:nowrap">Import CSV:</label>
+                <input type="file" name="file" accept=".csv,.txt,.xlsx" required class="input" style="width:auto;padding:6px 10px;flex:1;min-width:0">
+                <button type="submit" class="btn btn-primary btn-sm" style="flex-shrink:0"><i data-lucide="upload" class="icon-sm"></i> Unggah</button>
+            </form>
         </div>
 
         <div id="userRegion">
@@ -86,7 +84,13 @@
                     @forelse($users as $user)
                         <tr>
                             <td class="text-sm text-muted">{{ $user->id }}</td>
-                            <td style="font-weight:600">{{ $user->name }}</td>
+                            <td style="font-weight:600">
+                                <div style="display:flex;align-items:center;gap:10px;min-width:0">
+                                    <img src="{{ $user->avatar_url }}" alt="Foto {{ $user->name }}"
+                                         style="width:30px;height:30px;border-radius:999px;object-fit:cover;flex-shrink:0;border:1px solid var(--border);background:var(--surface)">
+                                    <span style="min-width:0">{{ $user->name }}</span>
+                                </div>
+                            </td>
                             <td class="text-sm text-muted">{{ $user->email }}</td>
                             <td>
                                 <div style="display:flex;gap:4px;flex-wrap:wrap">
@@ -113,6 +117,9 @@
                                     <a href="{{ route('students.show', $user->student) }}" style="font-weight:600">{{ $user->student->nisn }}</a>
                                     <span class="text-muted"> &middot; {{ $user->student->full_name }}</span>
                                     <span class="text-muted"> &middot; {{ $user->student->currentEnrollment?->schoolClass?->name ?? '-' }}</span>
+                                @elseif($user->teacher)
+                                    <span style="font-weight:600">{{ $user->teacher->nip ?: 'Tanpa NIP' }}</span>
+                                    <span class="text-muted"> &middot; {{ $user->teacher->mata_pelajaran ?: 'Mapel belum diisi' }}</span>
                                 @else
                                     <span class="text-muted">-</span>
                                 @endif
@@ -174,5 +181,25 @@
         </div>
         </div>
     </div>
+    <script>
+        // Tampilkan filter Jabatan hanya saat tipe = Guru / Staff.
+        // Jabatan yang tersembunyi di-disabled agar tidak ikut terkirim sebagai query.
+        (function () {
+            var typeSelect = document.getElementById('userType');
+            var jabatanField = document.getElementById('jabatanField');
+            var jabatanSelect = document.getElementById('jabatanSelect');
+            if (!typeSelect || !jabatanField || !jabatanSelect) return;
+
+            function syncJabatan() {
+                var isStaff = typeSelect.value === 'guru';
+                jabatanField.style.display = isStaff ? 'flex' : 'none';
+                jabatanSelect.disabled = !isStaff;
+                if (!isStaff) jabatanSelect.value = '';
+            }
+
+            typeSelect.addEventListener('change', syncJabatan);
+            syncJabatan();
+        })();
+    </script>
     <script>document.addEventListener('DOMContentLoaded',()=>{lucide.createIcons()})</script>
 </x-app-layout>

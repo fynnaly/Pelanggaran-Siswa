@@ -65,6 +65,7 @@ class StudentController extends Controller
         }
 
         $students = Student::with([
+                'user',
                 'currentEnrollment.schoolClass',
                 'currentEnrollment.academicYear',
                 'enrollments.schoolClass',
