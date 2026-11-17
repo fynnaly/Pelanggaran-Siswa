@@ -39,15 +39,20 @@
                             <td>
                                 @php $isManager = auth()->user()?->hasAnyRole(['admin', 'bk', 'kesiswaan', 'kepala_sekolah']); @endphp
                                 @unless($isManager)
-                                    {{ $class->homeroomTeacher?->name ?? '-' }}
+                                    {{ $class->homeroom_teacher_name ?? '-' }}
                                 @else
                                 <form action="{{ route('classes.update', $class) }}" method="POST" class="inline" style="display:inline">
                                     @csrf @method('PUT')
-                                    <select name="homeroom_teacher_id" class="input" style="width:auto;padding:8px 32px 8px 10px;font-size:.8125rem" onchange="this.form.submit()"
-                                    >
-                                        <option value="">-</option>
+                                    <input type="hidden" name="class_id" value="{{ $class->id }}">
+                                    <select name="homeroom_teacher_id" class="input" style="width:auto;padding:8px 32px 8px 10px;font-size:.8125rem" onchange="this.form.submit()">
+                                        <option value="">- Belum ada -</option>
                                         @foreach($teachers as $t)
-                                            <option value="{{ $t->id }}" {{ old('homeroom_teacher_id', $class->homeroom_teacher_id)==$t->id?'selected':'' }}>{{ $t->name }}</option>
+                                            @php
+                                                $isSelected = (old('class_id') == $class->id)
+                                                    ? ((string) old('homeroom_teacher_id') === (string) $t->id)
+                                                    : ((string) $class->homeroom_teacher_id === (string) $t->user_id);
+                                            @endphp
+                                            <option value="{{ $t->id }}" {{ $isSelected ? 'selected' : '' }}>{{ $t->name }}</option>
                                         @endforeach
                                     </select>
                                 </form>

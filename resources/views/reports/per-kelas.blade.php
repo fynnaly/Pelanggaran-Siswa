@@ -122,7 +122,7 @@
                                         @if($isWorst)<span class="badge badge-danger" style="margin-left:6px">Paling sering melanggar</span>@endif
                                     </td>
                                     <td class="text-sm text-muted">{{ $row['class']->academicYear?->name ?? '-' }}</td>
-                                    <td class="text-sm">{{ $row['class']->homeroomTeacher?->name ?? '-' }}</td>
+                                    <td class="text-sm">{{ $row['class']->homeroom_teacher_name ?? '-' }}</td>
                                     <td class="mono" style="text-align:right">{{ $row['students'] }}</td>
                                     <td class="mono" style="text-align:right;font-weight:700;{{ $row['kasus'] > 0 ? 'color:var(--danger)' : '' }}">{{ $row['kasus'] }}</td>
                                     <td class="mono" style="text-align:right;color:var(--success)">{{ $row['prestasi'] }}</td>

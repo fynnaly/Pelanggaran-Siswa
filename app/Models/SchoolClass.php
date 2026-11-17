@@ -75,10 +75,24 @@ class SchoolClass extends Model
         return $this->belongsTo(User::class, 'homeroom_teacher_id');
     }
 
+    /** Nama wali kelas (mengutamakan nama lengkap dari Data Guru bila ada). */
+    public function getHomeroomTeacherNameAttribute(): ?string
+    {
+        return $this->homeroomTeacher?->teacher?->full_name
+            ?? $this->homeroomTeacher?->name;
+    }
+
     /** Guru pembantu (Guru 2) penanggung jawab kelas. */
     public function assistantTeacher(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assistant_teacher_id');
+    }
+
+    /** Nama guru pendamping (mengutamakan nama lengkap dari Data Guru bila ada). */
+    public function getAssistantTeacherNameAttribute(): ?string
+    {
+        return $this->assistantTeacher?->teacher?->full_name
+            ?? $this->assistantTeacher?->name;
     }
 
     /** Siswa terdaftar di kelas ini lewat enrollments (fase 2). */
