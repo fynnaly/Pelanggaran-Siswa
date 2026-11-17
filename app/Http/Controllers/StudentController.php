@@ -152,9 +152,9 @@ class StudentController extends Controller
         $this->authorizeManagement();
 
         $validated = $request->validate([
-            // NISN standar Kemendikbud: 10 digit angka (opsional). NIS sekolah: YYYYMMDD+urutan = 12 digit.
+            // NISN standar Kemendikbud: 10 digit angka (opsional). NIS format bebas milik sekolah, mis. 2425.7.001.
             'nisn' => 'nullable|digits:10|unique:students',
-            'nis' => 'required|digits:12|unique:students',
+            'nis' => ['required', 'string', 'max:20', 'regex:/^[A-Za-z0-9._\-\/]+$/', 'unique:students'],
             'full_name' => 'required|string|max:100',
             'gender' => 'required|in:L,P',
             'birth_date' => 'nullable|date',
@@ -264,7 +264,7 @@ class StudentController extends Controller
 
         $validated = $request->validate([
             'nisn' => 'sometimes|nullable|digits:10|unique:students,nisn,'.$student->id,
-            'nis' => 'sometimes|digits:12|unique:students,nis,'.$student->id,
+            'nis' => ['sometimes', 'string', 'max:20', 'regex:/^[A-Za-z0-9._\-\/]+$/', 'unique:students,nis,'.$student->id],
             'full_name' => 'sometimes|string|max:100',
             'gender' => 'sometimes|in:L,P',
             'birth_date' => 'nullable|date',
@@ -435,7 +435,7 @@ class StudentController extends Controller
 
     /**
      * Import siswa dari CSV atau XLSX.
-     * Kolom wajib: NIS (12 digit), Nama Lengkap.
+     * Kolom wajib: NIS (maks. 20 karakter), Nama Lengkap.
      * Opsional: NISN (10 digit), Kelas (nama), Tahun Ajaran (nama), Status.
      * - Format NISN/NIS salah → baris dilewati dengan pesan (validasi dulu, bukan fatal).
      * - NISN boleh kosong; bila kosong disimpan sebagai null.
@@ -543,8 +543,8 @@ class StudentController extends Controller
 
                     continue;
                 }
-                if (! preg_match('/^\d{12}$/', $nis)) {
-                    $errors[] = "Baris {$rowNum} ({$nama}): NIS \"{$nis}\" bukan 12 digit angka — dilewati.";
+                if (strlen($nis) > 20 || ! preg_match('/^[A-Za-z0-9._\-\/]+$/', $nis)) {
+                    $errors[] = "Baris {$rowNum} ({$nama}): NIS \"{$nis}\" hanya boleh huruf, angka, titik, garis miring, atau tanda hubung (maks. 20) — dilewati.";
                     $skipped++;
 
                     continue;

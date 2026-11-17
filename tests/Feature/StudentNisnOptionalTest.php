@@ -130,3 +130,50 @@ it('imports students with an empty nisn value and still validates a filled nisn'
     expect(Student::where('nis', '202412010007')->value('nisn'))->toBeNull()
         ->and(Student::where('nis', '202412010008')->exists())->toBeFalse();
 });
+
+it('accepts a dotted school nis when creating a student', function () {
+    $this->actingAs($this->admin)
+        ->post(route('students.store'), [
+            'nis' => '2425.7.001',
+            'full_name' => 'Aditya Pratama Suryanto',
+            'gender' => 'L',
+            'class_id' => $this->class->id,
+            'academic_year_id' => $this->year->id,
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('students.index'));
+
+    expect(Student::where('nis', '2425.7.001')->exists())->toBeTrue();
+});
+
+it('imports students with a dotted school nis', function () {
+    $csv = implode("\n", [
+        'NIS,Nama Lengkap,Jenis Kelamin',
+        '2425.7.001,ADITYA PRATAMA SURYANTO,Laki-laki',
+        '2425.7.002,AINIYA FAIDA AZMI,Perempuan',
+    ]);
+
+    $this->actingAs($this->admin)
+        ->from(route('students.index'))
+        ->post(route('students.import'), [
+            'file' => UploadedFile::fake()->createWithContent('students.csv', $csv),
+        ])
+        ->assertRedirect(route('students.index'))
+        ->assertSessionHas('success', fn (string $message) => str_contains($message, '2 siswa ditambahkan')
+            && ! str_contains($message, 'dilewati'));
+
+    expect(Student::where('nis', '2425.7.001')->value('full_name'))->toBe('ADITYA PRATAMA SURYANTO')
+        ->and(Student::where('nis', '2425.7.002')->value('gender'))->toBe('P');
+});
+
+it('rejects a school nis with unsupported characters', function () {
+    $this->actingAs($this->admin)
+        ->post(route('students.store'), [
+            'nis' => '2425 7 001',
+            'full_name' => 'Siswa NIS Salah',
+            'gender' => 'L',
+            'class_id' => $this->class->id,
+            'academic_year_id' => $this->year->id,
+        ])
+        ->assertSessionHasErrors('nis');
+});
