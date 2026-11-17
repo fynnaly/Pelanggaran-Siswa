@@ -59,15 +59,19 @@
         .cert-footer-line { text-align: center; font-size: 9px; color: #94a3b8; border-top: 1px dashed #e2e8f0; padding-top: 3px; margin-top: 4px; }
 
         /* Tombol Aksi Layar */
-        .no-print { position: sticky; top: 0; display: flex; gap: 8px; padding: 12px 20px; background: #ffffff; border-bottom: 1px solid #cbd5e1; z-index: 100; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .no-print { position: sticky; top: 0; display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 20px; background: #ffffff; border-bottom: 1px solid #cbd5e1; z-index: 100; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .btn-ui { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; color: #0f172a; font: 600 12px 'Figtree', sans-serif; cursor: pointer; text-decoration: none; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
         .btn-ui-primary { background: #059669; color: #ffffff; border-color: #059669; }
+
+        /* Pratinjau layar: tiap lembar A4 diskalakan agar muat lebar layar. */
+        .cert-sheet-fit { display: flex; justify-content: center; }
 
         /* Print Media — Pasti 1 Lembar Per Siswa */
         @media print {
             body { background: #ffffff !important; margin: 0 !important; padding: 0 !important; }
             .no-print { display: none !important; }
-            .cert-sheet { width: 297mm !important; height: 210mm !important; max-height: 210mm !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; page-break-after: always !important; break-after: page !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .cert-sheet-fit { display: block !important; width: auto !important; height: auto !important; overflow: visible !important; }
+            .cert-sheet { width: 297mm !important; height: 210mm !important; max-height: 210mm !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; transform: none !important; page-break-after: always !important; break-after: page !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             .cert-sheet:last-child { page-break-after: auto !important; break-after: auto !important; }
             .cert-outer-frame { border: 3px double #1e3a5f !important; padding: 4mm !important; height: 100% !important; }
             .cert-inner-frame { border: 1px solid #cbd5e1 !important; height: calc(210mm - 8mm) !important; padding: 6mm 10mm !important; }
@@ -82,7 +86,44 @@
         <span style="font-size:12px;color:#64748b;margin-left:auto">Pilih "Save as PDF" di dialog cetak browser untuk mengunduh satu berkas PDF multi-halaman.</span>
     </div>
     @foreach($students as $student)
-        @include('monitor-poin._certificate', ['zone' => $student->zone])
+        <div class="cert-sheet-fit">
+            @include('monitor-poin._certificate', ['zone' => $student->zone])
+        </div>
     @endforeach
+    <script>
+        // Skala tiap lembar sertifikat agar muat layar ponsel (halaman tidak
+        // melebar). Hasil cetak tetap 1:1 karena transform direset saat print.
+        (function () {
+            function fit() {
+                document.querySelectorAll('.cert-sheet-fit').forEach(function (wrap) {
+                    var sheet = wrap.querySelector('.cert-sheet');
+                    if (!sheet) return;
+
+                    wrap.style.width = '';
+                    wrap.style.height = '';
+                    wrap.style.overflow = '';
+                    sheet.style.transform = '';
+                    sheet.style.transformOrigin = '';
+                    sheet.style.margin = '';
+
+                    var avail = Math.floor(document.documentElement.clientWidth) - 24;
+                    var base = sheet.offsetWidth;
+                    if (!base || base <= avail) return;
+
+                    var scale = avail / base;
+                    sheet.style.transformOrigin = 'top left';
+                    sheet.style.transform = 'scale(' + scale + ')';
+                    sheet.style.margin = '0';
+                    wrap.style.width = avail + 'px';
+                    wrap.style.height = Math.ceil(sheet.offsetHeight * scale) + 'px';
+                    wrap.style.overflow = 'hidden';
+                });
+            }
+
+            fit();
+            window.addEventListener('resize', fit);
+            window.addEventListener('load', fit);
+        })();
+    </script>
 </body>
 </html>

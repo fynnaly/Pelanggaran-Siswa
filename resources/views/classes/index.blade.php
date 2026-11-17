@@ -14,7 +14,7 @@
         @if(session('success'))<div class="alert alert-success"><i data-lucide="check-circle" class="icon-sm"></i> {{ session('success') }}</div>@endif
         @if(session('error'))<div class="alert alert-error"><i data-lucide="alert-circle" class="icon-sm"></i> {{ session('error') }}</div>@endif
         <div class="toolbar" style="margin-bottom:var(--sp-md)">
-            <form action="{{ route('classes.index') }}" method="GET" data-live="#classRegion" id="classFilter" style="display:flex;gap:var(--sp-sm);flex:1;align-items:stretch">
+            <form action="{{ route('classes.index') }}" method="GET" data-live="#classRegion" id="classFilter" style="display:flex;gap:var(--sp-sm);flex:1;align-items:stretch;flex-wrap:wrap">
                 <select name="year_id" class="input" style="width:auto;min-width:130px;flex-shrink:0" onchange="this.form.submit()">
                     @foreach($academicYears as $yr)
                         <option value="{{ $yr->id }}" {{ $selectedYearId==$yr->id?'selected':'' }}>{{ $yr->name }}{{ $yr->is_active?' (Aktif)':'' }}</option>
@@ -26,13 +26,14 @@
         <div id="classRegion">
         <div class="table-wrap">
             <table>
-                <thead><tr><th style="width:48px"><x-sortable-header column="id" label="No" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="name" label="Nama Kelas" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="grade_level" label="Tingkat" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="status" label="Status" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th class="mono" style="width:96px;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums"><x-sortable-header column="students_count" label="Jumlah Siswa" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="homeroom_teacher_id" label="Wali Kelas" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th style="width:100px">Aksi</th></tr></thead>
+                <thead><tr><th style="width:48px"><x-sortable-header column="id" label="No" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="name" label="Nama Kelas" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="grade_level" label="Tingkat" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="angkatan" label="Angkatan" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="status" label="Status" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th class="mono" style="width:96px;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums"><x-sortable-header column="students_count" label="Jumlah Siswa" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th><x-sortable-header column="homeroom_teacher_id" label="Wali Kelas" :sort="$sort" :order="$order" route="classes.index" :params="request()->except('sort','order','page')" /></th><th style="width:100px">Aksi</th></tr></thead>
                 <tbody>
                     @forelse($classes as $class)
                         <tr>
                             <td class="text-sm text-muted">{{ $class->id }}</td>
                             <td style="font-weight:600">{{ $class->name }}</td>
                             <td class="mono" style="font-weight:600">{{ $class->tingkat ?? '-' }}</td>
+                            <td class="mono">{{ $class->angkatan ?? '-' }}</td>
                             <td><span class="badge {{ ($class->status ?? 'active')==='active'?'badge-success':'' }}" style="{{ ($class->status ?? 'active')!=='active'?'background:var(--surface);color:var(--on-surface-muted)':'' }}">{{ ($class->status ?? 'active')==='active'?'Aktif':'Nonaktif' }}</span></td>
                             <td class="mono" style="width:96px;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums">{{ $class->students_count }}</td>
                             <td>
@@ -61,7 +62,7 @@
                             </div></td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" style="padding:40px;text-align:center;color:var(--on-surface-muted)"><i data-lucide="inbox" class="icon-lg" style="display:block;margin:0 auto var(--sp-sm)"></i>Belum ada kelas. Tambah dulu.</td></tr>
+                        <tr><td colspan="8" style="padding:40px;text-align:center;color:var(--on-surface-muted)"><i data-lucide="inbox" class="icon-lg" style="display:block;margin:0 auto var(--sp-sm)"></i>Belum ada kelas. Tambah dulu.</td></tr>
                     @endforelse
                 </tbody>
             </table>

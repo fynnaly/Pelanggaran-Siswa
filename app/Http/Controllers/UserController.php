@@ -2,14 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
+use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\User;
 use App\Support\Xlsx;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
 
@@ -40,6 +45,9 @@ class UserController extends Controller
         'kesiswaan',
     ];
 
+    /** Domain email untuk akun yang dibuat otomatis (siswa / guru). */
+    private const AUTO_EMAIL_DOMAIN = 'smpbn666.sch.id';
+
     /**
      * Display user accounts with Guru/Siswa filters.
      */
@@ -48,18 +56,33 @@ class UserController extends Controller
         $this->authorizeManagement();
 
         $type = request('type');
-        $jabatan = request('jabatan');
+        // Jabatan hanya bermakna saat tipe = guru; jangan biarkan parameter lama
+        // di URL menyaring daftar tanpa terlihat (dropdown-nya tersembunyi).
+        $jabatan = $type === 'guru' ? request('jabatan') : null;
         $q = request('q');
         $deletionRequested = request()->boolean('deletion_requested');
         $pendingDeletionCount = User::where('is_active', true)
             ->whereNotNull('deletion_requested_at')
             ->count();
+        $studentsWithoutAccounts = Student::whereNull('user_id')->where('status', 'active')->count();
+        $teachersWithoutAccounts = Teacher::whereNull('user_id')->where('status', 'active')->count();
+
+        // Untuk kartu reset password massal (per kelas / per tingkatan).
+        $classes = SchoolClass::with('academicYear')
+            ->orderBy('name')
+            ->get(['id', 'name', 'grade_level', 'academic_year_id']);
+        $gradeOptions = SchoolClass::query()
+            ->whereIn('grade_level', ['VII', 'VIII', 'IX'])
+            ->distinct()
+            ->pluck('grade_level')
+            ->sortBy(fn ($grade) => ['VII' => 1, 'VIII' => 2, 'IX' => 3][$grade] ?? 99)
+            ->values();
 
         $roles = Role::whereIn('name', self::STAFF_ROLES)->orderBy('name')->pluck('name');
 
         $sort = request()->string('sort')->toString();
         $order = strtolower(request()->string('order')->toString()) === 'asc' ? 'asc' : 'desc';
-        $allowed = ['id', 'name', 'email', 'created_at'];
+        $allowed = ['id', 'name', 'email', 'role', 'is_active', 'created_at'];
         $sort = in_array($sort, $allowed, true) ? $sort : 'name';
 
         $users = User::with(['roles', 'student.currentEnrollment.schoolClass', 'teacher'])
@@ -73,7 +96,8 @@ class UserController extends Controller
                     ->orWhereHas('teacher', fn ($teacher) => $teacher
                         ->where('full_name', 'like', "%{$q}%")
                         ->orWhere('nip', 'like', "%{$q}%")
-                        ->orWhere('mata_pelajaran', 'like', "%{$q}%"));
+                        ->orWhere('mata_pelajaran', 'like', "%{$q}%")
+                        ->orWhere('jabatan', 'like', "%{$q}%"));
             }))
             ->when($type === 'guru', fn ($query) => $query->whereHas(
                 'roles',
@@ -90,11 +114,36 @@ class UserController extends Controller
             ->when($deletionRequested, fn ($query) => $query
                 ->where('is_active', true)
                 ->whereNotNull('deletion_requested_at'))
-            ->orderBy($sort, $order)
+            ->when($sort === 'role', fn ($query) => $query->orderBy(
+                Role::query()
+                    ->select('roles.name')
+                    ->join('model_has_roles', 'model_has_roles.role_id', '=', 'roles.id')
+                    ->whereColumn('model_has_roles.model_id', 'users.id')
+                    ->where('model_has_roles.model_type', User::class)
+                    ->orderBy('roles.name')
+                    ->limit(1),
+                $order,
+            ))
+            ->when($sort !== 'role', fn ($query) => $query->orderBy($sort, $order))
+            ->orderBy('users.id')
             ->paginate(20)
             ->withQueryString();
 
-        return view('users.index', compact('users', 'roles', 'type', 'jabatan', 'q', 'sort', 'order', 'deletionRequested', 'pendingDeletionCount'));
+        return view('users.index', compact(
+            'users',
+            'roles',
+            'type',
+            'jabatan',
+            'q',
+            'sort',
+            'order',
+            'deletionRequested',
+            'pendingDeletionCount',
+            'studentsWithoutAccounts',
+            'teachersWithoutAccounts',
+            'classes',
+            'gradeOptions',
+        ));
     }
 
     /**
@@ -156,6 +205,24 @@ class UserController extends Controller
             return $user;
         });
 
+        ActivityLog::record(
+            'user.create',
+            'Menambahkan pengguna '.$user->name,
+            [
+                'role' => $role,
+                'email' => $user->email,
+                'student_id' => $studentId,
+                'teacher_id' => $teacherId,
+                'accounts' => [[
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $role,
+                    'identity' => $studentId ? Student::whereKey($studentId)->value('nis') : Teacher::whereKey($teacherId)->value('nip'),
+                ]],
+            ],
+            $user,
+        );
+
         return redirect()->route('users.index')
             ->with('success', 'User '.$user->name.' berhasil dibuat.');
     }
@@ -196,7 +263,7 @@ class UserController extends Controller
     }
 
     /**
-     * Update account data, role, and optional student identity link.
+     * Update account data, profile photo, role, and optional student identity link.
      */
     public function update(Request $request, User $user)
     {
@@ -206,10 +273,29 @@ class UserController extends Controller
             'name' => 'sometimes|required|string|max:255',
             'email' => 'sometimes|required|email|unique:users,email,'.$user->id,
             'password' => 'nullable|string|min:8',
+            'nip' => 'nullable|string|max:40',
             'role' => 'sometimes|required|exists:roles,name',
             'student_id' => 'nullable|integer|exists:students,id',
             'teacher_id' => 'nullable|integer|exists:teachers,id',
+            'avatar' => 'nullable|image|mimes:png,jpg,jpeg,webp|max:15360',
+            'remove_avatar' => 'nullable|boolean',
+        ], [
+            'avatar.max' => 'Ukuran foto profil maksimal 15MB.',
+            'avatar.image' => 'Foto profil harus berupa gambar.',
+            'avatar.mimes' => 'Foto profil harus berformat PNG, JPG, JPEG, atau WEBP.',
         ]);
+
+        $avatar = $validated['avatar'] ?? null;
+        $removeAvatar = (bool) ($validated['remove_avatar'] ?? false);
+        unset($validated['avatar'], $validated['remove_avatar']);
+
+        if ($avatar instanceof UploadedFile) {
+            $validated['avatar_path'] = $avatar->store('avatars', 'public');
+        } elseif ($removeAvatar) {
+            $validated['avatar_path'] = null;
+        }
+
+        $oldAvatar = $user->avatar_path;
 
         $role = $validated['role'] ?? $user->roles->first()?->name;
         $studentId = array_key_exists('student_id', $validated)
@@ -221,8 +307,35 @@ class UserController extends Controller
         $this->validateStudentLink($role, $studentId, $user->id);
         $this->validateTeacherLink($role, $teacherId, $user->id);
 
+        $previousRole = $user->roles->first()?->name;
+        $changes = [];
+        if (array_key_exists('name', $validated) && $validated['name'] !== $user->name) {
+            $changes[] = 'nama';
+        }
+        if (array_key_exists('email', $validated) && $validated['email'] !== $user->email) {
+            $changes[] = 'email';
+        }
+        if (array_key_exists('nip', $validated) && $validated['nip'] !== $user->nip) {
+            $changes[] = 'NIP';
+        }
+        if (! empty($validated['password'])) {
+            $changes[] = 'password';
+        }
+        if (array_key_exists('avatar_path', $validated)) {
+            $changes[] = 'foto profil';
+        }
+        if ($role !== $previousRole) {
+            $changes[] = 'role';
+        }
+        if ($studentId !== $user->student?->id) {
+            $changes[] = 'identitas siswa';
+        }
+        if ($teacherId !== $user->teacher?->id) {
+            $changes[] = 'identitas guru';
+        }
+
         DB::transaction(function () use ($validated, $user, $role, $studentId, $teacherId) {
-            $userData = collect($validated)->only(['name', 'email', 'password'])->all();
+            $userData = collect($validated)->only(['name', 'email', 'password', 'nip', 'avatar_path'])->all();
             if (isset($userData['password'])) {
                 $userData['password'] = Hash::make($userData['password']);
             }
@@ -238,10 +351,35 @@ class UserController extends Controller
             if ($teacherId !== null) {
                 Teacher::whereKey($teacherId)->update(['user_id' => $user->id]);
             }
+
+            if (array_key_exists('avatar_path', $userData)) {
+                // Foto akun dipakai bersama oleh data siswa/guru yang tertaut.
+                Student::where('user_id', $user->id)->update(['avatar_path' => $userData['avatar_path']]);
+                Teacher::where('user_id', $user->id)->update(['avatar_path' => $userData['avatar_path']]);
+            }
         });
 
-        return redirect()->route('users.index')
-            ->with('success', 'User '.$user->name.' berhasil diperbarui.');
+        if (array_key_exists('avatar_path', $validated)
+            && $oldAvatar
+            && $oldAvatar !== $validated['avatar_path']
+            && Storage::disk('public')->exists($oldAvatar)) {
+            Storage::disk('public')->delete($oldAvatar);
+        }
+
+        ActivityLog::record(
+            'user.update',
+            'Memperbarui pengguna '.$user->name.($changes !== [] ? ' ('.implode(', ', $changes).')' : ''),
+            [
+                'changes' => $changes,
+                'role' => $role,
+                'password_changed' => ! empty($validated['password']),
+                'avatar_changed' => array_key_exists('avatar_path', $validated),
+            ],
+            $user,
+        );
+
+        return redirect()->route('users.edit', $user)
+            ->with('success', 'Data pengguna '.$user->name.' berhasil diperbarui.');
     }
 
     /**
@@ -257,6 +395,13 @@ class UserController extends Controller
         }
 
         $this->deactivateAccount($user, request()->user());
+
+        ActivityLog::record(
+            'user.deactivate',
+            'Menonaktifkan akun '.$user->name,
+            ['email' => $user->email],
+            $user,
+        );
 
         return redirect()->route('users.index')
             ->with('success', 'Akun dinonaktifkan. Data dan identitas siswa tetap tersimpan.');
@@ -313,6 +458,445 @@ class UserController extends Controller
 
         return redirect()->route('users.index')
             ->with('success', 'Permintaan penghapusan akun ditolak.');
+    }
+
+    // ────────────────────────────────────────────────
+    // Generate akun otomatis (siswa / guru)
+    // ────────────────────────────────────────────────
+
+    /**
+     * Buat akun untuk siswa / guru aktif yang belum punya akun.
+     *
+     * Email dibuat dari NIS (siswa) atau NIP (guru); bila kosong memakai ID.
+     * Password dibuat acak dan hanya dikembalikan sekali lewat session flash —
+     * tidak pernah disimpan dalam bentuk teks biasa.
+     */
+    public function generateAccounts(Request $request): RedirectResponse
+    {
+        $this->authorizeManagement();
+
+        // Generate ratusan akun = ratusan kali hashing password. Naikkan batas waktu
+        // request agar tidak fatal error 30 detik (PHP default).
+        set_time_limit(300);
+
+        $validated = $request->validate([
+            'type' => ['required', 'in:siswa,guru'],
+        ]);
+
+        $type = $validated['type'];
+        $roleName = $type === 'siswa' ? 'siswa' : 'guru';
+        $generated = [];
+
+        // Hashing password adalah biaya terbesar saat generate massal; helper
+        // hashForBulkAccount() memakai cost lebih ringan (lihat catatan di sana).
+        DB::transaction(function () use ($type, $roleName, &$generated) {
+            if ($type === 'siswa') {
+                $students = Student::whereNull('user_id')
+                    ->where('status', 'active')
+                    ->with('currentEnrollment.schoolClass')
+                    ->orderBy('full_name')
+                    ->get();
+
+                foreach ($students as $student) {
+                    $password = $this->makeSimplePassword();
+                    $email = $this->makeAutoEmail($student->nis ?: 'S'.$student->id);
+
+                    $user = User::create([
+                        'name' => $student->full_name,
+                        'email' => $email,
+                        'password' => $this->hashForBulkAccount($password),
+                    ]);
+                    $user->syncRoles([$roleName]);
+                    $student->update(['user_id' => $user->id]);
+
+                    $generated[] = [
+                        'name' => $student->full_name,
+                        'class_name' => $student->currentEnrollment?->schoolClass?->name ?? '',
+                        'email' => $email,
+                        'password' => $password,
+                        'role' => $roleName,
+                        'identity' => $student->nis,
+                    ];
+                }
+
+                return;
+            }
+
+            $teachers = Teacher::whereNull('user_id')
+                ->where('status', 'active')
+                ->orderBy('full_name')
+                ->get();
+
+            foreach ($teachers as $teacher) {
+                $password = $this->makeSimplePassword();
+
+                // Email guru memakai nama (tanpa gelar setelah koma), huruf kecil.
+                // Bila nama bentrok, makeAutoEmail menambahkan akhiran .2, .3, dst.
+                $email = $this->makeAutoEmail(Str::before($teacher->full_name, ','));
+
+                // Jabatan struktural tertentu otomatis memakai role yang sesuai;
+                // sisanya tetap guru dan bisa diubah manual di halaman pengguna.
+                $teacherRole = $this->resolveTeacherRole($teacher);
+
+                $user = User::create([
+                    'name' => $teacher->full_name,
+                    'email' => $email,
+                    'password' => $this->hashForBulkAccount($password),
+                    'nip' => $teacher->nip,
+                ]);
+                $user->syncRoles([$teacherRole]);
+                $teacher->update(['user_id' => $user->id]);
+
+                $generated[] = [
+                    'name' => $teacher->full_name,
+                    'class_name' => '',
+                    'email' => $email,
+                    'password' => $password,
+                    'role' => $teacherRole,
+                    'identity' => $teacher->nip ?: '-',
+                ];
+            }
+        });
+
+        if ($generated === []) {
+            return redirect()->route('users.index')
+                ->with('error', 'Tidak ada data '.$type.' aktif yang belum memiliki akun.');
+        }
+
+        ActivityLog::record(
+            'user.generate',
+            count($generated).' akun '.$type.' berhasil dibuat otomatis',
+            [
+                'type' => $type,
+                'total' => count($generated),
+                // Password sengaja tidak pernah dicatat di log.
+                'accounts' => array_map(fn ($account) => [
+                    'name' => $account['name'],
+                    'email' => $account['email'],
+                    'role' => $account['role'],
+                    'identity' => $account['identity'],
+                ], $generated),
+            ],
+        );
+
+        // Simpan juga di sesi (bukan flash) supaya tombol Unduh CSV tetap bekerja
+        // setelah halaman redirect tampil, dan daftar bisa diunduh ulang selama sesi.
+        session()->put('generated_credentials', $generated);
+        session()->put('generated_credentials_label', 'semua '.$type);
+
+        return redirect()->route('users.index')
+            ->with('success', count($generated).' akun '.$type.' berhasil dibuat otomatis. Simpan atau unduh daftar password sekarang — password hanya ditampilkan sekali.')
+            ->with('generated_accounts', $generated);
+    }
+
+    /**
+     * Reset password massal: semua akun, per kelas, atau per angkatan.
+     *
+     * Password baru dibuat acak, ditampilkan sekali lewat session flash, dan
+     * tidak pernah disimpan dalam bentuk teks biasa maupun ditulis ke log.
+     */
+    public function resetPasswords(Request $request): RedirectResponse
+    {
+        $this->authorizeManagement();
+
+        // Hashing per akun — beri waktu lebih untuk rombel/tingkatan besar.
+        set_time_limit(300);
+
+        $validated = $request->validate([
+            'type' => ['required', 'in:siswa,guru,all'],
+            'scope' => ['required', 'in:all,class,grade'],
+            'class_id' => ['nullable', 'required_if:scope,class', 'integer', 'exists:classes,id'],
+            'grade_level' => ['nullable', 'required_if:scope,grade', 'in:VII,VIII,IX'],
+        ], [
+            'class_id.required_if' => 'Pilih kelas yang akan direset passwordnya.',
+            'grade_level.required_if' => 'Pilih tingkatan yang akan direset passwordnya.',
+        ]);
+
+        $type = $validated['type'];
+        $scope = $validated['scope'];
+
+        // Kelas/tingkatan hanya bermakna untuk akun siswa; tipe guru maupun
+        // "semua pengguna" selalu mencakup semua akun aktif.
+        if ($type !== 'siswa') {
+            $scope = 'all';
+        }
+
+        $query = User::query()
+            ->where('is_active', true)
+            ->when($type !== 'all', fn ($query) => $query->whereHas(
+                'roles',
+                fn ($role) => $role->where('name', $type),
+            ))
+            // Akun yang sedang dipakai tidak ikut direset agar admin tidak
+            // terkunci dari akunnya sendiri.
+            ->when($type === 'all', fn ($query) => $query->whereKeyNot($request->user()->getKey()))
+            ->with([
+                'roles:id,name',
+                'student:id,user_id,nis',
+                'student.currentEnrollment.schoolClass',
+                'teacher:id,user_id,nip',
+            ]);
+
+        if ($scope === 'class') {
+            $query->whereHas('student.enrollments', fn ($enrollment) => $enrollment
+                ->where('class_id', (int) $validated['class_id'])
+                ->where('status', 'active'));
+        } elseif ($scope === 'grade') {
+            $query->whereHas('student.currentEnrollment.schoolClass', fn ($class) => $class
+                ->where('grade_level', $validated['grade_level']));
+        }
+
+        $users = $query->orderBy('name')->get();
+
+        $className = $scope === 'class'
+            ? (SchoolClass::whereKey($validated['class_id'])->value('name') ?? '-')
+            : null;
+
+        // Label ringkas untuk pesan & log aktivitas.
+        $targetLabel = $type === 'all' ? 'semua pengguna' : 'akun '.$type;
+
+        $scopeLabel = match ($scope) {
+            'class' => 'kelas '.$className,
+            'grade' => 'tingkatan '.$validated['grade_level'],
+            default => $type === 'all' ? 'semua pengguna' : 'semua akun '.$type,
+        };
+
+        // Label untuk judul berkas CSV (mis. "password XI A").
+        $csvLabel = match ($scope) {
+            'class' => $className,
+            'grade' => 'tingkatan '.$validated['grade_level'],
+            default => $type === 'all' ? 'semua pengguna' : 'semua '.$type,
+        };
+
+        if ($users->isEmpty()) {
+            return redirect()->route('users.index')
+                ->with('error', 'Tidak ada '.$targetLabel.' aktif pada '.$scopeLabel.' yang bisa direset.');
+        }
+
+        $generated = [];
+
+        DB::transaction(function () use ($users, $type, &$generated) {
+            foreach ($users as $user) {
+                $password = $this->makeSimplePassword();
+                $user->forceFill(['password' => $this->hashForBulkAccount($password)])->save();
+                // Password baru membatalkan sesi API lama.
+                $user->tokens()->delete();
+
+                $generated[] = [
+                    'name' => $user->name,
+                    'class_name' => $user->student?->currentEnrollment?->schoolClass?->name ?? '',
+                    'email' => $user->email,
+                    'password' => $password,
+                    // Untuk "semua pengguna" tampilkan role asli tiap akun.
+                    'role' => $type === 'all' ? ($user->roles->first()?->name ?? '-') : $type,
+                    'identity' => $user->student?->nis ?: ($user->nip ?: '-'),
+                ];
+            }
+        });
+
+        ActivityLog::record(
+            'user.password_reset',
+            'Reset password '.count($generated).' '.$targetLabel.' ('.$scopeLabel.')',
+            [
+                'type' => $type,
+                'scope' => $scope,
+                'scope_label' => $scopeLabel,
+                'total' => count($generated),
+                'accounts' => array_map(fn ($account) => [
+                    'name' => $account['name'],
+                    'email' => $account['email'],
+                    'role' => $account['role'],
+                    'identity' => $account['identity'],
+                ], $generated),
+            ],
+        );
+
+        // Simpan di sesi agar tombol Unduh CSV tetap berfungsi setelah redirect.
+        session()->put('generated_credentials', $generated);
+        session()->put('generated_credentials_label', $csvLabel);
+
+        return redirect()->route('users.index')
+            ->with('success', count($generated).' password '.$targetLabel.' ('.$scopeLabel.') berhasil direset. Salin atau unduh sekarang — password hanya ditampilkan sekali.')
+            ->with('generated_accounts', $generated);
+    }
+
+    /** Reset password satu akun. */
+    public function resetPassword(User $user): RedirectResponse
+    {
+        $this->authorizeManagement();
+
+        if ($user->is(request()->user())) {
+            return back()->with('error', 'Password akun sendiri tidak dapat direset dari halaman ini. Gunakan menu Profil Saya.');
+        }
+
+        $password = $this->makeSimplePassword();
+        $user->forceFill(['password' => $this->hashForBulkAccount($password)])->save();
+        $user->tokens()->delete();
+
+        $user->loadMissing('student.currentEnrollment.schoolClass');
+
+        ActivityLog::record(
+            'user.password_reset',
+            'Reset password akun '.$user->name,
+            [
+                'total' => 1,
+                'accounts' => [[
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->roles->first()?->name,
+                    'identity' => $user->student?->nis ?: ($user->nip ?: '-'),
+                ]],
+            ],
+            $user,
+        );
+
+        $credentials = [[
+            'name' => $user->name,
+            'class_name' => $user->student?->currentEnrollment?->schoolClass?->name ?? '',
+            'email' => $user->email,
+            'password' => $password,
+            'role' => $user->roles->first()?->name ?? '-',
+            'identity' => $user->student?->nis ?: ($user->nip ?: '-'),
+        ]];
+
+        session()->put('generated_credentials', $credentials);
+        session()->put('generated_credentials_label', $user->name);
+
+        return redirect()->route('users.index')
+            ->with('success', 'Password '.$user->name.' berhasil direset. Salin sekarang — password hanya ditampilkan sekali.')
+            ->with('generated_accounts', $credentials);
+    }
+
+    /** Hapus daftar kredensial dari sesi (password tidak bisa dipulihkan lagi). */
+    public function clearGeneratedAccounts(): RedirectResponse
+    {
+        $this->authorizeManagement();
+
+        session()->forget(['generated_accounts', 'generated_credentials', 'generated_credentials_label']);
+
+        return redirect()->route('users.index')
+            ->with('success', 'Daftar kredensial dihapus dari sesi ini.');
+    }
+
+    /** Unduh kredensial akun yang baru dibuat / direset sebagai CSV. */
+    public function downloadGeneratedAccounts(Request $request)
+    {
+        $this->authorizeManagement();
+
+        // Baca dari sesi (bukan flash) agar unduhan tetap bekerja setelah halaman
+        // redirect tampil, dan bisa diunduh ulang selama sesi masih aktif.
+        $accounts = $request->session()->get(
+            'generated_credentials',
+            $request->session()->get('generated_accounts', []),
+        );
+
+        if ($accounts === []) {
+            return redirect()->route('users.index')
+                ->with('error', 'Tidak ada daftar akun baru untuk diunduh. Generate atau reset password dulu.');
+        }
+
+        // Judul berkas mengikuti cakupan reset, mis. "password XI A.csv".
+        $label = (string) $request->session()->get('generated_credentials_label', 'akun-baru');
+        $label = trim(str_replace(['\\', '/', ':', '*', '?', '"', '<', '>', '|'], '-', $label)) ?: 'akun-baru';
+        $filename = 'password '.$label.'.csv';
+
+        return response()->streamDownload(function () use ($accounts) {
+            $out = fopen('php://output', 'w');
+            fprintf($out, chr(0xEF).chr(0xBB).chr(0xBF));
+            fputcsv($out, ['Nama', 'Kelas', 'Email', 'Password']);
+
+            foreach ($accounts as $account) {
+                fputcsv($out, [
+                    $account['name'],
+                    $account['class_name'] ?? '',
+                    $account['email'],
+                    $account['password'],
+                ]);
+            }
+
+            fclose($out);
+        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    /**
+     * Role akun dari jabatan guru.
+     *
+     * Hanya jabatan struktural yang dipetakan otomatis: Kepala Sekolah,
+     * Kesiswaan, dan BK/bimbingan konseling. Jabatan lain (Wks. Kurikulum,
+     * Pembina OSIS, dst.) tetap guru. Untuk data lama, kolom jabatan bisa
+     * masih kosong sehingga mata pelajaran dipakai sebagai cadangan.
+     */
+    private function resolveTeacherRole(Teacher $teacher): string
+    {
+        $position = mb_strtolower(trim((string) ($teacher->jabatan ?: $teacher->mata_pelajaran)));
+
+        return match (true) {
+            str_contains($position, 'kepala sekolah') => 'kepala_sekolah',
+            str_contains($position, 'kesiswaan') => 'kesiswaan',
+            (bool) preg_match('/\b(bk|bimbingan)\b/', $position) => 'bk',
+            default => 'guru',
+        };
+    }
+
+    /**
+     * Email unik untuk akun otomatis.
+     *
+     * Siswa memakai NIS langsung (mis. 24257001@smpbn666.sch.id), guru memakai
+     * nama tanpa gelar (mis. budisantoso@smpbn666.sch.id). Hanya huruf/angka
+     * yang dipakai, lalu diberi akhiran angka bila sudah terpakai (termasuk
+     * akun yang sudah di-soft-delete).
+     */
+    private function makeAutoEmail(string $identifier): string
+    {
+        $local = Str::lower(preg_replace('/[^A-Za-z0-9]+/', '', $identifier));
+        $local = $local !== '' ? $local : Str::lower(Str::random(8));
+        $base = $local.'@'.self::AUTO_EMAIL_DOMAIN;
+
+        $email = $base;
+        $suffix = 2;
+
+        while (User::withTrashed()->where('email', $email)->exists()) {
+            $email = $local.'.'.$suffix.'@'.self::AUTO_EMAIL_DOMAIN;
+            $suffix++;
+        }
+
+        return $email;
+    }
+
+    /**
+     * Password sederhana untuk akun siswa/guru: 6 digit angka.
+     *
+     * Sengaja tanpa huruf/simbol agar mudah dibacakan di kelas. Tidak diawali
+     * angka 0 supaya tidak terbaca sebagai angka lain saat disalin ke Excel.
+     */
+    private function makeSimplePassword(): string
+    {
+        return (string) random_int(100000, 999999);
+    }
+
+    /**
+     * Hash password untuk pembuatan akun massal (generate / import).
+     *
+     * Bcrypt default (cost 12) butuh ratusan milidetik per akun, sehingga 150+ akun
+     * bisa melewati batas waktu request. Cost diturunkan sementara ke 8: password
+     * hasil generate acak dan hanya tampil sekali, dan Laravel otomatis melakukan
+     * rehash ke cost normal saat pengguna login pertama (hashing.rehash_on_login).
+     * Cost tidak pernah dinaikkan di atas konfigurasi (mis. saat test memakai cost 4).
+     */
+    private function hashForBulkAccount(string $password): string
+    {
+        if (config('hashing.driver', 'bcrypt') !== 'bcrypt') {
+            return Hash::make($password);
+        }
+
+        $originalRounds = (int) config('hashing.bcrypt.rounds', 12);
+        Hash::setRounds(min($originalRounds, 8));
+
+        try {
+            return Hash::make($password);
+        } finally {
+            Hash::setRounds($originalRounds);
+        }
     }
 
     // ────────────────────────────────────────────────
@@ -394,17 +978,24 @@ class UserController extends Controller
     {
         $this->authorizeManagement();
 
+        // Import massal juga melakukan hashing per akun — beri waktu lebih.
+        set_time_limit(300);
+
         $request->validate([
             'file' => 'required|file|max:4096',
         ]);
 
         $file = $request->file('file');
+        $fileName = $file->getClientOriginalName();
         $ext = strtolower($file->getClientOriginalExtension());
         $allowed = ['csv', 'txt', 'xlsx'];
 
         if (! in_array($ext, $allowed, true)) {
-            return back()->with('error', 'Format tidak didukung: .'.($ext ?: '(tanpa ekstensi)')
-                .' — gunakan berkas .csv, .txt, atau .xlsx.');
+            $message = 'Format tidak didukung: .'.($ext ?: '(tanpa ekstensi)')
+                .' — gunakan berkas .csv, .txt, atau .xlsx.';
+            $this->logImportFailure($message, $fileName);
+
+            return back()->with('error', $message);
         }
 
         try {
@@ -412,10 +1003,14 @@ class UserController extends Controller
                 ? Xlsx::read($file->getRealPath())
                 : $this->readDelimitedRows(file_get_contents($file->getRealPath()));
         } catch (\Throwable $e) {
+            $this->logImportFailure('Gagal membaca berkas: '.$e->getMessage(), $fileName);
+
             return back()->with('error', 'Gagal membaca berkas: '.$e->getMessage());
         }
 
         if ($rows === []) {
+            $this->logImportFailure('Berkas kosong — tidak ada baris untuk diimpor.', $fileName);
+
             return back()->with('error', 'Berkas kosong — tidak ada baris untuk diimpor.');
         }
 
@@ -433,16 +1028,19 @@ class UserController extends Controller
             $missing = array_filter(['Nama', 'Email', 'Password', 'Role'],
                 fn ($want) => array_search(mb_strtolower($want), $header, true) === false);
 
-            return back()->with('error',
-                'Header tidak valid. Ditemukan: ['.($seen ? implode(', ', $seen) : 'tidak ada kolom terbaca').']'
+            $message = 'Header tidak valid. Ditemukan: ['.($seen ? implode(', ', $seen) : 'tidak ada kolom terbaca').']'
                 .'. Kolom wajib yang belum ada: ['.implode(', ', $missing).'].'
-                .' Pemisah kolom harus koma (,) atau titik koma (;).');
+                .' Pemisah kolom harus koma (,) atau titik koma (;).';
+            $this->logImportFailure($message, $fileName);
+
+            return back()->with('error', $message);
         }
 
         $validRoles = Role::pluck('name')->all();
         $imported = 0;
         $skipped = 0;
         $issues = [];
+        $createdAccounts = [];
 
         DB::beginTransaction();
         try {
@@ -486,14 +1084,21 @@ class UserController extends Controller
                 $user = User::create([
                     'name' => $name,
                     'email' => $email,
-                    'password' => Hash::make($password),
+                    'password' => $this->hashForBulkAccount($password),
                 ]);
                 $user->syncRoles([$role]);
                 $imported++;
+                $createdAccounts[] = [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $role,
+                    'identity' => '-',
+                ];
             }
             DB::commit();
         } catch (\Throwable $e) {
             DB::rollBack();
+            $this->logImportFailure('Import gagal: '.$e->getMessage(), $fileName);
 
             return back()->with('error', 'Import gagal: '.$e->getMessage());
         }
@@ -506,7 +1111,31 @@ class UserController extends Controller
             }
         }
 
+        ActivityLog::record(
+            'user.import',
+            "Import pengguna: {$imported} ditambahkan, {$skipped} dilewati ({$fileName})",
+            [
+                'status' => 'ok',
+                'file' => $fileName,
+                'imported' => $imported,
+                'skipped' => $skipped,
+                'issues_total' => count($issues),
+                'issues' => array_slice($issues, 0, 500),
+                'accounts' => array_slice($createdAccounts, 0, 500),
+            ],
+        );
+
         return back()->with($imported > 0 ? 'success' : 'error', $msg);
+    }
+
+    /** Catat percobaan import yang gagal total agar bisa ditelusuri admin. */
+    private function logImportFailure(string $message, ?string $fileName = null): void
+    {
+        ActivityLog::record('user.import', 'Import pengguna gagal: '.$message, [
+            'status' => 'failed',
+            'file' => $fileName,
+            'reason' => $message,
+        ]);
     }
 
     /**

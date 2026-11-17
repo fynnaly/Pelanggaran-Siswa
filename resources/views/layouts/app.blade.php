@@ -207,18 +207,18 @@
         @include('layouts.sidebar')
 
         {{-- Main content container --}}
-        <div class="main-content-layout flex-1 min-w-0 transition-[margin-left] duration-200 ease-in-out">
+        <div class="main-content-layout flex-1 min-w-0 max-w-full overflow-x-clip transition-[margin-left] duration-200 ease-in-out">
             <!-- app header start -->
             @include('layouts.app-header')
             <!-- app header end -->
 
             @isset($header)
-                <div class="px-4 pt-6 mx-auto max-w-(--breakpoint-2xl) md:px-6">
+                <div class="px-4 pt-6 mx-auto max-w-(--breakpoint-2xl) md:px-6 w-full min-w-0 max-w-full">
                     {{ $header }}
                 </div>
             @endisset
 
-            <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
+            <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6 w-full min-w-0 max-w-full">
                 @if (isset($slot) && trim($slot) !== '')
                     {{ $slot }}
                 @else

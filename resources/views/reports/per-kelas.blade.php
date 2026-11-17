@@ -28,7 +28,7 @@
         <div class="print-only" style="display:none;margin-bottom:16px">
             <div style="text-align:center;border-bottom:2px solid #000;padding-bottom:8px">
                 <h2 style="font-size:16px;font-weight:800;margin:0;text-transform:uppercase">LAPORAN PELANGGARAN PER KELAS</h2>
-                <div style="font-size:12px;font-weight:700">{{ \App\Models\Setting::get('school_name', 'SMK Baktinusantara 666') }}</div>
+                <div style="font-size:12px;font-weight:700">{{ \App\Models\Setting::get('school_name', 'SMP Baktinusantara 666') }}</div>
                 <div style="font-size:11px;color:#475569">
                     {{ $filters['year'] ? 'Tahun Ajaran: '.$years->firstWhere('id', $filters['year'])?->name : 'Semua Tahun Ajaran' }}
                     @if($filters['from'] || $filters['to'])
@@ -40,35 +40,35 @@
         </div>
 
         <div class="toolbar no-print">
-            <form method="GET" action="{{ route('laporan.per-kelas') }}" style="display:flex;gap:var(--sp-sm);flex-wrap:wrap;align-items:center;width:100%">
-                <select name="year" class="input" style="width:auto;min-width:150px" onchange="this.form.submit()">
+            <form method="GET" action="{{ route('laporan.per-kelas') }}" style="display:flex;gap:var(--sp-sm);flex-wrap:wrap;align-items:center;width:100%;min-width:0">
+                <select name="year" class="input" style="width:auto;min-width:140px;max-width:100%" onchange="this.form.submit()">
                     <option value="">Semua Tahun Ajaran</option>
                     @foreach($years as $y)
                         <option value="{{ $y->id }}" {{ (string) $filters['year'] === (string) $y->id ? 'selected' : '' }}>{{ $y->name }}</option>
                     @endforeach
                 </select>
                 <span class="text-muted text-sm" style="white-space:nowrap">Tanggal <strong>mulai</strong></span>
-                <input type="date" name="from" class="input" style="width:auto" value="{{ $filters['from'] }}" title="Tanggal mulai (kasus pada tanggal ini ikut dihitung)" onchange="this.form.submit()">
+                <input type="date" name="from" class="input" style="width:auto;max-width:100%;min-width:0" value="{{ $filters['from'] }}" title="Tanggal mulai (kasus pada tanggal ini ikut dihitung)" onchange="this.form.submit()">
                 <span class="text-muted text-sm" style="white-space:nowrap">s/d <strong>selesai</strong></span>
-                <input type="date" name="to" class="input" style="width:auto" value="{{ $filters['to'] }}" title="Tanggal selesai (kasus pada tanggal ini ikut dihitung)" onchange="this.form.submit()">
+                <input type="date" name="to" class="input" style="width:auto;max-width:100%;min-width:0" value="{{ $filters['to'] }}" title="Tanggal selesai (kasus pada tanggal ini ikut dihitung)" onchange="this.form.submit()">
                 <a href="{{ route('laporan.per-kelas') }}" class="btn btn-secondary btn-sm">Reset</a>
             </form>
         </div>
 
-        <p class="text-sm text-muted" style="margin:0 0 var(--sp-md);display:flex;align-items:center;gap:6px">
+        <p class="text-sm text-muted" style="margin:0 0 var(--sp-md);display:flex;align-items:center;gap:6px;flex-wrap:wrap">
             <i data-lucide="calendar" class="icon-sm"></i> Periode: <strong style="color:var(--on-surface)">{{ $periodLabel }}</strong> · Kasus dihitung dari tanggal kejadian (fallback: tanggal dicatat)
         </p>
 
-        <div style="display:flex;gap:var(--sp-md);flex-wrap:wrap;margin-bottom:var(--sp-md)">
-            <div class="card" style="flex:1;min-width:200px;margin:0">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="card" style="margin:0">
                 <div class="text-sm text-muted">Total Kasus Pelanggaran</div>
                 <div class="mono" style="font-size:1.5rem;font-weight:700">{{ number_format($totalKasus) }}</div>
             </div>
-            <div class="card" style="flex:1;min-width:200px;margin:0">
+            <div class="card" style="margin:0">
                 <div class="text-sm text-muted">Total Prestasi</div>
                 <div class="mono" style="font-size:1.5rem;font-weight:700;color:var(--success)">{{ number_format($totalPrestasi) }}</div>
             </div>
-            <div class="card" style="flex:2;min-width:280px;margin:0">
+            <div class="card sm:col-span-2" style="margin:0">
                 <div class="text-sm text-muted">Kelas Paling Sering Melanggar</div>
                 @if($worstRow)
                     <div style="font-size:1.125rem;font-weight:700;color:var(--danger)">{{ $worstRow['class']->name }}
@@ -167,8 +167,11 @@
     <style>
         /* Kontainer table-based: kepala di <thead> sehingga berulang otomatis saat terpotong halaman */
         .report-box {
-            width:100%; background:#ffffff; border:1px solid #e5e7eb; border-radius:10px;
+            width:100%; max-width:100%; background:#ffffff; border:1px solid #e5e7eb; border-radius:10px;
             border-collapse:separate; border-spacing:0; margin-bottom:var(--sp-lg);
+            /* Kolom tunggal 100%: tanpa ini tabel luar melebar mengikuti tabel
+               dalam dan membuat seluruh halaman bisa digeser di ponsel. */
+            table-layout: fixed;
         }
         .report-box > thead > tr > td, .report-box > tbody > tr > td {
             padding:0; border:none; background:transparent;
@@ -176,7 +179,11 @@
         .report-box-head {
             padding:var(--sp-sm) var(--sp-md); background:#f3f4f6; border-bottom:1px solid #e5e7eb;
         }
-        .report-box-cell { padding:var(--sp-md); }
+        .report-box-cell {
+            padding:var(--sp-md);
+            max-width: 100%;
+            overflow: hidden;
+        }
 
         @media print {
             .no-print, .app-header, aside, .sidebar, .sidebar-mobile, .sidebar-overlay, .mobile-topbar { display: none !important; }

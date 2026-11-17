@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Teacher;
 use App\Models\User;
 use App\Support\Xlsx;
@@ -16,7 +17,7 @@ class TeacherController extends Controller
     private const STAFF_ROLES = ['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'];
 
     /** Role akun yang boleh ditautkan ke data guru. */
-    private const TEACHER_ROLES = ['guru', 'wali_kelas'];
+    private const TEACHER_ROLES = ['guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'];
 
     private function authorizeStaff(): void
     {
@@ -45,7 +46,7 @@ class TeacherController extends Controller
         $status = $request->query('status');
         $sort = $request->string('sort')->toString();
         $order = strtolower($request->string('order')->toString()) === 'asc' ? 'asc' : 'desc';
-        $allowed = ['id', 'nip', 'full_name', 'mata_pelajaran', 'status', 'created_at'];
+        $allowed = ['id', 'nip', 'full_name', 'gender', 'mata_pelajaran', 'jabatan', 'status', 'created_at'];
         $sort = in_array($sort, $allowed, true) ? $sort : 'full_name';
 
         $teachers = Teacher::with('user')
@@ -53,6 +54,7 @@ class TeacherController extends Controller
                 $where->where('full_name', 'like', "%{$q}%")
                     ->orWhere('nip', 'like', "%{$q}%")
                     ->orWhere('mata_pelajaran', 'like', "%{$q}%")
+                    ->orWhere('jabatan', 'like', "%{$q}%")
                     ->orWhereHas('user', fn ($user) => $user
                         ->where('email', 'like', "%{$q}%")
                         ->orWhere('name', 'like', "%{$q}%"));
@@ -81,8 +83,10 @@ class TeacherController extends Controller
 
         $validated = $request->validate([
             'full_name' => ['required', 'string', 'max:255'],
+            'gender' => ['nullable', 'in:L,P'],
             'nip' => ['nullable', 'string', 'max:40', 'unique:teachers,nip'],
             'mata_pelajaran' => ['nullable', 'string', 'max:150'],
+            'jabatan' => ['nullable', 'string', 'max:150'],
             'phone' => ['nullable', 'string', 'max:20'],
             'status' => ['nullable', 'in:active,inactive'],
             'user_id' => ['nullable', 'integer', 'exists:users,id', 'unique:teachers,user_id'],
@@ -113,8 +117,10 @@ class TeacherController extends Controller
 
         $validated = $request->validate([
             'full_name' => ['required', 'string', 'max:255'],
+            'gender' => ['nullable', 'in:L,P'],
             'nip' => ['nullable', 'string', 'max:40', Rule::unique('teachers', 'nip')->ignore($teacher->id)],
             'mata_pelajaran' => ['nullable', 'string', 'max:150'],
+            'jabatan' => ['nullable', 'string', 'max:150'],
             'phone' => ['nullable', 'string', 'max:20'],
             'status' => ['nullable', 'in:active,inactive'],
             'user_id' => ['nullable', 'integer', 'exists:users,id', Rule::unique('teachers', 'user_id')->ignore($teacher->id)],
@@ -153,8 +159,8 @@ class TeacherController extends Controller
         $this->authorizeManagement();
 
         $rows = [
-            ['NIP', 'Nama Lengkap', 'Mata Pelajaran', 'Telepon', 'Status'],
-            ['198501012010011001', 'Budi Santoso', 'Matematika', '08123456789', 'active'],
+            ['NIP (opsional)', 'Nama Lengkap', 'L/P', 'Mata Pelajaran', 'Jabatan', 'Telepon', 'Status'],
+            ['', 'Budi Santoso', 'L', 'Matematika', 'Guru', '08123456789', 'active'],
         ];
 
         $path = Xlsx::write($rows, 'template-guru', true);
@@ -175,14 +181,16 @@ class TeacherController extends Controller
             ->get();
 
         $rows = [
-            ['NIP', 'Nama Lengkap', 'Mata Pelajaran', 'Telepon', 'Email Akun', 'Status'],
+            ['NIP', 'Nama Lengkap', 'L/P', 'Mata Pelajaran', 'Jabatan', 'Telepon', 'Email Akun', 'Status'],
         ];
 
         foreach ($teachers as $teacher) {
             $rows[] = [
                 $teacher->nip ?? '',
                 $teacher->full_name,
+                $teacher->gender ?? '',
                 $teacher->mata_pelajaran ?? '',
+                $teacher->jabatan ?? '',
                 $teacher->phone ?? '',
                 $teacher->user?->email ?? '',
                 $teacher->status,
@@ -198,9 +206,12 @@ class TeacherController extends Controller
     }
 
     /**
-     * Import guru dari CSV/XLSX. Wajib: Nama Lengkap.
-     * Opsional: NIP (unik), Mata Pelajaran, Telepon, Status.
-     * NIP yang sudah ada → baris dilewati (idempoten).
+     * Import guru dari CSV/XLSX.
+     * Wajib: Nama Lengkap (alias: NAMA).
+     * Opsional: NIP (unik, boleh kosong/tanpa kolom), L/P, Mata Pelajaran,
+     * Jabatan, Telepon, Status.
+     * NIP yang sudah ada → baris dilewati (idempoten). Baris tanpa NIP yang
+     * namanya sama dengan guru yang sudah ada → memperbarui data guru tersebut.
      */
     public function import(Request $request)
     {
@@ -211,11 +222,15 @@ class TeacherController extends Controller
         ]);
 
         $file = $request->file('file');
+        $fileName = $file->getClientOriginalName();
         $ext = strtolower($file->getClientOriginalExtension());
 
         if (! in_array($ext, ['csv', 'txt', 'xlsx'], true)) {
-            return back()->with('error', 'Format tidak didukung: .'.($ext ?: '(tanpa ekstensi)')
-                .' — gunakan berkas .csv, .txt, atau .xlsx.');
+            $message = 'Format tidak didukung: .'.($ext ?: '(tanpa ekstensi)')
+                .' — gunakan berkas .csv, .txt, atau .xlsx.';
+            $this->logImportFailure($message, $fileName);
+
+            return back()->with('error', $message);
         }
 
         try {
@@ -223,10 +238,14 @@ class TeacherController extends Controller
                 ? Xlsx::read($file->getRealPath())
                 : $this->readDelimitedRows(file_get_contents($file->getRealPath()));
         } catch (\Throwable $e) {
+            $this->logImportFailure('Gagal membaca berkas: '.$e->getMessage(), $fileName);
+
             return back()->with('error', 'Gagal membaca berkas: '.$e->getMessage());
         }
 
         if ($rows === []) {
+            $this->logImportFailure('Berkas kosong — tidak ada baris untuk diimpor.', $fileName);
+
             return back()->with('error', 'Berkas kosong — tidak ada baris untuk diimpor.');
         }
 
@@ -236,21 +255,59 @@ class TeacherController extends Controller
 
         $iNama = $idx('nama lengkap') !== false ? $idx('nama lengkap') : $idx('nama');
         $iNip = $idx('nip');
+        if ($iNip === false) {
+            $iNip = $idx('nip (opsional)');
+        }
+        if ($iNip === false) {
+            $iNip = $idx('nip/ nuptk');
+        }
+        if ($iNip === false) {
+            $iNip = $idx('nuptk');
+        }
         $iMapel = $idx('mata pelajaran');
+        if ($iMapel === false) {
+            foreach (['mata pelajaran/mapel', 'mapel'] as $alias) {
+                $iMapel = $idx($alias);
+                if ($iMapel !== false) {
+                    break;
+                }
+            }
+        }
+        $iJabatan = $idx('jabatan');
+        if ($iJabatan === false) {
+            foreach (['jabatan sekarang', 'posisi'] as $alias) {
+                $iJabatan = $idx($alias);
+                if ($iJabatan !== false) {
+                    break;
+                }
+            }
+        }
         $iPhone = $idx('telepon');
         $iStatus = $idx('status');
+        $iGender = $idx('l/p');
+        if ($iGender === false) {
+            foreach (['jenis kelamin', 'jk', 'gender'] as $alias) {
+                $iGender = $idx($alias);
+                if ($iGender !== false) {
+                    break;
+                }
+            }
+        }
 
         if ($iNama === false) {
             $seen = array_values(array_filter($header, fn ($h) => $h !== ''));
+            $message = 'Header tidak valid. Ditemukan: ['.($seen ? implode(', ', $seen) : 'tidak ada kolom terbaca').']'
+                .'. Kolom wajib: [Nama Lengkap].';
+            $this->logImportFailure($message, $fileName);
 
-            return back()->with('error',
-                'Header tidak valid. Ditemukan: ['.($seen ? implode(', ', $seen) : 'tidak ada kolom terbaca').']'
-                .'. Kolom wajib: [Nama Lengkap].');
+            return back()->with('error', $message);
         }
 
         $imported = 0;
+        $updated = 0;
         $skipped = 0;
         $issues = [];
+        $createdTeachers = [];
 
         DB::beginTransaction();
         try {
@@ -263,8 +320,10 @@ class TeacherController extends Controller
                 $nama = trim((string) ($row[$iNama] ?? ''));
                 $nip = $iNip !== false ? trim((string) ($row[$iNip] ?? '')) : '';
                 $mapel = $iMapel !== false ? trim((string) ($row[$iMapel] ?? '')) : '';
+                $jabatan = $iJabatan !== false ? trim((string) ($row[$iJabatan] ?? '')) : '';
                 $phone = $iPhone !== false ? trim((string) ($row[$iPhone] ?? '')) : '';
                 $status = $iStatus !== false ? mb_strtolower(trim((string) ($row[$iStatus] ?? 'active'))) : 'active';
+                $gender = $iGender !== false ? $this->normalizeGender($row[$iGender] ?? null) : null;
 
                 if ($nama === '') {
                     $skipped++;
@@ -282,28 +341,89 @@ class TeacherController extends Controller
                     continue;
                 }
 
-                Teacher::create([
-                    'full_name' => $nama,
+                $payload = [
+                    'gender' => $gender,
                     'nip' => $nip !== '' ? $nip : null,
                     'mata_pelajaran' => $mapel !== '' ? $mapel : null,
+                    'jabatan' => $jabatan !== '' ? $jabatan : null,
                     'phone' => $phone !== '' ? $phone : null,
                     'status' => $status,
-                ]);
-                $imported++;
+                ];
+
+                // Spreadsheet sekolah tidak punya NIP, jadi re-import (mis. setelah
+                // data dirapikan) akan mencocokkan nama agar tidak menggandakan guru.
+                $existing = $nip === ''
+                    ? Teacher::whereRaw('LOWER(full_name) = ?', [mb_strtolower($nama)])->first()
+                    : null;
+
+                if ($existing) {
+                    $existing->update($payload);
+                    $updated++;
+                } else {
+                    Teacher::create(['full_name' => $nama] + $payload);
+                    $imported++;
+                }
+
+                $createdTeachers[] = [
+                    'name' => $nama,
+                    'email' => '-',
+                    'role' => 'guru',
+                    'identity' => $nip !== '' ? $nip : '-',
+                ];
             }
             DB::commit();
         } catch (\Throwable $e) {
             DB::rollBack();
+            $this->logImportFailure('Import gagal: '.$e->getMessage(), $fileName);
 
             return back()->with('error', 'Import gagal: '.$e->getMessage());
         }
 
-        $msg = "Import selesai — {$imported} guru ditambahkan".($skipped ? ", {$skipped} dilewati" : '').'.';
+        $msg = "Import selesai — {$imported} guru ditambahkan"
+            .($updated ? ", {$updated} diperbarui" : '')
+            .($skipped ? ", {$skipped} dilewati" : '').'.';
         if ($issues !== []) {
             $msg .= ' '.implode(' ', array_slice($issues, 0, 5));
         }
 
-        return back()->with($imported > 0 ? 'success' : 'error', $msg);
+        ActivityLog::record(
+            'teacher.import',
+            "Import guru: {$imported} ditambahkan, {$updated} diperbarui, {$skipped} dilewati ({$fileName})",
+            [
+                'status' => 'ok',
+                'file' => $fileName,
+                'imported' => $imported,
+                'updated' => $updated,
+                'skipped' => $skipped,
+                'issues_total' => count($issues),
+                'issues' => array_slice($issues, 0, 500),
+                'accounts' => array_slice($createdTeachers, 0, 500),
+            ],
+        );
+
+        return back()->with(($imported + $updated) > 0 ? 'success' : 'error', $msg);
+    }
+
+    /** Normalisasi kolom L/P (L, P, Laki-laki, Perempuan) menjadi L/P atau null. */
+    private function normalizeGender(mixed $value): ?string
+    {
+        $value = mb_strtolower(trim((string) $value));
+
+        return match (true) {
+            in_array($value, ['l', 'lk', 'laki', 'laki-laki', 'laki laki'], true) => 'L',
+            in_array($value, ['p', 'pr', 'perempuan', 'wanita'], true) => 'P',
+            default => null,
+        };
+    }
+
+    /** Catat percobaan import yang gagal total agar bisa ditelusuri admin. */
+    private function logImportFailure(string $message, ?string $fileName = null): void
+    {
+        ActivityLog::record('teacher.import', 'Import guru gagal: '.$message, [
+            'status' => 'failed',
+            'file' => $fileName,
+            'reason' => $message,
+        ]);
     }
 
     /** Akun guru yang belum tertaut ke data guru (plus akun milik guru ini saat edit). */

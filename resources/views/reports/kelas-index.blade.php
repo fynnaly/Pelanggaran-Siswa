@@ -37,7 +37,7 @@
             </form>
         </div>
 
-        <p class="text-sm text-muted" style="margin:0 0 var(--sp-md);display:flex;align-items:center;gap:6px">
+        <p class="text-sm text-muted" style="margin:0 0 var(--sp-md);display:flex;align-items:center;gap:6px;flex-wrap:wrap">
             <i data-lucide="calendar" class="icon-sm"></i> Periode: <strong style="color:var(--on-surface)">{{ $periodLabel }}</strong> · Kasus dihitung dari tanggal kejadian (fallback: tanggal dicatat)
         </p>
 
@@ -45,12 +45,12 @@
             <table>
                 <thead><tr>
                     <th style="width:40px">No</th>
-                    <th>Kelas</th>
-                    <th>Tahun Ajaran</th>
-                    <th>Wali Kelas</th>
-                    <th style="text-align:right">Jumlah Siswa</th>
-                    <th style="text-align:right">Kasus Pelanggaran</th>
-                    <th style="text-align:right">Prestasi</th>
+                    <th><x-sortable-header column="class" label="Kelas" :sort="$sort" :order="$order" route="laporan.kelas.index" :params="request()->except('sort','order','page')" /></th>
+                    <th><x-sortable-header column="year" label="Tahun Ajaran" :sort="$sort" :order="$order" route="laporan.kelas.index" :params="request()->except('sort','order','page')" /></th>
+                    <th><x-sortable-header column="homeroom" label="Wali Kelas" :sort="$sort" :order="$order" route="laporan.kelas.index" :params="request()->except('sort','order','page')" /></th>
+                    <th style="text-align:right"><x-sortable-header column="students" label="Jumlah Siswa" :sort="$sort" :order="$order" route="laporan.kelas.index" :params="request()->except('sort','order','page')" /></th>
+                    <th style="text-align:right"><x-sortable-header column="kasus" label="Kasus Pelanggaran" :sort="$sort" :order="$order" route="laporan.kelas.index" :params="request()->except('sort','order','page')" /></th>
+                    <th style="text-align:right"><x-sortable-header column="prestasi" label="Prestasi" :sort="$sort" :order="$order" route="laporan.kelas.index" :params="request()->except('sort','order','page')" /></th>
                     <th style="width:130px">Aksi</th>
                 </tr></thead>
                 <tbody>

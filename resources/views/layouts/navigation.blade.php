@@ -67,8 +67,8 @@
     <div class="sidebar-brand-wrap" style="padding:var(--sp-md) var(--sp-lg);border-bottom:1px solid var(--border)">
         <button type="button" onclick="toggleSidebarCollapse()" class="sidebar-brand-toggle" style="display:flex;align-items:center;justify-content:space-between;width:100%;border:none;background:transparent;color:var(--primary);cursor:pointer;padding:4px 0;font-family:inherit;text-align:left;transition:all .15s" title="Klik untuk perkecil / perbesar sidebar">
             <div style="display:flex;align-items:center;gap:var(--sp-sm);min-width:0">
-                <img src="{{ asset('image.ico') }}" alt="Logo" style="width:24px;height:24px;border-radius:4px;flex-shrink:0">
-                <span class="sidebar-brand-title" style="font-size:1.0625rem;font-weight:700;white-space:nowrap;letter-spacing:-0.01em;overflow:hidden;text-overflow:ellipsis">Pelanggaran Kuy</span>
+                <img src="{{ asset('logo-smp.png') }}" alt="Logo" style="width:24px;height:24px;object-fit:contain;flex-shrink:0">
+                <span class="sidebar-brand-title" style="font-size:1.0625rem;font-weight:700;white-space:nowrap;letter-spacing:-0.01em;overflow:hidden;text-overflow:ellipsis;min-width:0">{{ config('app.name') }}</span>
             </div>
             <i data-lucide="panel-left-close" class="sidebar-toggle-icon sidebar-brand-title icon-sm" style="color:var(--on-surface-muted);flex-shrink:0"></i>
         </button>
@@ -194,7 +194,7 @@
                 box-shadow:var(--sh-md);">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp-md);border-bottom:1px solid var(--border)">
             <a href="{{ route('dashboard') }}" style="display:flex;align-items:center;gap:var(--sp-sm);text-decoration:none;color:var(--primary);font-size:1rem;font-weight:700">
-                <img src="{{ asset('image.ico') }}" alt="Logo" style="width:20px;height:20px;border-radius:4px"> Pelanggaran Kuy
+                <img src="{{ asset('logo-smp.png') }}" alt="Logo" style="width:20px;height:20px;object-fit:contain"> {{ config('app.name') }}
             </a>
             <button @click="open = false; localStorage.setItem('sidebar-open', 'false')" style="width:32px;height:32px;border:none;background:transparent;color:var(--on-surface-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:var(--r-sm)">
                 <i data-lucide="x" style="width:18px;height:18px"></i>

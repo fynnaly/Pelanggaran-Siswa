@@ -4,8 +4,10 @@
             <tr>
                 <th style="width:48px"><x-sortable-header column="id" label="No" :sort="$sort" :order="$order" route="teachers.index" :params="request()->except('sort','order','page')" /></th>
                 <th><x-sortable-header column="full_name" label="Nama" :sort="$sort" :order="$order" route="teachers.index" :params="request()->except('sort','order','page')" /></th>
+                <th style="width:120px"><x-sortable-header column="gender" label="Jenis Kelamin" :sort="$sort" :order="$order" route="teachers.index" :params="request()->except('sort','order','page')" /></th>
                 <th><x-sortable-header column="nip" label="NIP" :sort="$sort" :order="$order" route="teachers.index" :params="request()->except('sort','order','page')" /></th>
                 <th><x-sortable-header column="mata_pelajaran" label="Mata Pelajaran" :sort="$sort" :order="$order" route="teachers.index" :params="request()->except('sort','order','page')" /></th>
+                <th><x-sortable-header column="jabatan" label="Jabatan" :sort="$sort" :order="$order" route="teachers.index" :params="request()->except('sort','order','page')" /></th>
                 <th>Akun Pengguna</th>
                 <th><x-sortable-header column="status" label="Status" :sort="$sort" :order="$order" route="teachers.index" :params="request()->except('sort','order','page')" /></th>
                 <th style="width:100px">Aksi</th>
@@ -22,8 +24,10 @@
                             <strong style="min-width:0">{{ $teacher->full_name }}</strong>
                         </div>
                     </td>
+                    <td class="text-sm">{{ $teacher->gender === 'L' ? 'Laki-laki' : ($teacher->gender === 'P' ? 'Perempuan' : '-') }}</td>
                     <td class="mono">{{ $teacher->nip ?? '-' }}</td>
                     <td>{{ $teacher->mata_pelajaran ?? '-' }}</td>
+                    <td class="text-sm">{{ $teacher->jabatan ?? '-' }}</td>
                     <td class="text-sm">
                         @if($teacher->user)
                             {{ $teacher->user->email }}
@@ -53,7 +57,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" style="padding:40px;text-align:center;color:var(--on-surface-muted)">
+                    <td colspan="9" style="padding:40px;text-align:center;color:var(--on-surface-muted)">
                         <i data-lucide="inbox" class="icon-lg" style="display:block;margin:0 auto var(--sp-sm)"></i>
                         @if(request('q') || request('status'))
                             Tidak ada guru yang cocok.

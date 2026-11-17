@@ -47,7 +47,7 @@ class SchoolClassController extends Controller
 
         $sort = $request->string('sort')->toString();
         $order = strtolower($request->string('order')->toString()) === 'asc' ? 'asc' : 'desc';
-        $allowed = ['id', 'name', 'grade_level', 'academic_year_id', 'status', 'students_count'];
+        $allowed = ['id', 'name', 'grade_level', 'angkatan', 'academic_year_id', 'status', 'students_count'];
         $sort = in_array($sort, $allowed, true) ? $sort : 'id';
 
         $query = SchoolClass::with(['academicYear', 'homeroomTeacher', 'assistantTeacher'])->withCount('students')

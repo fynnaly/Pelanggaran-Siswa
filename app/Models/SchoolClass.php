@@ -15,6 +15,7 @@ class SchoolClass extends Model
         'academic_year_id',
         'name',
         'grade_level',
+        'angkatan',
         'homeroom_teacher_id',
         'assistant_teacher_id',
         'capacity',
@@ -24,6 +25,44 @@ class SchoolClass extends Model
     protected function casts(): array
     {
         return [];
+    }
+
+    /**
+     * Isi angkatan otomatis saat kelas dibuat / tingkatan atau tahun ajarannya berubah.
+     * Nilai eksplisit pada kelas baru tetap dihormati.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (self $class) {
+            if (! $class->exists && $class->angkatan !== null) {
+                return;
+            }
+
+            if ($class->angkatan === null || $class->isDirty(['academic_year_id', 'grade_level'])) {
+                $class->angkatan = self::resolveAngkatan($class->academicYear()->first(), $class->grade_level);
+            }
+        });
+    }
+
+    /**
+     * Angkatan = tahun masuk siswa berdasarkan tingkatan.
+     * VII = tahun awal tahun ajaran, VIII = tahun awal - 1, IX = tahun awal - 2.
+     */
+    public static function resolveAngkatan(?AcademicYear $year, ?string $gradeLevel): ?int
+    {
+        $startYear = $year?->startYear();
+
+        if ($startYear === null) {
+            return null;
+        }
+
+        $offset = match (strtoupper((string) $gradeLevel)) {
+            'VIII' => 1,
+            'IX' => 2,
+            default => 0,
+        };
+
+        return $startYear - $offset;
     }
 
     public function academicYear(): BelongsTo

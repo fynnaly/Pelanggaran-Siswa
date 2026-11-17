@@ -35,12 +35,26 @@ class DatabaseSeeder extends Seeder
         //     $staffUsers[] = $u;
         // }
 
-        // Academic Year
+        // Academic Year — samakan format dengan UI ("2026/2027").
+        // Tahun ajaran Indonesia dimulai Juli; sebelum Juli berarti tahun sebelumnya.
+        $now = now();
+        $startYear = $now->month >= 7 ? $now->year : $now->year - 1;
+        $yearName = $startYear.'/'.($startYear + 1);
+        $yearStart = $now->copy()->setDate($startYear, 7, 1)->startOfDay();
+        $yearEnd = $yearStart->copy()->addYear()->subDay();
+
+        // Data lama dari seeder sebelumnya memakai nama "2026" saja — ganti nama
+        // tanpa membuat baris baru agar relasi kelas/enrollment tetap utuh.
+        $legacyYear = AcademicYear::where('name', (string) $startYear)->first();
+        if ($legacyYear && ! AcademicYear::where('name', $yearName)->exists()) {
+            $legacyYear->update(['name' => $yearName]);
+        }
+
         $academicYear = AcademicYear::firstOrCreate(
-            ['name' => '2026'],
+            ['name' => $yearName],
             [
-                'start_date' => now()->startOfYear(),
-                'end_date' => now()->startOfYear()->addYear()->subDay(),
+                'start_date' => $yearStart,
+                'end_date' => $yearEnd,
                 'status' => AcademicYear::STATUS_ACTIVE,
                 'is_locked' => false,
                 'is_active' => true,
@@ -167,5 +181,9 @@ class DatabaseSeeder extends Seeder
 
         // Pedoman Pancawaluya (TABEL 1 penghargaan R1-R10 + TABEL 2 pelanggaran P1-P5).
         $this->call(PancawaluyaSeeder::class);
+
+        // Database seeder testing users
+        // ! Nonaktifkan ini jika sudah siap deploy
+        $this->call(TestingUserSeeder::class);
     }
 }

@@ -61,13 +61,18 @@
         /* Tombol Aksi Layar */
         .no-print { position: fixed; top: 14px; right: 14px; display: flex; gap: 8px; z-index: 100; }
         .btn-ui { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; color: #0f172a; font: 600 12px 'Figtree', sans-serif; cursor: pointer; text-decoration: none; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+        /* Pratinjau layar: lembar A4 diskalakan agar muat lebar layar,
+           sehingga halaman tidak bisa digeser ke samping di ponsel. */
+        .cert-fit { display: flex; justify-content: center; padding: 20px 0; }
         .btn-ui-primary { background: #059669; color: #ffffff; border-color: #059669; }
 
         /* Print Media — Pasti 1 Lembar A4 Landscape */
         @media print {
             body { background: #ffffff !important; margin: 0 !important; padding: 0 !important; }
             .no-print { display: none !important; }
-            .cert-sheet { width: 297mm !important; height: 210mm !important; max-height: 210mm !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; page-break-after: always; break-after: page; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .cert-fit { display: block !important; padding: 0 !important; width: auto !important; height: auto !important; overflow: visible !important; }
+            .cert-sheet { width: 297mm !important; height: 210mm !important; max-height: 210mm !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; transform: none !important; page-break-after: always; break-after: page; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             .cert-outer-frame { border: 3px double #1e3a5f !important; padding: 4mm !important; height: 100% !important; }
             .cert-inner-frame { border: 1px solid #cbd5e1 !important; height: calc(210mm - 8mm) !important; padding: 6mm 10mm !important; }
             @page { size: A4 landscape; margin: 0; }
@@ -79,6 +84,42 @@
         <a href="{{ route('monitor-poin.index') }}" class="btn-ui">Kembali</a>
         <button class="btn-ui btn-ui-primary" onclick="window.print()">Cetak / Simpan PDF</button>
     </div>
-    @include('monitor-poin._certificate')
+    <div class="cert-fit">
+        @include('monitor-poin._certificate')
+    </div>
+    <script>
+        // Skala lembar sertifikat (297mm) agar muat layar ponsel: halaman tidak
+        // ikut melebar, dan hasil cetak tetap 1:1 karena transform direset saat print.
+        (function () {
+            var wrap = document.querySelector('.cert-fit');
+            var sheet = document.querySelector('.cert-sheet');
+            if (!wrap || !sheet) return;
+
+            function fit() {
+                wrap.style.width = '';
+                wrap.style.height = '';
+                wrap.style.overflow = '';
+                sheet.style.transform = '';
+                sheet.style.transformOrigin = '';
+                sheet.style.margin = '';
+
+                var avail = Math.floor(document.documentElement.clientWidth) - 24;
+                var base = sheet.offsetWidth;
+                if (!base || base <= avail) return;
+
+                var scale = avail / base;
+                sheet.style.transformOrigin = 'top left';
+                sheet.style.transform = 'scale(' + scale + ')';
+                sheet.style.margin = '0';
+                wrap.style.width = avail + 'px';
+                wrap.style.height = Math.ceil(sheet.offsetHeight * scale) + 'px';
+                wrap.style.overflow = 'hidden';
+            }
+
+            fit();
+            window.addEventListener('resize', fit);
+            window.addEventListener('load', fit);
+        })();
+    </script>
 </body>
 </html>

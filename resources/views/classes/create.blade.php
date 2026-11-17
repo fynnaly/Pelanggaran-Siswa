@@ -41,6 +41,10 @@
                     <input type="text" id="composedName" class="field-input cursor-not-allowed" value="{{ old('name') }}" readonly style="background:var(--surface);color:var(--on-surface-muted)">
                     <span class="help-text">Nama kelas tersusun otomatis: Tingkatan + Rombel (mis. VII A).</span>
                 </div>
+                <div class="field"><label class="field-label">Angkatan</label>
+                    <input type="text" id="angkatanField" class="field-input cursor-not-allowed" value="" readonly style="background:var(--surface);color:var(--on-surface-muted)">
+                    <span class="help-text">Tahun masuk siswa, dihitung otomatis: VII = tahun awal tahun ajaran, VIII = −1, IX = −2.</span>
+                </div>
                 <div class="field"><label class="field-label">Status</label>
                     <input type="text" class="field-input cursor-not-allowed" value="Aktif" disabled style="background:var(--surface);cursor:not-allowed">
                     <input type="hidden" name="status" value="active">
@@ -79,6 +83,12 @@
                 const name = [grade, rombelValue].filter(Boolean).join(' ');
                 const out = document.getElementById('composedName');
                 if (out) out.value = name;
+
+                // Angkatan: tahun awal tahun ajaran dikurangi offset tingkatan.
+                const startYear = {{ $activeYear?->startYear() ?? 'null' }};
+                const offset = { VII: 0, VIII: 1, IX: 2 }[grade] ?? 0;
+                const angkatan = document.getElementById('angkatanField');
+                if (angkatan) angkatan.value = startYear ? (startYear - offset) : '';
             }
 
             document.getElementById('gradeLevel')?.addEventListener('change', compose);

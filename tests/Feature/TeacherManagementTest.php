@@ -24,8 +24,10 @@ beforeEach(function () {
 it('renders the teacher list for staff', function () {
     $teacher = Teacher::create([
         'full_name' => 'Budi Santoso',
+        'gender' => 'L',
         'nip' => '198501012010011001',
         'mata_pelajaran' => 'Matematika',
+        'jabatan' => 'Wks. Kesiswaan',
         'status' => 'active',
     ]);
 
@@ -33,8 +35,10 @@ it('renders the teacher list for staff', function () {
         ->get(route('teachers.index'))
         ->assertOk()
         ->assertSee('Budi Santoso')
+        ->assertSee('Laki-laki')
         ->assertSee('198501012010011001')
-        ->assertSee('Matematika');
+        ->assertSee('Matematika')
+        ->assertSee('Wks. Kesiswaan');
 
     expect($teacher->avatar_url)->toContain('default-avatar.png');
 });
@@ -150,6 +154,77 @@ it('imports teachers from csv and skips duplicate nip', function () {
 
     $this->assertDatabaseHas('teachers', ['nip' => '123', 'full_name' => 'Guru Baru']);
     $this->assertDatabaseHas('teachers', ['nip' => '999', 'full_name' => 'Guru Lama']);
+});
+
+it('imports the school teacher spreadsheet format without a nip column', function () {
+    $csv = "NO,sdr/i,L/P,NAMA,(GTT)/ (GTY),JABATAN SEKARANG\n"
+        ."1,Sdr.,L,ZIDAN SAYYID NUGRAHA,GTT,Guru Matematika\n"
+        ."2,Sdri.,P,SITI AMINAH,GTY,Guru Bahasa Indonesia\n";
+
+    $this->actingAs($this->admin)
+        ->from(route('teachers.index'))
+        ->post(route('teachers.import'), [
+            'file' => UploadedFile::fake()->createWithContent('guru-sekolah.csv', $csv),
+        ])
+        ->assertRedirect(route('teachers.index'))
+        ->assertSessionHas('success', fn (string $message) => str_contains($message, '2 guru ditambahkan'));
+
+    $zidan = Teacher::where('full_name', 'ZIDAN SAYYID NUGRAHA')->firstOrFail();
+    $siti = Teacher::where('full_name', 'SITI AMINAH')->firstOrFail();
+
+    expect($zidan->nip)->toBeNull()
+        ->and($zidan->gender)->toBe('L')
+        ->and($zidan->jabatan)->toBe('Guru Matematika')
+        ->and($zidan->mata_pelajaran)->toBeNull()
+        ->and($siti->nip)->toBeNull()
+        ->and($siti->gender)->toBe('P')
+        ->and($siti->jabatan)->toBe('Guru Bahasa Indonesia')
+        ->and($siti->mata_pelajaran)->toBeNull();
+});
+
+it('keeps mata pelajaran and jabatan in separate columns when both exist', function () {
+    $csv = "NIP,Nama Lengkap,L/P,Mata Pelajaran,Jabatan,Telepon,Status\n"
+        ."123,Guru Dua Kolom,P,Matematika,Wks. Kesiswaan,,active\n";
+
+    $this->actingAs($this->admin)
+        ->from(route('teachers.index'))
+        ->post(route('teachers.import'), [
+            'file' => UploadedFile::fake()->createWithContent('guru-dua-kolom.csv', $csv),
+        ])
+        ->assertRedirect(route('teachers.index'));
+
+    $teacher = Teacher::where('nip', '123')->firstOrFail();
+
+    expect($teacher->mata_pelajaran)->toBe('Matematika')
+        ->and($teacher->jabatan)->toBe('Wks. Kesiswaan')
+        ->and($teacher->gender)->toBe('P');
+});
+
+it('updates an existing teacher when the same nameless-nip row is imported again', function () {
+    Teacher::create([
+        'full_name' => 'KOKOM KOMALASARI, S.Pd., Gr',
+        'gender' => 'P',
+        'jabatan' => 'KOKOM LAMA',
+        'status' => 'active',
+    ]);
+
+    $csv = "NIP,Nama Lengkap,L/P,Mata Pelajaran,Jabatan,Telepon,Status\n"
+        .",\"KOKOM KOMALASARI, S.Pd., Gr\",P,GURU B. INDONESIA,Guru,,active\n";
+
+    $this->actingAs($this->admin)
+        ->from(route('teachers.index'))
+        ->post(route('teachers.import'), [
+            'file' => UploadedFile::fake()->createWithContent('guru-ulang.csv', $csv),
+        ])
+        ->assertRedirect(route('teachers.index'))
+        ->assertSessionHas('success', fn (string $message) => str_contains($message, '1 diperbarui'));
+
+    expect(Teacher::where('full_name', 'KOKOM KOMALASARI, S.Pd., Gr')->count())->toBe(1);
+
+    $teacher = Teacher::where('full_name', 'KOKOM KOMALASARI, S.Pd., Gr')->firstOrFail();
+
+    expect($teacher->mata_pelajaran)->toBe('GURU B. INDONESIA')
+        ->and($teacher->jabatan)->toBe('Guru');
 });
 
 it('links a teacher record when creating a user account', function () {

@@ -13,6 +13,7 @@ use App\Models\ViolationCategory;
 use App\Support\StudentDisciplineReport;
 use App\Support\ViolationStats;
 use App\Support\Xlsx;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +25,12 @@ class ReportController extends Controller
 
     /** Daftar role yang dianggap staf sekolah. User tanpa role apa pun = DITOLAK. */
     private const STAFF_ROLES = ['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'];
+
+    /** Kolom yang boleh dipakai untuk sortir tabel Laporan Kelas. */
+    private const KELAS_SORTABLE = ['class', 'year', 'homeroom', 'students', 'kasus', 'prestasi'];
+
+    /** Kolom yang boleh dipakai untuk sortir tabel Laporan Siswa. */
+    private const SISWA_SORTABLE = ['name', 'nis', 'class', 'kasus', 'prestasi'];
 
     private function authorizeStaff(): void
     {
@@ -334,10 +341,31 @@ class ReportController extends Controller
 
         $filters = $this->filters($request);
 
+        // Sortir tabel: hitungan kasus/prestasi dihitung di PHP, jadi urutkan
+        // collection setelah digabung (bukan ORDER BY query).
+        $sort = $request->string('sort')->toString();
+        $order = strtolower($request->string('order')->toString()) === 'desc' ? 'desc' : 'asc';
+        if (! in_array($sort, self::KELAS_SORTABLE, true)) {
+            $sort = 'class';
+        }
+
+        $rows = $this->perClassRows($filters)
+            ->sortBy(fn (array $row) => match ($sort) {
+                'year' => $row['class']->academicYear?->name,
+                'homeroom' => $row['class']->homeroomTeacher?->name,
+                'students' => $row['students'],
+                'kasus' => $row['kasus'],
+                'prestasi' => $row['prestasi'],
+                default => $row['class']->name,
+            }, SORT_NATURAL | SORT_FLAG_CASE, $order === 'desc')
+            ->values();
+
         return view('reports.kelas-index', [
             'filters' => $filters,
             'years' => AcademicYear::orderByDesc('start_date')->get(['id', 'name']),
-            'rows' => $this->perClassRows($filters),
+            'rows' => $rows,
+            'sort' => $sort,
+            'order' => $order,
             'linkParams' => $this->linkParams($filters),
         ]);
     }
@@ -353,6 +381,12 @@ class ReportController extends Controller
         $filters = $this->filters($request);
         $scope = $filters['scope'];
         $search = trim($request->string('search')->toString());
+
+        $sort = $request->string('sort')->toString();
+        $order = strtolower($request->string('order')->toString()) === 'desc' ? 'desc' : 'asc';
+        if (! in_array($sort, self::SISWA_SORTABLE, true)) {
+            $sort = 'name';
+        }
 
         $studentsQuery = Student::query()
             ->with('currentEnrollment.schoolClass')
@@ -395,7 +429,7 @@ class ReportController extends Controller
                 'disciplineCases as kasus_count' => $caseFilter,
                 'achievementRecords as prestasi_count' => $achievementFilter,
             ])
-            ->orderBy('full_name')
+            ->tap(fn ($query) => $this->applyStudentReportSort($query, $sort, $order))
             ->paginate(25)
             ->withQueryString();
 
@@ -411,8 +445,43 @@ class ReportController extends Controller
             'classes' => $classes,
             'students' => $students,
             'search' => $search,
+            'sort' => $sort,
+            'order' => $order,
             'linkParams' => $this->linkParams($filters),
         ]);
+    }
+
+    /**
+     * Urutkan daftar siswa pada laporan sesuai kolom yang diizinkan.
+     * Kolom kelas memakai subquery enrollment aktif terbaru karena siswa tidak
+     * menyimpan class_id secara langsung.
+     */
+    private function applyStudentReportSort(Builder $query, string $sort, string $order): void
+    {
+        if ($sort === 'class') {
+            $query->orderBy(
+                DB::table('enrollments')
+                    ->join('classes', 'classes.id', '=', 'enrollments.class_id')
+                    ->select('classes.name')
+                    ->whereColumn('enrollments.student_id', 'students.id')
+                    ->where('enrollments.status', 'active')
+                    ->orderByDesc('enrollments.id')
+                    ->limit(1),
+                $order,
+            );
+        } else {
+            $query->orderBy(match ($sort) {
+                'nis' => 'nis',
+                'kasus' => 'kasus_count',
+                'prestasi' => 'prestasi_count',
+                default => 'full_name',
+            }, $order);
+        }
+
+        // Urutan kedua agar hasil stabil saat nilai kolom sama.
+        if ($sort !== 'name') {
+            $query->orderBy('full_name', 'asc');
+        }
     }
 
     private function authorizeStudentReportScope(Student $student, ?array $scope): void

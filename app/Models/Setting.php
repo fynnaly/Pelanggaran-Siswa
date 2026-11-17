@@ -18,8 +18,8 @@ class Setting extends Model
     /** Nilai default bila belum pernah disimpan. Alamat/nama pemilik TTD
      *  sengaja default kosong — informasi pribadi sekolah diisi manual. */
     public const DEFAULTS = [
-        'app_name' => 'Pelanggaran Kuy',
-        'school_name' => 'SMK Baktinusantara 666',
+        'app_name' => 'SMP Baktinusantara 666',
+        'school_name' => 'SMP Baktinusantara 666',
         'school_address' => '',
         'school_phone' => '(0274) 512345',
         'kop_pemerintah' => 'PEMERINTAH KABUPATEN BANTUL',

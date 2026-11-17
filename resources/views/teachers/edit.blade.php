@@ -29,6 +29,14 @@
                     <input type="text" name="full_name" value="{{ old('full_name', $teacher->full_name) }}" class="field-input" required>
                 </div>
                 <div class="field">
+                    <label class="field-label">Jenis Kelamin</label>
+                    <select name="gender" class="field-input">
+                        <option value="">Belum diisi</option>
+                        <option value="L" {{ old('gender', $teacher->gender) === 'L' ? 'selected' : '' }}>Laki-laki</option>
+                        <option value="P" {{ old('gender', $teacher->gender) === 'P' ? 'selected' : '' }}>Perempuan</option>
+                    </select>
+                </div>
+                <div class="field">
                     <label class="field-label">NIP</label>
                     <input type="text" name="nip" value="{{ old('nip', $teacher->nip) }}" class="field-input" placeholder="Nomor Induk Pegawai">
                     <span class="help-text">Opsional, harus unik antar guru.</span>
@@ -36,6 +44,11 @@
                 <div class="field">
                     <label class="field-label">Mata Pelajaran</label>
                     <input type="text" name="mata_pelajaran" value="{{ old('mata_pelajaran', $teacher->mata_pelajaran) }}" class="field-input" placeholder="Contoh: Matematika">
+                </div>
+                <div class="field">
+                    <label class="field-label">Jabatan</label>
+                    <input type="text" name="jabatan" value="{{ old('jabatan', $teacher->jabatan) }}" class="field-input" placeholder="Contoh: Kepala Sekolah / Wks. Kesiswaan">
+                    <span class="help-text">Jabatan struktural, bukan mata pelajaran.</span>
                 </div>
                 <div class="field">
                     <label class="field-label">Telepon</label>

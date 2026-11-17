@@ -11,6 +11,7 @@
         @php
             // Rombel diambil dari bagian akhir nama kelas yang tersimpan (huruf).
             $classRombel = old('rombel', $class->rombel ?: 'A');
+            $yearStartYears = $academicYears->mapWithKeys(fn ($year) => [$year->id => $year->startYear()]);
         @endphp
         <div class="card card-form">
             @if($errors->any())<div class="alert alert-error" style="margin-bottom:var(--sp-lg)"><i data-lucide="alert-circle" class="icon-sm"></i> {{ $errors->first() }}</div>@endif
@@ -39,6 +40,10 @@
                 <div class="field"><label class="field-label">Nama Kelas</label>
                     <input type="text" id="composedName" class="field-input cursor-not-allowed" value="{{ old('name', $class->name) }}" readonly style="background:var(--surface);color:var(--on-surface-muted)">
                     <span class="help-text">Nama kelas tersusun otomatis: Tingkatan + Rombel (mis. VII A).</span>
+                </div>
+                <div class="field"><label class="field-label">Angkatan</label>
+                    <input type="text" id="angkatanField" class="field-input cursor-not-allowed" value="{{ $class->angkatan }}" readonly style="background:var(--surface);color:var(--on-surface-muted)">
+                    <span class="help-text">Tahun masuk siswa, dihitung otomatis dari tahun ajaran + tingkatan.</span>
                 </div>
                 <div class="field"><label class="field-label">Status</label>
                     <select name="status" class="field-input">
@@ -80,9 +85,18 @@
                 const name = [grade, rombelValue].filter(Boolean).join(' ');
                 const out = document.getElementById('composedName');
                 if (out) out.value = name;
+
+                // Angkatan: tahun awal tahun ajaran terpilih dikurangi offset tingkatan.
+                const yearStart = @json($yearStartYears);
+                const yearId = document.querySelector('select[name="academic_year_id"]')?.value || '';
+                const startYear = yearStart[yearId] ?? null;
+                const offset = { VII: 0, VIII: 1, IX: 2 }[grade] ?? 0;
+                const angkatan = document.getElementById('angkatanField');
+                if (angkatan) angkatan.value = startYear ? (startYear - offset) : '';
             }
 
             document.getElementById('gradeLevel')?.addEventListener('change', compose);
+            document.querySelector('select[name="academic_year_id"]')?.addEventListener('change', compose);
             compose();
         });
     </script>

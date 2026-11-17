@@ -29,7 +29,7 @@
         default => 'background:#fef3c7;color:#92400e;border:1px solid #fde68a;',
     };
 
-    $schoolName = \App\Models\Setting::get('school_name', 'SMK Baktinusantara 666');
+    $schoolName = \App\Models\Setting::get('school_name', 'SMP Baktinusantara 666');
     $kopPemerintah = \App\Models\Setting::get('kop_pemerintah', 'PEMERINTAH DAERAH PROVINSI JAWA BARAT');
     $kopDinas = \App\Models\Setting::get('kop_dinas', 'DINAS PENDIDIKAN');
     $schoolAddress = \App\Models\Setting::get('school_address');

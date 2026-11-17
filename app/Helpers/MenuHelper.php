@@ -148,8 +148,17 @@ class MenuHelper
             ];
         }
 
-        // Pengaturan hanya pengelola (admin / kesiswaan / kepala sekolah).
+        // Log aktivitas hanya admin & kesiswaan.
         $items = [];
+        if ($user?->hasAnyRole(['admin', 'kesiswaan'])) {
+            $items[] = [
+                'icon' => 'task',
+                'name' => 'Log Aktivitas',
+                'path' => '/logs',
+            ];
+        }
+
+        // Pengaturan hanya pengelola (admin / kesiswaan / kepala sekolah).
         if ($user?->hasAnyRole(['admin', 'kesiswaan', 'kepala_sekolah'])) {
             $items[] = [
                 'icon' => 'settings',

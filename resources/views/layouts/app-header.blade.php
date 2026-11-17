@@ -25,9 +25,9 @@
             </x-ui.button>
 
             <!-- Logo (mobile only) -->
-            <a href="/" class="xl:hidden flex items-center gap-2">
-                <img src="/image.ico" alt="Logo" class="h-7 w-7" />
-                <span class="font-bold text-gray-800 dark:text-white text-base font-outfit">Pelanggaran Kuy</span>
+            <a href="/" class="xl:hidden flex items-center gap-2 min-w-0 max-w-[60vw]" title="{{ config('app.name') }}">
+                <img src="{{ asset('logo-smp.png') }}" alt="Logo {{ config('app.name') }}" class="h-7 w-7 shrink-0 object-contain" />
+                <span class="min-w-0 truncate font-bold text-gray-800 dark:text-white text-base font-outfit">{{ config('app.name') }}</span>
             </a>
 
             <!-- Application menu toggle (mobile only) -->

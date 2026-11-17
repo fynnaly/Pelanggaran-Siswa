@@ -43,44 +43,41 @@
 
         {{-- Filter & Import Toolbar --}}
         <div class="toolbar" style="margin-bottom:var(--sp-md)">
-            <form action="{{ route('nametag-nfc.index') }}" method="GET" style="display:flex;gap:var(--sp-sm);flex:1;align-items:stretch;flex-wrap:wrap">
-                <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari Kode UID / Nama Siswa / NIS..." class="input" style="flex:1;min-width:200px">
+            <form action="{{ route('nametag-nfc.index') }}" method="GET" class="toolbar-form toolbar-form--filters">
+                <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari Kode UID / Nama Siswa / NIS..." class="input toolbar-search">
 
-                <select name="status" class="input" style="width:auto;min-width:140px;flex-shrink:0" onchange="this.form.submit()">
+                <select name="status" class="input w-auto min-w-[130px] max-sm:w-full max-sm:min-w-0" onchange="this.form.submit()">
                     <option value="all" {{ request('status') === 'all' || !request('status') ? 'selected' : '' }}>Semua Status</option>
                     <option value="assigned" {{ request('status') === 'assigned' ? 'selected' : '' }}>Sudah Terpasang ({{ $assignedCount }})</option>
                     <option value="unassigned" {{ request('status') === 'unassigned' ? 'selected' : '' }}>Belum Terpasang ({{ $unassignedCount }})</option>
                 </select>
 
-                <select name="class_id" class="input" style="width:auto;min-width:140px;flex-shrink:0" onchange="this.form.submit()">
+                <select name="class_id" class="input w-auto min-w-[130px] max-sm:w-full max-sm:min-w-0" onchange="this.form.submit()">
                     <option value="">Semua Kelas</option>
                     @foreach($classes as $c)
                         <option value="{{ $c->id }}" {{ request('class_id') == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
                     @endforeach
                 </select>
 
-                <button type="submit" class="btn btn-secondary btn-sm" style="flex-shrink:0">
+                <button type="submit" class="btn btn-secondary btn-sm max-sm:w-full max-sm:justify-center">
                     <i data-lucide="filter" class="icon-sm"></i> Saring
                 </button>
 
-                @if(request('q') || request('class_id') || (request('status') && request('status') !== 'all'))
-                    <a href="{{ route('nametag-nfc.index') }}" class="btn btn-secondary btn-sm" style="flex-shrink:0">
-                        <i data-lucide="x" class="icon-sm"></i> Reset
-                    </a>
-                @endif
+                <a href="{{ route('nametag-nfc.index') }}" class="btn btn-secondary btn-sm max-sm:w-full max-sm:justify-center" title="Bersihkan semua filter">
+                    <i data-lucide="x" class="icon-sm"></i> Reset
+                </a>
             </form>
 
             @if($isManager)
-            <div style="display:flex;align-items:center;gap:var(--sp-sm);flex-wrap:wrap">
-                <form action="{{ route('nametag-nfc.import') }}" method="POST" enctype="multipart/form-data" style="display:flex;align-items:center;gap:var(--sp-sm);flex:1;min-width:0">
+                <form action="{{ route('nametag-nfc.import') }}" method="POST" enctype="multipart/form-data"
+                      class="toolbar-form toolbar-form--import">
                     @csrf
-                    <label class="text-sm text-muted" style="white-space:nowrap;font-weight:500">Import File:</label>
-                    <input type="file" name="file" accept=".xlsx,.csv,.txt" required class="input" style="width:auto;padding:6px 10px;flex:1;min-width:0">
-                    <button type="submit" class="btn btn-primary btn-sm" style="flex-shrink:0" title="Unggah file XLSX/CSV pencocokan nametag">
+                    <label class="text-sm text-muted shrink-0 whitespace-nowrap max-sm:w-full">Import File:</label>
+                    <input type="file" name="file" accept=".xlsx,.csv,.txt" required class="input max-sm:w-full" style="padding:6px 10px">
+                    <button type="submit" class="btn btn-primary btn-sm max-sm:w-full max-sm:justify-center" title="Unggah file XLSX/CSV pencocokan nametag">
                         <i data-lucide="upload" class="icon-sm"></i> Unggah
                     </button>
                 </form>
-            </div>
             @endif
         </div>
 

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Providers;
 
 use App\Models\DisciplineCase;
@@ -31,10 +32,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(DisciplineCase::class, DisciplineCasePolicy::class);
 
         // Nama aplikasi dari pengaturan admin (settings.app_name) — fallback ke
-        // config/app.php bila tabel belum ada (migrasi belum jalan).
+        // config/app.php (APP_NAME di .env) bila belum pernah disimpan.
         try {
             if (Schema::hasTable('settings')) {
-                config(['app.name' => Setting::get('app_name') ?: config('app.name')]);
+                config(['app.name' => Setting::get('app_name', config('app.name'))]);
             }
         } catch (\Throwable) {
             // DB belum siap — biarkan config bawaan.
@@ -55,7 +56,7 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('api-login', function (Request $request) {
             $email = strtolower((string) $request->input('email', ''));
 
-            return Limit::perMinute(5)->by($email . '|' . $request->ip());
+            return Limit::perMinute(5)->by($email.'|'.$request->ip());
         });
 
         RateLimiter::for('api', function (Request $request) {

@@ -46,6 +46,7 @@ it('sets the grade level when the class name already contains the grade', functi
     $class = SchoolClass::where('name', 'VIII B')->firstOrFail();
 
     expect($class->grade_level)->toBe('VIII')
+        ->and($class->angkatan)->toBe(2025)
         ->and(Student::where('nis', '2425.8.001')->value('full_name'))->toBe('Siti Aminah');
 });
 
@@ -58,6 +59,7 @@ it('composes the class name from the Tingkatan column', function () {
     $class = SchoolClass::where('name', 'IX A')->firstOrFail();
 
     expect($class->grade_level)->toBe('IX')
+        ->and($class->angkatan)->toBe(2024)
         ->and(Student::where('nis', '2425.9.001')->firstOrFail()->currentEnrollment->class_id)->toBe($class->id);
 });
 
@@ -68,6 +70,25 @@ it('normalizes numeric class names to roman grade and letter rombel', function (
     ]));
 
     expect(SchoolClass::where('name', 'VII A')->where('grade_level', 'VII')->exists())->toBeTrue();
+
+    expect(SchoolClass::where('name', 'VII A')->firstOrFail()->angkatan)->toBe(2026);
+});
+
+it('auto-creates missing classes with angkatan and reports them in the import summary', function () {
+    $this->actingAs($this->admin)
+        ->from(route('students.index'))
+        ->post(route('students.import'), [
+            'file' => UploadedFile::fake()->createWithContent('students.csv', implode("\n", [
+                'NIS,Nama Lengkap,Kelas (nama),Tingkatan',
+                '2425.7.010,Angkatan Tujuh,7A,VII',
+                '2425.9.010,Angkatan Sembilan,A,IX',
+            ])),
+        ])
+        ->assertSessionHas('success', fn (string $message) => str_contains($message, '2 siswa ditambahkan')
+            && str_contains($message, '2 kelas baru dibuat'));
+
+    expect(SchoolClass::where('name', 'VII A')->firstOrFail()->angkatan)->toBe(2026)
+        ->and(SchoolClass::where('name', 'IX A')->firstOrFail()->angkatan)->toBe(2024);
 });
 
 it('enrolls into an existing class matching the grade when class name is empty', function () {

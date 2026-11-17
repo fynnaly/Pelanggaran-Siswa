@@ -3,6 +3,7 @@
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\AchievementCategoryController;
 use App\Http\Controllers\AchievementRecordController;
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DisciplineCaseController;
 use App\Http\Controllers\NfcCardController;
@@ -35,6 +36,12 @@ Route::middleware(['auth', 'active.account'])->group(function () {
             Route::get('/', [SettingController::class, 'index'])->name('index');
             Route::put('/', [SettingController::class, 'update'])->name('update');
         });
+
+    // Log aktivitas — jejak import, generate akun, dan perubahan data.
+    Route::middleware('role:admin|kesiswaan')->group(function () {
+        Route::get('logs', [ActivityLogController::class, 'index'])->name('logs.index');
+        Route::get('logs/{activityLog}', [ActivityLogController::class, 'show'])->name('logs.show');
+    });
 
     // Auth Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -145,6 +152,14 @@ Route::middleware(['auth', 'active.account'])->group(function () {
         Route::get('users/template', [UserController::class, 'downloadTemplate'])->name('users.template');
         Route::get('users/export', [UserController::class, 'export'])->name('users.export');
         Route::post('users/import', [UserController::class, 'import'])->name('users.import');
+        Route::post('users/generate', [UserController::class, 'generateAccounts'])->name('users.generate');
+        Route::get('users/generate/download', [UserController::class, 'downloadGeneratedAccounts'])->name('users.generate.download');
+        Route::post('users/generate/clear', [UserController::class, 'clearGeneratedAccounts'])->name('users.generate.clear');
+        // Reset password massal & satuan — harus sebelum resource agar tidak tertelan {user}.
+        Route::post('users/reset-passwords', [UserController::class, 'resetPasswords'])->name('users.passwords.reset');
+        Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.password.reset');
+        // Halaman profil terpisah sudah digabung ke form edit pengguna — arahkan tautan lama.
+        Route::get('users/{user}/profile', fn ($user) => redirect()->route('users.edit', $user));
         Route::patch('users/{user}/deletion-request/approve', [UserController::class, 'approveDeletionRequest'])->name('users.deletion-requests.approve');
         Route::patch('users/{user}/deletion-request/reject', [UserController::class, 'rejectDeletionRequest'])->name('users.deletion-requests.reject');
         Route::patch('users/{user}/activate', [UserController::class, 'activate'])->name('users.activate');

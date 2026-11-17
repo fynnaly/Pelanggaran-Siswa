@@ -2,14 +2,18 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AcademicYear extends Model
 {
     public const STATUS_DRAFT = 'draft';
+
     public const STATUS_ACTIVE = 'active';
+
     public const STATUS_CLOSED = 'closed';
+
     public const STATUS_ARCHIVED = 'archived';
 
     protected $fillable = [
@@ -37,10 +41,23 @@ class AcademicYear extends Model
     }
 
     /**
+     * Tahun awal periode, mis. "2026/2027" → 2026.
+     * Fallback ke tahun dari start_date bila nama tidak memuat tahun.
+     */
+    public function startYear(): ?int
+    {
+        if (preg_match('/(\d{4})/', (string) $this->name, $matches)) {
+            return (int) $matches[1];
+        }
+
+        return $this->start_date?->year;
+    }
+
+    /**
      * Tanggal berakhir efektif: end_date jika diisi, jika tidak start_date + 1 tahun
      * (form tidak menginput end_date, jadi periode standar dipakai sebagai batas).
      */
-    public function effectiveEndDate(): ?\Carbon\Carbon
+    public function effectiveEndDate(): ?Carbon
     {
         return $this->end_date ?? $this->start_date?->copy()->addYear();
     }

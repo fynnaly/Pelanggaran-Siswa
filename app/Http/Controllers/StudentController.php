@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\ScopesWaliKelas;
 use App\Models\AcademicYear;
+use App\Models\ActivityLog;
 use App\Models\Enrollment;
 use App\Models\PointLedger;
 use App\Models\SchoolClass;
@@ -11,13 +12,19 @@ use App\Models\Student;
 use App\Models\User;
 use App\Support\Xlsx;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class StudentController extends Controller
 {
     private const MANAGER_ROLES = ['admin', 'bk', 'kesiswaan', 'kepala_sekolah'];
+
+    /** Hanya admin / BK / Kesiswaan yang boleh mengganti foto profil siswa. */
+    private const PHOTO_MANAGER_ROLES = ['admin', 'bk', 'kesiswaan'];
 
     use ScopesWaliKelas;
 
@@ -169,7 +176,7 @@ class StudentController extends Controller
         // Status siswa baru selalu 'active' — tidak ditanyakan di form.
         $validated['status'] = 'active';
 
-        return DB::transaction(function () use ($validated, $request) {
+        $student = DB::transaction(function () use ($validated, $request) {
             // Opsional: buat user login jika email diisi (untuk role siswa). Jika tidak diisi, siswa tetap master tanpa akun.
             $user = null;
             if ($request->filled('email')) {
@@ -202,9 +209,29 @@ class StudentController extends Controller
             // Saldo awal 2000 — idempotent per siswa per tahun ajaran
             $this->ensureOpeningBalance($student);
 
-            return redirect()->route('students.index')
-                ->with('success', 'Siswa '.$validated['full_name'].' berhasil ditambahkan.');
+            return $student;
         });
+
+        ActivityLog::record(
+            'student.create',
+            'Menambahkan siswa '.$student->full_name,
+            [
+                'nis' => $student->nis,
+                'nisn' => $student->nisn,
+                'class' => SchoolClass::whereKey($validated['class_id'])->value('name'),
+                'academic_year' => AcademicYear::whereKey($validated['academic_year_id'])->value('name'),
+                'accounts' => [[
+                    'name' => $student->full_name,
+                    'email' => $student->user?->email ?? '-',
+                    'role' => 'siswa',
+                    'identity' => $student->nis,
+                ]],
+            ],
+            $student,
+        );
+
+        return redirect()->route('students.index')
+            ->with('success', 'Siswa '.$validated['full_name'].' berhasil ditambahkan.');
     }
 
     /** Form edit siswa */
@@ -262,7 +289,16 @@ class StudentController extends Controller
     {
         $this->authorizeManagement();
 
-        $validated = $request->validate([
+        $canManagePhoto = $request->user()?->hasAnyRole(self::PHOTO_MANAGER_ROLES) ?? false;
+        $wantsPhotoChange = $request->hasFile('avatar') || $request->boolean('remove_avatar');
+
+        abort_if(
+            $wantsPhotoChange && ! $canManagePhoto,
+            403,
+            'Hanya admin / BK / Kesiswaan yang boleh mengganti foto profil siswa.',
+        );
+
+        $rules = [
             'nisn' => 'sometimes|nullable|digits:10|unique:students,nisn,'.$student->id,
             'nis' => ['sometimes', 'string', 'max:20', 'regex:/^[A-Za-z0-9._\-\/]+$/', 'unique:students,nis,'.$student->id],
             'full_name' => 'sometimes|string|max:100',
@@ -275,9 +311,28 @@ class StudentController extends Controller
             'parent_name' => 'nullable|string|max:100',
             'parent_phone' => 'nullable|string|max:20',
             'status' => 'sometimes|in:active,inactive,graduated,transferred',
+        ];
+
+        if ($canManagePhoto) {
+            $rules['avatar'] = ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:15360'];
+            $rules['remove_avatar'] = ['nullable', 'boolean'];
+        }
+
+        $validated = $request->validate($rules, [
+            'avatar.max' => 'Ukuran foto profil maksimal 15MB.',
+            'avatar.image' => 'Foto profil harus berupa gambar.',
+            'avatar.mimes' => 'Foto profil harus berformat PNG, JPG, JPEG, atau WEBP.',
         ]);
 
+        $avatar = $validated['avatar'] ?? null;
+        $removeAvatar = (bool) ($validated['remove_avatar'] ?? false);
+        unset($validated['avatar'], $validated['remove_avatar']);
+
         $student->update($validated);
+
+        if ($avatar instanceof UploadedFile || $removeAvatar) {
+            $this->syncStudentAvatar($student, $avatar, $removeAvatar);
+        }
 
         // Sinkronisasi enrollment jika pindah kelas/tahun ajaran
         $enroll = $student->latestEnrollment();
@@ -294,6 +349,42 @@ class StudentController extends Controller
 
         return redirect()->route('students.index')
             ->with('success', 'Data siswa '.$student->full_name.' berhasil diupdate.');
+    }
+
+    /**
+     * Simpan / hapus foto siswa. Foto juga disalin ke akun pengguna yang tertaut
+     * agar dashboard siswa dan daftar pengguna menampilkan gambar yang sama.
+     */
+    private function syncStudentAvatar(Student $student, ?UploadedFile $avatar, bool $remove): void
+    {
+        $oldPaths = array_values(array_filter([
+            $student->avatar_path,
+            $student->user?->avatar_path,
+        ]));
+
+        if ($avatar !== null) {
+            $newPath = $avatar->store('avatars', 'public');
+
+            if ($newPath === false) {
+                throw ValidationException::withMessages([
+                    'avatar' => 'Foto profil gagal disimpan. Silakan coba lagi.',
+                ]);
+            }
+
+            $student->avatar_path = $newPath;
+            $student->user?->forceFill(['avatar_path' => $newPath])->save();
+        } elseif ($remove) {
+            $student->avatar_path = null;
+            $student->user?->forceFill(['avatar_path' => null])->save();
+        }
+
+        $student->save();
+
+        foreach (array_unique($oldPaths) as $path) {
+            if ($path !== $student->avatar_path && Storage::disk('public')->exists($path)) {
+                Storage::disk('public')->delete($path);
+            }
+        }
     }
 
     /** Hapus siswa (tidak diaktifkan — siswa tetap bisa diedit/ditampilkan) */
@@ -455,6 +546,7 @@ class StudentController extends Controller
             'file' => 'required|file|mimes:csv,txt,xlsx|max:5120',
         ]);
 
+        $fileName = $request->file('file')->getClientOriginalName();
         $path = $request->file('file')->getRealPath();
         $isXlsx = strtolower($request->file('file')->getClientOriginalExtension()) === 'xlsx';
 
@@ -462,6 +554,8 @@ class StudentController extends Controller
             try {
                 $allRows = Xlsx::read($path);
             } catch (\Throwable $e) {
+                $this->logImportFailure('Import gagal: '.$e->getMessage(), $fileName);
+
                 return back()->with('error', 'Import gagal: '.$e->getMessage());
             }
             $header = array_map(fn ($h) => trim(strtolower((string) $h)), $allRows[0] ?? []);
@@ -469,6 +563,8 @@ class StudentController extends Controller
         } else {
             $handle = fopen($path, 'r');
             if (! $handle) {
+                $this->logImportFailure('Gagal membaca file CSV.', $fileName);
+
                 return back()->with('error', 'Gagal membaca file CSV.');
             }
 
@@ -508,7 +604,10 @@ class StudentController extends Controller
         $iStatus = $idx('status');
 
         if ($iNis === false || $iNama === false) {
-            return back()->with('error', 'Header CSV tidak valid. Wajib ada kolom: NIS, Nama Lengkap.');
+            $message = 'Header CSV tidak valid. Wajib ada kolom: NIS, Nama Lengkap.';
+            $this->logImportFailure($message, $fileName);
+
+            return back()->with('error', $message);
         }
 
         $activeYear = AcademicYear::where('is_active', true)->first()
@@ -516,7 +615,10 @@ class StudentController extends Controller
 
         $imported = 0;
         $skipped = 0;
+        $classesCreated = 0;
         $errors = [];
+        $createdStudents = [];
+        $createdClasses = [];
 
         DB::beginTransaction();
         try {
@@ -571,6 +673,7 @@ class StudentController extends Controller
                 }
                 if (Student::where('nis', $nis)->exists()
                     || ($nisn !== '' && Student::where('nisn', $nisn)->exists())) {
+                    $errors[] = "Baris {$rowNum} ({$nama}): NIS/NISN sudah terdaftar — dilewati.";
                     $skipped++;
 
                     continue;
@@ -586,12 +689,24 @@ class StudentController extends Controller
                     if ($year) {
                         $kelas = SchoolClass::firstOrCreate(
                             ['name' => $kelasNama, 'academic_year_id' => $year->id],
-                            ['homeroom_teacher_id' => null, 'grade_level' => $grade]
+                            [
+                                'homeroom_teacher_id' => null,
+                                'grade_level' => $grade,
+                                'angkatan' => $grade !== null ? SchoolClass::resolveAngkatan($year, $grade) : null,
+                            ]
                         );
-                        // Kelas lama hasil impor sebelumnya bisa belum punya tingkatan.
-                        if ($grade !== null && ! $kelas->grade_level) {
-                            $kelas->update(['grade_level' => $grade]);
+
+                        if ($kelas->wasRecentlyCreated) {
+                            $classesCreated++;
+                            $createdClasses[] = $kelas->name;
+                        } elseif ($grade !== null && (! $kelas->grade_level || $kelas->angkatan === null)) {
+                            // Kelas lama hasil impor sebelumnya bisa belum punya tingkatan/angkatan.
+                            $kelas->update([
+                                'grade_level' => $kelas->grade_level ?: $grade,
+                                'angkatan' => $kelas->angkatan ?? SchoolClass::resolveAngkatan($year, $grade),
+                            ]);
                         }
+
                         $classId = $kelas->id;
                         $yearId = $year->id;
                     }
@@ -635,22 +750,60 @@ class StudentController extends Controller
 
                 $this->syncEnrollment($student, $classId, $yearId);
                 $this->ensureOpeningBalance($student);
+                $createdStudents[] = [
+                    'name' => $nama,
+                    'email' => '-',
+                    'role' => 'siswa',
+                    'identity' => $nis,
+                    'class' => SchoolClass::whereKey($classId)->value('name') ?? $kelasNama,
+                ];
                 $imported++;
             }
 
             DB::commit();
         } catch (\Throwable $e) {
             DB::rollBack();
+            $this->logImportFailure('Import gagal: '.$e->getMessage(), $fileName);
 
             return back()->with('error', 'Import gagal: '.$e->getMessage());
         }
 
-        $msg = "Import selesai — {$imported} siswa ditambahkan".($skipped ? ", {$skipped} dilewati" : '').'.';
+        $msg = "Import selesai — {$imported} siswa ditambahkan";
+        if ($classesCreated > 0) {
+            $msg .= ", {$classesCreated} kelas baru dibuat";
+        }
+        $msg .= ($skipped ? ", {$skipped} dilewati" : '').'.';
         if ($errors) {
             $msg .= ' '.implode(' ', array_slice($errors, 0, 3));
         }
 
+        ActivityLog::record(
+            'student.import',
+            "Import siswa: {$imported} ditambahkan, {$skipped} dilewati ({$fileName})",
+            [
+                'status' => 'ok',
+                'file' => $fileName,
+                'imported' => $imported,
+                'skipped' => $skipped,
+                'classes_created' => $classesCreated,
+                'issues_total' => count($errors),
+                'issues' => array_slice($errors, 0, 500),
+                'classes' => array_slice($createdClasses, 0, 500),
+                'accounts' => array_slice($createdStudents, 0, 500),
+            ],
+        );
+
         return back()->with('success', $msg);
+    }
+
+    /** Catat percobaan import yang gagal total agar bisa ditelusuri admin. */
+    private function logImportFailure(string $message, ?string $fileName = null): void
+    {
+        ActivityLog::record('student.import', 'Import siswa gagal: '.$message, [
+            'status' => 'failed',
+            'file' => $fileName,
+            'reason' => $message,
+        ]);
     }
 
     /** Normalisasi tingkatan: VII/7 → VII, VIII/8 → VIII, IX/9 → IX. */

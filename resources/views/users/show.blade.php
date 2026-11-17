@@ -10,6 +10,14 @@
     </x-slot>
     <div class="main-wrap">
         <div class="card">
+            <div style="display:flex;align-items:center;gap:var(--sp-md);margin-bottom:var(--sp-md)">
+                <img src="{{ $user->avatar_url }}" alt="Foto {{ $user->name }}"
+                     style="width:72px;height:72px;border-radius:999px;object-fit:cover;flex-shrink:0;border:1px solid var(--border);background:var(--surface)">
+                <div style="min-width:0">
+                    <div style="font-size:1.05rem;font-weight:700">{{ $user->name }}</div>
+                    <div class="text-sm text-muted">{{ $user->email }}</div>
+                </div>
+            </div>
             <h2 style="font-size:1.125rem;font-weight:700;margin-bottom:var(--sp-md)">Informasi Pengguna</h2>
             <table style="width:100%">
                 <tbody>
