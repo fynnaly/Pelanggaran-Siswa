@@ -74,15 +74,19 @@ class MenuHelper
         // (admin / kesiswaan / kepala sekolah) — guru, wali kelas & BK tidak.
         $isManagement = $user?->hasAnyRole(['admin', 'kesiswaan', 'kepala_sekolah']) ?? false;
 
-        $dataReferensi = [
+        // Master data = seluruh data referensi + kategori aturan.
+        // Dikelompokkan di satu tempat agar admin mudah menemukannya.
+        $masterData = [
             ['name' => 'Siswa', 'path' => '/students', 'pro' => false],
             ['name' => 'Guru', 'path' => '/teachers', 'pro' => false],
-            ['name' => 'Nametag NFC', 'path' => '/nametag-nfc', 'pro' => false],
             ['name' => 'Kelas', 'path' => '/classes', 'pro' => false],
             ['name' => 'Tahun Ajaran', 'path' => '/academic-years', 'pro' => false],
+            ['name' => 'Nametag NFC', 'path' => '/nametag-nfc', 'pro' => false],
+            ['name' => 'Kategori Pelanggaran', 'path' => '/violation-categories', 'pro' => false],
+            ['name' => 'Kategori Prestasi', 'path' => '/achievement-categories', 'pro' => false],
         ];
         if ($isManagement) {
-            array_unshift($dataReferensi, ['name' => 'Pengguna', 'path' => '/users', 'pro' => false]);
+            array_unshift($masterData, ['name' => 'Pengguna', 'path' => '/users', 'pro' => false]);
         }
 
         return [
@@ -93,8 +97,8 @@ class MenuHelper
             ],
             [
                 'icon' => 'database',
-                'name' => 'Data Referensi',
-                'subItems' => $dataReferensi,
+                'name' => 'Master Data',
+                'subItems' => $masterData,
             ],
             [
                 'icon' => 'charts',
@@ -110,7 +114,6 @@ class MenuHelper
                 'icon' => 'shield-alert',
                 'name' => 'Pelanggaran',
                 'subItems' => [
-                    ['name' => 'Kategori Pelanggaran', 'path' => '/violation-categories', 'pro' => false],
                     ['name' => 'Catat Kasus', 'path' => '/kasus-pelanggaran', 'pro' => false],
                 ],
             ],
@@ -118,7 +121,6 @@ class MenuHelper
                 'icon' => 'trophy',
                 'name' => 'Prestasi',
                 'subItems' => [
-                    ['name' => 'Kategori Prestasi', 'path' => '/achievement-categories', 'pro' => false],
                     ['name' => 'Catat Prestasi', 'path' => '/achievement-records', 'pro' => false],
                 ],
             ],
@@ -183,7 +185,7 @@ class MenuHelper
                 'items' => self::getMainNavItems(),
             ],
             [
-                'title' => 'Others',
+                'title' => 'Sistem',
                 'items' => self::getOthersItems(),
             ],
         ];
