@@ -20,11 +20,11 @@ beforeEach(function () {
     $this->guru->assignRole('guru');
 });
 
-it('shows master data and activity log menus to admin', function () {
+it('shows reference categories and the activity log to admin', function () {
     $this->actingAs($this->admin)
         ->get(route('achievement-categories.index'))
         ->assertOk()
-        ->assertSee('Master Data')
+        ->assertSee('Data Referensi')
         ->assertSee('Kategori Pelanggaran')
         ->assertSee('Kategori Prestasi')
         ->assertSee('Log Aktivitas');
