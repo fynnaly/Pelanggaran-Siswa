@@ -9,8 +9,8 @@
                 @if(auth()->user()->hasAnyRole(['admin', 'bk', 'kesiswaan', 'kepala_sekolah']))
                     <a href="{{ route('achievement-categories.template') }}" class="btn btn-secondary"><i data-lucide="download" class="icon-sm"></i> Template</a>
                     <a href="{{ route('achievement-categories.export') }}" class="btn btn-secondary"><i data-lucide="download" class="icon-sm"></i> Ekspor XLSX</a>
+                    <a href="{{ route('achievement-categories.create') }}" class="btn btn-primary"><i data-lucide="plus" class="icon-sm"></i> Tambah</a>
                 @endif
-                <a href="{{ route('achievement-categories.create') }}" class="btn btn-primary"><i data-lucide="plus" class="icon-sm"></i> Tambah</a>
             </div>
         </div>
     </x-slot>
@@ -57,8 +57,12 @@
                             <td class="mono">+{{ $cat->points }}</td>
                             <td><span class="badge {{ $cat->status==='active'?'badge-success':'badge-warning' }}">{{ ucfirst($cat->status) }}</span></td>
                             <td><div class="action-cell">
-                                <a href="{{ route('achievement-categories.edit', $cat) }}" class="action-btn" title="Edit"><i data-lucide="pencil" style="width:14px;height:14px"></i></a>
-                                <form action="{{ route('achievement-categories.destroy', $cat) }}" method="POST" class="inline" onsubmit="return confirm('Hapus kategori ini?')">@csrf @method('DELETE')<button class="action-btn" title="Hapus" style="color:var(--danger)"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button></form>
+                                @if(auth()->user()->hasAnyRole(['admin', 'bk', 'kesiswaan', 'kepala_sekolah']))
+                                    <a href="{{ route('achievement-categories.edit', $cat) }}" class="action-btn" title="Edit"><i data-lucide="pencil" style="width:14px;height:14px"></i></a>
+                                    <form action="{{ route('achievement-categories.destroy', $cat) }}" method="POST" class="inline" onsubmit="return confirm('Hapus kategori ini?')">@csrf @method('DELETE')<button class="action-btn" title="Hapus" style="color:var(--danger)"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button></form>
+                                @else
+                                    <span class="text-muted text-sm">—</span>
+                                @endif
                             </div></td>
                         </tr>
                     @empty

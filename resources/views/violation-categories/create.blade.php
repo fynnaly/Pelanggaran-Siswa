@@ -101,6 +101,36 @@
                     <input type="text" class="field-input" value="Otomatis — daftar prestasi wajib (redemption rules)" readonly style="background:var(--surface);color:var(--on-surface-muted)">
                     <span class="help-text">Sanksi diturunkan dari daftar prestasi pemulihan. Tanpa prestasi divalidasi, poin siswa tertahan (tidak naik). Setelah kategori disimpan dan dipasangkan redemption rules, daftar tampil di halaman edit & detail kasus.</span>
                 </div>
+                <details style="margin:var(--sp-lg) 0;border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-md)">
+                    <summary style="cursor:pointer;font-weight:600;font-size:.875rem">Pengaturan lanjutan (opsional)</summary>
+                    <div style="margin-top:var(--sp-md)">
+                        <div class="field">
+                            <label class="field-label">Grup Kategori</label>
+                            <input type="text" name="group_type" value="{{ old('group_type') }}" class="field-input" list="violation-group-types" maxlength="50" placeholder="Contoh: kedisiplinan">
+                            <datalist id="violation-group-types">
+                                <option value="terlambat"></option>
+                                <option value="kehadiran"></option>
+                                <option value="seragam"></option>
+                                <option value="kerapian"></option>
+                                <option value="kedisiplinan"></option>
+                            </datalist>
+                            <span class="help-text">Dipakai untuk pengelompokan laporan. Pilih dari daftar atau tulis sendiri.</span>
+                        </div>
+
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--sp-sm)">
+                            <div class="field">
+                                <label class="field-label">Berlaku Mulai</label>
+                                <input type="date" name="effective_date" value="{{ old('effective_date') }}" class="field-input">
+                                <span class="help-text">Kosongkan bila langsung berlaku.</span>
+                            </div>
+                            <div class="field">
+                                <label class="field-label">Berakhir Pada</label>
+                                <input type="date" name="expiry_date" value="{{ old('expiry_date') }}" class="field-input">
+                                <span class="help-text">Kosongkan bila berlaku tanpa batas.</span>
+                            </div>
+                        </div>
+                    </div>
+                </details>
                 <div class="field"><label class="field-label">Deskripsi</label><textarea name="description" class="field-input" rows="3" placeholder="Opsional...">{{ old('description') }}</textarea></div>
                 <div style="display:flex;gap:var(--sp-sm);margin-top:var(--sp-lg)">
                     <a href="{{ route('violation-categories.index') }}" class="btn btn-secondary" style="flex:1;justify-content:center">Batal</a>

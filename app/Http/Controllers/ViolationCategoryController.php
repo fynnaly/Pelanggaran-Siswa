@@ -310,6 +310,14 @@ class ViolationCategoryController extends Controller
             'poin_ke_2' => ['nullable', 'integer', 'min:0', 'max:1000'],
             'poin_ke_3' => ['nullable', 'integer', 'min:0', 'max:1000'],
             'description' => ['nullable', 'string'],
+            'group_type' => ['nullable', 'string', 'max:50'],
+            'effective_date' => ['nullable', 'date'],
+            'expiry_date' => ['nullable', 'date', function (string $attribute, mixed $value, \Closure $fail) use ($request) {
+                $start = $request->input('effective_date');
+                if ($value && $start && $value < $start) {
+                    $fail('Tanggal berakhir tidak boleh lebih awal dari tanggal berlaku.');
+                }
+            }],
             'status' => [$existing ? 'sometimes' : 'required', 'required', 'in:draft,active'],
         ]);
     }
@@ -391,6 +399,11 @@ class ViolationCategoryController extends Controller
         $data = collect($validated)->except(['poin_ke_1', 'poin_ke_2', 'poin_ke_3'])->all();
         $data = array_merge($data, $this->tierColumns($validated));
 
+        // group_type NOT NULL di MySQL — jangan kirim null eksplisit.
+        if (array_key_exists('group_type', $data) && ! filled($data['group_type'])) {
+            $data['group_type'] = 'kedisiplinan';
+        }
+
         ViolationCategory::create($data);
 
         // mengarahkan ke halaman ke -
@@ -434,6 +447,11 @@ class ViolationCategoryController extends Controller
 
         $data = collect($validated)->except(['poin_ke_1', 'poin_ke_2', 'poin_ke_3'])->all();
         $data = array_merge($data, $this->tierColumns($validated));
+
+        // group_type NOT NULL di MySQL — fallback ke nilai lama.
+        if (array_key_exists('group_type', $data) && ! filled($data['group_type'])) {
+            $data['group_type'] = $violationCategory->group_type ?: 'kedisiplinan';
+        }
 
         $violationCategory->update($data);
 

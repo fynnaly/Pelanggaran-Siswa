@@ -14,6 +14,12 @@ class AchievementCategoryController extends Controller
 {
     private const MANAGER_ROLES = ['admin', 'bk', 'kesiswaan', 'kepala_sekolah'];
 
+    /** Pilihan umum untuk `<datalist>` grup kategori prestasi. */
+    private const GROUP_TYPES = [
+        'keagamaan', 'karakter', 'akademik', 'sosial', 'kepemimpinan',
+        'nonakademik', 'kebersihan', 'kewirausahaan',
+    ];
+
     /** Daftar role yang dianggap staf sekolah. User tanpa role apa pun = DITOLAK. */
     private const STAFF_ROLES = ['admin', 'guru', 'wali_kelas', 'bk', 'kesiswaan', 'kepala_sekolah'];
 
@@ -73,7 +79,10 @@ class AchievementCategoryController extends Controller
         // Hanya kategori induk yang boleh menjadi induk langsung.
         $parents = AchievementCategory::whereNull('parent_id')->orderBy('name')->get();
 
-        return view('achievement-categories.create', compact('parents'));
+        return view('achievement-categories.create', [
+            'parents' => $parents,
+            'groupTypes' => self::GROUP_TYPES,
+        ]);
     }
 
     /**
@@ -286,30 +295,78 @@ class AchievementCategoryController extends Controller
         return $message;
     }
 
+    /**
+     * Aturan validasi kategori prestasi.
+     *
+     * `$existing = null` dipakai untuk store; bila diisi, kode/nama/poin/status
+     * boleh tidak dikirim (update parsial) dan kode sendiri dikecualikan dari
+     * aturan unik.
+     */
+    private function validateCategory(Request $request, ?AchievementCategory $existing = null): array
+    {
+        $codeRules = $existing
+            ? ['sometimes', 'required', 'string', 'max:20', 'unique:achievement_categories,code,'.$existing->id]
+            : ['required', 'string', 'max:20', 'unique:achievement_categories,code'];
+
+        $parentRules = [
+            'nullable',
+            Rule::exists('achievement_categories', 'id')->where(fn ($query) => $query->whereNull('parent_id')),
+        ];
+
+        if ($existing) {
+            // Self-reference dilarang dan kategori ber-anak tidak boleh dipindah.
+            $parentRules[] = Rule::notIn([$existing->id]);
+            $parentRules[] = function (string $attribute, mixed $value, \Closure $fail) use ($existing) {
+                if ($value !== null && $value !== '' && $existing->children()->exists()) {
+                    $fail('Kategori yang memiliki sub-kategori tidak dapat dipindahkan ke bawah kategori lain.');
+                }
+            };
+        }
+
+        $pointsRules = [$existing ? 'sometimes' : null, 'required', 'integer', 'min:0'];
+        if ($pointsRules[0] === null) {
+            array_shift($pointsRules);
+        }
+        $pointsRules[] = function (string $attribute, mixed $value, \Closure $fail) use ($request, $existing) {
+            $parentId = $request->input('parent_id', $existing?->parent_id);
+            if ($parentId !== null && $parentId !== '' && (int) $value < 1) {
+                $fail('Sub-kategori prestasi harus memiliki poin minimal 1.');
+            }
+        };
+
+        $nameRules = $existing
+            ? ['sometimes', 'required', 'string', 'max:150']
+            : ['required', 'string', 'max:150'];
+
+        return $request->validate([
+            'code' => $codeRules,
+            'name' => $nameRules,
+            'parent_id' => $parentRules,
+            'points' => $pointsRules,
+            'status' => [$existing ? 'sometimes' : 'required', 'required', 'in:draft,active'],
+            'description' => ['nullable', 'string'],
+            'group_type' => ['nullable', 'string', 'max:50'],
+            'max_points_per_event' => ['nullable', 'integer', 'min:0', 'max:1000'],
+            'effective_date' => ['nullable', 'date'],
+            'expiry_date' => ['nullable', 'date', function (string $attribute, mixed $value, \Closure $fail) use ($request) {
+                $start = $request->input('effective_date');
+                if ($value && $start && $value < $start) {
+                    $fail('Tanggal berakhir tidak boleh lebih awal dari tanggal berlaku.');
+                }
+            }],
+        ]);
+    }
+
     public function store(Request $request)
     {
         $this->authorizeManagement();
 
-        $validated = $request->validate([
-            'code' => ['required', 'string', 'max:20', 'unique:achievement_categories,code'],
-            'name' => ['required', 'string', 'max:150'],
-            'parent_id' => [
-                'nullable',
-                Rule::exists('achievement_categories', 'id')->where(fn ($query) => $query->whereNull('parent_id')),
-            ],
-            'points' => [
-                'required',
-                'integer',
-                'min:0',
-                function (string $attribute, mixed $value, \Closure $fail) use ($request) {
-                    $parentId = $request->input('parent_id');
-                    if ($parentId !== null && $parentId !== '' && (int) $value < 1) {
-                        $fail('Sub-kategori prestasi harus memiliki poin minimal 1.');
-                    }
-                },
-            ],
-            'status' => ['required', 'in:draft,active'],
-        ]);
+        $validated = $this->validateCategory($request);
+
+        // group_type NOT NULL di MySQL — jangan kirim null eksplisit.
+        if (array_key_exists('group_type', $validated) && ! filled($validated['group_type'])) {
+            $validated['group_type'] = 'akademik';
+        }
 
         AchievementCategory::create($validated);
 
@@ -327,41 +384,23 @@ class AchievementCategoryController extends Controller
             ->where('id', '!=', $achievementCategory->id)
             ->orderBy('name')->get();
 
-        return view('achievement-categories.edit', compact('achievementCategory', 'parents'));
+        return view('achievement-categories.edit', [
+            'achievementCategory' => $achievementCategory,
+            'parents' => $parents,
+            'groupTypes' => self::GROUP_TYPES,
+        ]);
     }
 
     public function update(Request $request, AchievementCategory $achievementCategory)
     {
         $this->authorizeManagement();
 
-        $validated = $request->validate([
-            'code' => ['sometimes', 'required', 'string', 'max:20', 'unique:achievement_categories,code,'.$achievementCategory->id],
-            'name' => ['sometimes', 'required', 'string', 'max:150'],
-            'parent_id' => [
-                'nullable',
-                Rule::exists('achievement_categories', 'id')->where(fn ($query) => $query->whereNull('parent_id')),
-                // Self-reference dilarang: kategori tidak boleh jadi induk dirinya sendiri.
-                Rule::notIn([$achievementCategory->id]),
-                function (string $attribute, mixed $value, \Closure $fail) use ($achievementCategory) {
-                    if ($value !== null && $value !== '' && $achievementCategory->children()->exists()) {
-                        $fail('Kategori yang memiliki sub-kategori tidak dapat dipindahkan ke bawah kategori lain.');
-                    }
-                },
-            ],
-            'points' => [
-                'sometimes',
-                'required',
-                'integer',
-                'min:0',
-                function (string $attribute, mixed $value, \Closure $fail) use ($request, $achievementCategory) {
-                    $parentId = $request->input('parent_id', $achievementCategory->parent_id);
-                    if ($parentId !== null && $parentId !== '' && (int) $value < 1) {
-                        $fail('Sub-kategori prestasi harus memiliki poin minimal 1.');
-                    }
-                },
-            ],
-            'status' => ['sometimes', 'required', 'in:draft,active'],
-        ]);
+        $validated = $this->validateCategory($request, $achievementCategory);
+
+        // group_type NOT NULL di MySQL — fallback ke nilai lama.
+        if (array_key_exists('group_type', $validated) && ! filled($validated['group_type'])) {
+            $validated['group_type'] = $achievementCategory->group_type ?: 'akademik';
+        }
 
         $achievementCategory->update($validated);
 
