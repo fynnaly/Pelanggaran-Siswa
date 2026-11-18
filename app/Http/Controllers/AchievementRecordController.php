@@ -94,6 +94,14 @@ class AchievementRecordController extends Controller
         $categories = AchievementCategory::with('parent')
             ->where('status', 'active')
             ->whereNotNull('parent_id')
+            // Hanya kategori yang sedang berlaku: belum mulai / sudah kedaluwarsa
+            // tidak boleh dipilih lagi.
+            ->where(function ($query) {
+                $query->whereNull('effective_date')->orWhereDate('effective_date', '<=', today());
+            })
+            ->where(function ($query) {
+                $query->whereNull('expiry_date')->orWhereDate('expiry_date', '>=', today());
+            })
             ->get();
         $categoryOptions = $categories->map(fn (AchievementCategory $category) => [
             'id' => $category->id,
@@ -235,9 +243,12 @@ class AchievementRecordController extends Controller
         }
 
         $category = AchievementCategory::findOrFail($validated['achievement_category_id']);
-        if ($category->parent_id === null || $category->status !== 'active') {
+        $notStarted = $category->effective_date && $category->effective_date->isAfter(today());
+        $expired = $category->expiry_date && $category->expiry_date->isBefore(today());
+
+        if ($category->parent_id === null || $category->status !== 'active' || $notStarted || $expired) {
             return back()->withInput()->withErrors([
-                'achievement_category_id' => 'Pilih sub-kategori prestasi yang aktif.',
+                'achievement_category_id' => 'Pilih sub-kategori prestasi yang aktif dan sedang berlaku.',
             ]);
         }
 
